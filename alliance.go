@@ -1,0 +1,23 @@
+package killboard
+
+import (
+	"context"
+	"time"
+)
+
+type AllianceRespository interface {
+	One(ctx context.Context, id uint64) *Alliance
+}
+
+// Alliance is an object representing the database table.
+type Alliance struct {
+	ID          uint64    `json:"id"`
+	Name        string    `json:"name"`
+	Ticker      string    `json:"ticker"`
+	MemberCount uint64    `json:"member_count"`
+	IsClosed    int8      `json:"is_closed"`
+	Etag        string    `json:"etag"`
+	CachedUntil time.Time `json:"cached_until"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
