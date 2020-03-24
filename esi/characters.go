@@ -45,7 +45,7 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 		}
 
 		response, err = e.Request(request)
-		if err != nil || response.Code >= 400 {
+		if err != nil {
 			return response, err
 		}
 		if response.Code < 400 {
@@ -68,11 +68,7 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 		}
 		character.ID = id
 
-		if character.CorporationID == 1000001 {
-			character.Ignored = true
-		}
-
-		character.Expires, err = RetrieveExpiresHeaderFromResponse(response, 0)
+		character.CachedUntil, err = RetrieveExpiresHeaderFromResponse(response, 0)
 		if err != nil {
 			return response, errors.Wrap(err, "Error Encountered attempting to parse expires header")
 		}
@@ -83,7 +79,7 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 		}
 
 	case 304:
-		character.Expires, err = RetrieveExpiresHeaderFromResponse(response, 0)
+		character.CachedUntil, err = RetrieveExpiresHeaderFromResponse(response, 0)
 		if err != nil {
 			return response, errors.Wrap(err, "Error Encountered attempting to parse expires header")
 		}

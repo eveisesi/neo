@@ -16,7 +16,7 @@ import (
 
 func (i *Ingresser) GetCharacterByID(id uint64) (*killboard.Character, error) {
 
-	var character *killboard.Character
+	var character = new(killboard.Character)
 
 	key := fmt.Sprintf("character:%d", id)
 

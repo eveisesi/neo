@@ -23,59 +23,59 @@ import (
 
 // Corporation is an object representing the database table.
 type Corporation struct {
-	ID         uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name       string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Ticker     string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	AllianceID uint64    `boil:"alliance_id" json:"alliance_id" toml:"alliance_id" yaml:"alliance_id"`
-	Etag       string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedAt   time.Time `boil:"cached_at" json:"cached_at" toml:"cached_at" yaml:"cached_at"`
-	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt  time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID          uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Ticker      string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
+	AllianceID  uint64    `boil:"alliance_id" json:"alliance_id" toml:"alliance_id" yaml:"alliance_id"`
+	Etag        string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	CachedUntil time.Time `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
+	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *corporationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L corporationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CorporationColumns = struct {
-	ID         string
-	Name       string
-	Ticker     string
-	AllianceID string
-	Etag       string
-	CachedAt   string
-	CreatedAt  string
-	UpdatedAt  string
+	ID          string
+	Name        string
+	Ticker      string
+	AllianceID  string
+	Etag        string
+	CachedUntil string
+	CreatedAt   string
+	UpdatedAt   string
 }{
-	ID:         "id",
-	Name:       "name",
-	Ticker:     "ticker",
-	AllianceID: "alliance_id",
-	Etag:       "etag",
-	CachedAt:   "cached_at",
-	CreatedAt:  "created_at",
-	UpdatedAt:  "updated_at",
+	ID:          "id",
+	Name:        "name",
+	Ticker:      "ticker",
+	AllianceID:  "alliance_id",
+	Etag:        "etag",
+	CachedUntil: "cached_until",
+	CreatedAt:   "created_at",
+	UpdatedAt:   "updated_at",
 }
 
 // Generated where
 
 var CorporationWhere = struct {
-	ID         whereHelperuint64
-	Name       whereHelperstring
-	Ticker     whereHelperstring
-	AllianceID whereHelperuint64
-	Etag       whereHelperstring
-	CachedAt   whereHelpertime_Time
-	CreatedAt  whereHelpertime_Time
-	UpdatedAt  whereHelpertime_Time
+	ID          whereHelperuint64
+	Name        whereHelperstring
+	Ticker      whereHelperstring
+	AllianceID  whereHelperuint64
+	Etag        whereHelperstring
+	CachedUntil whereHelpertime_Time
+	CreatedAt   whereHelpertime_Time
+	UpdatedAt   whereHelpertime_Time
 }{
-	ID:         whereHelperuint64{field: "`corporations`.`id`"},
-	Name:       whereHelperstring{field: "`corporations`.`name`"},
-	Ticker:     whereHelperstring{field: "`corporations`.`ticker`"},
-	AllianceID: whereHelperuint64{field: "`corporations`.`alliance_id`"},
-	Etag:       whereHelperstring{field: "`corporations`.`etag`"},
-	CachedAt:   whereHelpertime_Time{field: "`corporations`.`cached_at`"},
-	CreatedAt:  whereHelpertime_Time{field: "`corporations`.`created_at`"},
-	UpdatedAt:  whereHelpertime_Time{field: "`corporations`.`updated_at`"},
+	ID:          whereHelperuint64{field: "`corporations`.`id`"},
+	Name:        whereHelperstring{field: "`corporations`.`name`"},
+	Ticker:      whereHelperstring{field: "`corporations`.`ticker`"},
+	AllianceID:  whereHelperuint64{field: "`corporations`.`alliance_id`"},
+	Etag:        whereHelperstring{field: "`corporations`.`etag`"},
+	CachedUntil: whereHelpertime_Time{field: "`corporations`.`cached_until`"},
+	CreatedAt:   whereHelpertime_Time{field: "`corporations`.`created_at`"},
+	UpdatedAt:   whereHelpertime_Time{field: "`corporations`.`updated_at`"},
 }
 
 // CorporationRels is where relationship names are stored.
@@ -102,8 +102,8 @@ func (*corporationR) NewStruct() *corporationR {
 type corporationL struct{}
 
 var (
-	corporationAllColumns            = []string{"id", "name", "ticker", "alliance_id", "etag", "cached_at", "created_at", "updated_at"}
-	corporationColumnsWithoutDefault = []string{"id", "name", "ticker", "alliance_id", "etag", "cached_at", "created_at", "updated_at"}
+	corporationAllColumns            = []string{"id", "name", "ticker", "alliance_id", "etag", "cached_until", "created_at", "updated_at"}
+	corporationColumnsWithoutDefault = []string{"id", "name", "ticker", "alliance_id", "etag", "cached_until", "created_at", "updated_at"}
 	corporationColumnsWithDefault    = []string{}
 	corporationPrimaryKeyColumns     = []string{"id"}
 )
@@ -267,7 +267,7 @@ func (corporationL) LoadKillmailAttackers(ctx context.Context, e boil.ContextExe
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -315,7 +315,7 @@ func (corporationL) LoadKillmailAttackers(ctx context.Context, e boil.ContextExe
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.CorporationID {
+			if queries.Equal(local.ID, foreign.CorporationID) {
 				local.R.KillmailAttackers = append(local.R.KillmailAttackers, foreign)
 				if foreign.R == nil {
 					foreign.R = &killmailAttackerR{}
@@ -425,7 +425,7 @@ func (o *Corporation) AddKillmailAttackers(ctx context.Context, exec boil.Contex
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.CorporationID = o.ID
+			queries.Assign(&rel.CorporationID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -446,7 +446,7 @@ func (o *Corporation) AddKillmailAttackers(ctx context.Context, exec boil.Contex
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.CorporationID = o.ID
+			queries.Assign(&rel.CorporationID, o.ID)
 		}
 	}
 
@@ -467,6 +467,76 @@ func (o *Corporation) AddKillmailAttackers(ctx context.Context, exec boil.Contex
 			rel.R.Corporation = o
 		}
 	}
+	return nil
+}
+
+// SetKillmailAttackers removes all previously related items of the
+// corporation replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Corporation's KillmailAttackers accordingly.
+// Replaces o.R.KillmailAttackers with related.
+// Sets related.R.Corporation's KillmailAttackers accordingly.
+func (o *Corporation) SetKillmailAttackers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*KillmailAttacker) error {
+	query := "update `killmail_attackers` set `corporation_id` = null where `corporation_id` = ?"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.KillmailAttackers {
+			queries.SetScanner(&rel.CorporationID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Corporation = nil
+		}
+
+		o.R.KillmailAttackers = nil
+	}
+	return o.AddKillmailAttackers(ctx, exec, insert, related...)
+}
+
+// RemoveKillmailAttackers relationships from objects passed in.
+// Removes related items from R.KillmailAttackers (uses pointer comparison, removal does not keep order)
+// Sets related.R.Corporation.
+func (o *Corporation) RemoveKillmailAttackers(ctx context.Context, exec boil.ContextExecutor, related ...*KillmailAttacker) error {
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.CorporationID, nil)
+		if rel.R != nil {
+			rel.R.Corporation = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("corporation_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.KillmailAttackers {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.KillmailAttackers)
+			if ln > 1 && i < ln-1 {
+				o.R.KillmailAttackers[i] = o.R.KillmailAttackers[ln-1]
+			}
+			o.R.KillmailAttackers = o.R.KillmailAttackers[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

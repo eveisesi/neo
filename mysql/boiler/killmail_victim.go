@@ -20,24 +20,23 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // KillmailVictim is an object representing the database table.
 type KillmailVictim struct {
-	ID            uint64        `boil:"id" json:"id" toml:"id" yaml:"id"`
-	KillmailID    uint64        `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
-	AllianceID    null.Uint64   `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	CharacterID   null.Uint64   `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
-	CorporationID uint64        `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
-	FactionID     null.Uint64   `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	DamageTaken   uint64        `boil:"damage_taken" json:"damage_taken" toml:"damage_taken" yaml:"damage_taken"`
-	ShipTypeID    uint64        `boil:"ship_type_id" json:"ship_type_id" toml:"ship_type_id" yaml:"ship_type_id"`
-	PosX          types.Decimal `boil:"pos_x" json:"pos_x" toml:"pos_x" yaml:"pos_x"`
-	PosY          types.Decimal `boil:"pos_y" json:"pos_y" toml:"pos_y" yaml:"pos_y"`
-	PosZ          types.Decimal `boil:"pos_z" json:"pos_z" toml:"pos_z" yaml:"pos_z"`
-	CreatedAt     time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time     `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID            uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	KillmailID    uint64       `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
+	AllianceID    null.Uint64  `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
+	CharacterID   null.Uint64  `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
+	CorporationID uint64       `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
+	FactionID     null.Uint64  `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
+	DamageTaken   uint64       `boil:"damage_taken" json:"damage_taken" toml:"damage_taken" yaml:"damage_taken"`
+	ShipTypeID    uint64       `boil:"ship_type_id" json:"ship_type_id" toml:"ship_type_id" yaml:"ship_type_id"`
+	PosX          null.Float64 `boil:"pos_x" json:"pos_x,omitempty" toml:"pos_x" yaml:"pos_x,omitempty"`
+	PosY          null.Float64 `boil:"pos_y" json:"pos_y,omitempty" toml:"pos_y" yaml:"pos_y,omitempty"`
+	PosZ          null.Float64 `boil:"pos_z" json:"pos_z,omitempty" toml:"pos_z" yaml:"pos_z,omitempty"`
+	CreatedAt     time.Time    `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt     time.Time    `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *killmailVictimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailVictimL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,6 +74,29 @@ var KillmailVictimColumns = struct {
 
 // Generated where
 
+type whereHelpernull_Float64 struct{ field string }
+
+func (w whereHelpernull_Float64) EQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Float64) NEQ(x null.Float64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Float64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Float64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Float64) LT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Float64) LTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Float64) GT(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Float64) GTE(x null.Float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var KillmailVictimWhere = struct {
 	ID            whereHelperuint64
 	KillmailID    whereHelperuint64
@@ -84,9 +106,9 @@ var KillmailVictimWhere = struct {
 	FactionID     whereHelpernull_Uint64
 	DamageTaken   whereHelperuint64
 	ShipTypeID    whereHelperuint64
-	PosX          whereHelpertypes_Decimal
-	PosY          whereHelpertypes_Decimal
-	PosZ          whereHelpertypes_Decimal
+	PosX          whereHelpernull_Float64
+	PosY          whereHelpernull_Float64
+	PosZ          whereHelpernull_Float64
 	CreatedAt     whereHelpertime_Time
 	UpdatedAt     whereHelpertime_Time
 }{
@@ -98,9 +120,9 @@ var KillmailVictimWhere = struct {
 	FactionID:     whereHelpernull_Uint64{field: "`killmail_victim`.`faction_id`"},
 	DamageTaken:   whereHelperuint64{field: "`killmail_victim`.`damage_taken`"},
 	ShipTypeID:    whereHelperuint64{field: "`killmail_victim`.`ship_type_id`"},
-	PosX:          whereHelpertypes_Decimal{field: "`killmail_victim`.`pos_x`"},
-	PosY:          whereHelpertypes_Decimal{field: "`killmail_victim`.`pos_y`"},
-	PosZ:          whereHelpertypes_Decimal{field: "`killmail_victim`.`pos_z`"},
+	PosX:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_x`"},
+	PosY:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_y`"},
+	PosZ:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_z`"},
 	CreatedAt:     whereHelpertime_Time{field: "`killmail_victim`.`created_at`"},
 	UpdatedAt:     whereHelpertime_Time{field: "`killmail_victim`.`updated_at`"},
 }

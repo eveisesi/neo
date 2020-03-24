@@ -27,7 +27,7 @@ type Alliance struct {
 	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker      string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
 	MemberCount uint64    `boil:"member_count" json:"member_count" toml:"member_count" yaml:"member_count"`
-	IsClosed    int8      `boil:"is_closed" json:"is_closed" toml:"is_closed" yaml:"is_closed"`
+	IsClosed    bool      `boil:"is_closed" json:"is_closed" toml:"is_closed" yaml:"is_closed"`
 	Etag        string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
 	CachedUntil time.Time `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
 	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
@@ -86,14 +86,14 @@ func (w whereHelperstring) IN(slice []string) qm.QueryMod {
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
 
-type whereHelperint8 struct{ field string }
+type whereHelperbool struct{ field string }
 
-func (w whereHelperint8) EQ(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint8) NEQ(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint8) LT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint8) LTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint8) GT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint8) GTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelpertime_Time struct{ field string }
 
@@ -121,7 +121,7 @@ var AllianceWhere = struct {
 	Name        whereHelperstring
 	Ticker      whereHelperstring
 	MemberCount whereHelperuint64
-	IsClosed    whereHelperint8
+	IsClosed    whereHelperbool
 	Etag        whereHelperstring
 	CachedUntil whereHelpertime_Time
 	CreatedAt   whereHelpertime_Time
@@ -131,7 +131,7 @@ var AllianceWhere = struct {
 	Name:        whereHelperstring{field: "`alliances`.`name`"},
 	Ticker:      whereHelperstring{field: "`alliances`.`ticker`"},
 	MemberCount: whereHelperuint64{field: "`alliances`.`member_count`"},
-	IsClosed:    whereHelperint8{field: "`alliances`.`is_closed`"},
+	IsClosed:    whereHelperbool{field: "`alliances`.`is_closed`"},
 	Etag:        whereHelperstring{field: "`alliances`.`etag`"},
 	CachedUntil: whereHelpertime_Time{field: "`alliances`.`cached_until`"},
 	CreatedAt:   whereHelpertime_Time{field: "`alliances`.`created_at`"},

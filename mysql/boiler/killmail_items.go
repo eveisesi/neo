@@ -32,7 +32,7 @@ type KillmailItem struct {
 	QuantityDropped   null.Uint64 `boil:"quantity_dropped" json:"quantity_dropped,omitempty" toml:"quantity_dropped" yaml:"quantity_dropped,omitempty"`
 	QuantityDestroyed null.Uint64 `boil:"quantity_destroyed" json:"quantity_destroyed,omitempty" toml:"quantity_destroyed" yaml:"quantity_destroyed,omitempty"`
 	Singleton         uint64      `boil:"singleton" json:"singleton" toml:"singleton" yaml:"singleton"`
-	IsParent          int8        `boil:"is_parent" json:"is_parent" toml:"is_parent" yaml:"is_parent"`
+	IsParent          bool        `boil:"is_parent" json:"is_parent" toml:"is_parent" yaml:"is_parent"`
 	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	UpdatedAt         time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
@@ -77,7 +77,7 @@ var KillmailItemWhere = struct {
 	QuantityDropped   whereHelpernull_Uint64
 	QuantityDestroyed whereHelpernull_Uint64
 	Singleton         whereHelperuint64
-	IsParent          whereHelperint8
+	IsParent          whereHelperbool
 	CreatedAt         whereHelpertime_Time
 	UpdatedAt         whereHelpertime_Time
 }{
@@ -89,7 +89,7 @@ var KillmailItemWhere = struct {
 	QuantityDropped:   whereHelpernull_Uint64{field: "`killmail_items`.`quantity_dropped`"},
 	QuantityDestroyed: whereHelpernull_Uint64{field: "`killmail_items`.`quantity_destroyed`"},
 	Singleton:         whereHelperuint64{field: "`killmail_items`.`singleton`"},
-	IsParent:          whereHelperint8{field: "`killmail_items`.`is_parent`"},
+	IsParent:          whereHelperbool{field: "`killmail_items`.`is_parent`"},
 	CreatedAt:         whereHelpertime_Time{field: "`killmail_items`.`created_at`"},
 	UpdatedAt:         whereHelpertime_Time{field: "`killmail_items`.`updated_at`"},
 }
@@ -128,8 +128,8 @@ type killmailItemL struct{}
 
 var (
 	killmailItemAllColumns            = []string{"id", "parent_id", "killmail_id", "flag_id", "item_type_id", "quantity_dropped", "quantity_destroyed", "singleton", "is_parent", "created_at", "updated_at"}
-	killmailItemColumnsWithoutDefault = []string{"killmail_id", "flag_id", "item_type_id", "quantity_dropped", "quantity_destroyed", "singleton", "is_parent", "created_at", "updated_at"}
-	killmailItemColumnsWithDefault    = []string{"id", "parent_id"}
+	killmailItemColumnsWithoutDefault = []string{"parent_id", "killmail_id", "flag_id", "item_type_id", "quantity_dropped", "quantity_destroyed", "singleton", "is_parent", "created_at", "updated_at"}
+	killmailItemColumnsWithDefault    = []string{"id"}
 	killmailItemPrimaryKeyColumns     = []string{"id"}
 )
 

@@ -1,23 +1,21 @@
 version: "3.7"
 
 services:
-    redis:
-        container_name: "redis"
-        image: "redis:alpine"
-        command: redis-server
-        ports:
-            - "4200:6379"
-        volumes:
-            - ./.redis/redis-data:/var/lib/redis
-            # - ./.redis/redis.conf:./.redis/redis.conf
-    db:
-        container_name: "db"
-        image: mysql
-        command: --default-authentication-plugin=mysql_native_password
-        restart: always
-        ports:
-            - "4210:3306"
-        environment:
-            MYSQL_ROOT_PASSWORD: p123!
-        volumes:
-            - ./.db:/var/lib/mysql
+    ingress:
+        image: killboard:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./killboard ingress --channel=killhashes
+        container_name: ingress
+        hostname: ingress
+        env_file:
+            - ./cmd/killboard/.env
+    egress:
+        image: killboard:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./killboard egress --channel=killhashes --date=20080617
+        container_name: egress
+        hostname: egress
+        env_file:
+            - ./cmd/killboard/.env

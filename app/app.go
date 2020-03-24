@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"github.com/ddouglas/killboard/esi"
 	"github.com/ddouglas/killboard/mysql"
 	"github.com/go-redis/redis"
+	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +19,7 @@ import (
 
 type App struct {
 	Logger *logrus.Entry
-	DB     *sql.DB
+	DB     *sqlx.DB
 	Redis  *redis.Client
 	Client *http.Client
 	ESI    *esi.Client
@@ -64,7 +64,9 @@ func New() *App {
 	}
 
 	logger.SetLevel(level)
-	logger.SetFormatter(&logrus.JSONFormatter{})
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
 
 	db, err := makeDB(cfg)
 	if err != nil {
@@ -117,7 +119,7 @@ func New() *App {
 
 }
 
-func makeDB(cfg config) (*sql.DB, error) {
+func makeDB(cfg config) (*sqlx.DB, error) {
 	return mysql.Connect(&sqlDriver.Config{
 		User:         cfg.DBUser,
 		Passwd:       cfg.DBPass,

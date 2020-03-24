@@ -15,7 +15,7 @@ import (
 )
 
 func (i *Ingresser) GetAllianceByID(id uint64) (*killboard.Alliance, error) {
-	var alliance *killboard.Alliance
+	var alliance = new(killboard.Alliance)
 
 	key := fmt.Sprintf("alliance:%d", id)
 
