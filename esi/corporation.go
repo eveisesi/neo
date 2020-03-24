@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/ddouglas/killboard"
 	"github.com/pkg/errors"
@@ -38,9 +39,25 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response,
 		Body:    []byte(""),
 	}
 
-	response, err := e.Request(request)
-	if err != nil || response.Code >= 400 {
-		return response, err
+	attempts := uint64(0)
+	for {
+
+		if attempts >= e.MaxAttempts {
+			return response, errors.New("max attempts exceeded")
+		}
+
+		response, err = e.Request(request)
+		if err != nil {
+			return response, err
+		}
+
+		if response.Code < 400 {
+			break
+		}
+
+		attempts++
+		time.Sleep(time.Second * e.SleepDuration)
+
 	}
 
 	var corporation killboard.Corporation
@@ -55,7 +72,7 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response,
 
 		corporation.ID = id
 
-		corporation.Expires, err = RetrieveExpiresHeaderFromResponse(response, 0)
+		corporation.CachedUntil, err = RetrieveExpiresHeaderFromResponse(response, 0)
 		if err != nil {
 			return response, errors.Wrap(err, "Error Encountered attempting to parse expires header")
 		}
@@ -66,7 +83,7 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response,
 		}
 
 	case 304:
-		corporation.Expires, err = RetrieveExpiresHeaderFromResponse(response, 0)
+		corporation.CachedUntil, err = RetrieveExpiresHeaderFromResponse(response, 0)
 		if err != nil {
 			return response, errors.Wrap(err, "Error Encountered attempting to parse expires header")
 		}

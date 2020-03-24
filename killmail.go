@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/volatiletech/null"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 type Killmail struct {
@@ -20,17 +19,17 @@ type Killmail struct {
 }
 
 type KillmailAttacker struct {
-	ID             uint64        `json:"id"`
-	KillmailID     uint64        `json:"killmail_id"`
-	AllianceID     null.Uint64   `json:"alliance_id"`
-	CharacterID    null.Uint64   `json:"character_id"`
-	CorporationID  uint64        `json:"corporation_id"`
-	FactionID      null.Uint64   `json:"faction_id"`
-	DamageDone     uint64        `json:"damage_done"`
-	FinalBlow      bool          `json:"final_blow"`
-	SecurityStatus types.Decimal `json:"security_status"`
-	ShipTypeID     null.Uint64   `json:"ship_type_id"`
-	WeaponTypeID   null.Uint64   `json:"weapon_type_id"`
+	ID             uint64      `json:"id"`
+	KillmailID     uint64      `json:"killmail_id"`
+	AllianceID     null.Uint64 `json:"alliance_id"`
+	CharacterID    null.Uint64 `json:"character_id"`
+	CorporationID  null.Uint64 `json:"corporation_id"`
+	FactionID      null.Uint64 `json:"faction_id"`
+	DamageDone     uint64      `json:"damage_done"`
+	FinalBlow      bool        `json:"final_blow"`
+	SecurityStatus float64     `json:"security_status"`
+	ShipTypeID     null.Uint64 `json:"ship_type_id"`
+	WeaponTypeID   null.Uint64 `json:"weapon_type_id"`
 }
 
 type KillmailItem struct {
@@ -48,17 +47,24 @@ type KillmailItem struct {
 }
 
 type KillmailVictim struct {
-	ID            uint          `json:"id"`
-	KillmailID    uint64        `json:"killmail_id"`
-	AllianceID    null.Uint64   `json:"alliance_id"`
-	CharacterID   null.Uint64   `json:"character_id"`
-	CorporationID uint64        `json:"corporation_id"`
-	FactionID     null.Uint64   `json:"faction_id"`
-	DamageTaken   uint64        `json:"damage_taken"`
-	ShipTypeID    uint64        `json:"ship_type_id"`
-	PosX          types.Decimal `json:"pos_x"`
-	PosY          types.Decimal `json:"pos_y"`
-	PosZ          types.Decimal `json:"pos_z"`
+	ID            uint              `json:"id"`
+	KillmailID    uint64            `json:"killmail_id"`
+	AllianceID    null.Uint64       `json:"alliance_id"`
+	CharacterID   null.Uint64       `json:"character_id"`
+	CorporationID uint64            `json:"corporation_id"`
+	FactionID     null.Uint64       `json:"faction_id"`
+	DamageTaken   uint64            `json:"damage_taken"`
+	ShipTypeID    uint64            `json:"ship_type_id"`
+	Position      *KillmailPosition `json:"postition"`
+	PosX          null.Float64      `json:"pos_x"`
+	PosY          null.Float64      `json:"pos_y"`
+	PosZ          null.Float64      `json:"pos_z"`
 
 	Items []*KillmailItem `json:"items"`
+}
+
+type KillmailPosition struct {
+	X null.Float64 `json:"x"`
+	Y null.Float64 `json:"y"`
+	Z null.Float64 `json:"z"`
 }

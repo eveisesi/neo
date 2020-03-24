@@ -16,7 +16,7 @@ import (
 
 func (i *Ingresser) GetCorporationByID(id uint64) (*killboard.Corporation, error) {
 
-	var corporation *killboard.Corporation
+	var corporation = new(killboard.Corporation)
 
 	key := fmt.Sprintf("corporation:%d", id)
 

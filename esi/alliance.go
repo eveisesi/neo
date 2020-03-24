@@ -46,7 +46,7 @@ func (e *Client) GetAlliancesAllianceID(id uint64, etag string) (Response, error
 		}
 
 		response, err = e.Request(request)
-		if err != nil || response.Code >= 400 {
+		if err != nil {
 			return response, err
 		}
 		if response.Code < 400 {

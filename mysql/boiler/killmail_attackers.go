@@ -20,24 +20,23 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // KillmailAttacker is an object representing the database table.
 type KillmailAttacker struct {
-	ID             uint64        `boil:"id" json:"id" toml:"id" yaml:"id"`
-	KillmailID     uint64        `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
-	AllianceID     null.Uint64   `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	CharacterID    null.Uint64   `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
-	CorporationID  uint64        `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
-	FactionID      null.Uint64   `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	DamageDone     uint64        `boil:"damage_done" json:"damage_done" toml:"damage_done" yaml:"damage_done"`
-	FinalBlow      bool          `boil:"final_blow" json:"final_blow" toml:"final_blow" yaml:"final_blow"`
-	SecurityStatus types.Decimal `boil:"security_status" json:"security_status" toml:"security_status" yaml:"security_status"`
-	ShipTypeID     null.Uint64   `boil:"ship_type_id" json:"ship_type_id,omitempty" toml:"ship_type_id" yaml:"ship_type_id,omitempty"`
-	WeaponTypeID   null.Uint64   `boil:"weapon_type_id" json:"weapon_type_id,omitempty" toml:"weapon_type_id" yaml:"weapon_type_id,omitempty"`
-	CreatedAt      time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time     `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID             uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	KillmailID     uint64      `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
+	AllianceID     null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
+	CharacterID    null.Uint64 `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
+	CorporationID  null.Uint64 `boil:"corporation_id" json:"corporation_id,omitempty" toml:"corporation_id" yaml:"corporation_id,omitempty"`
+	FactionID      null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
+	DamageDone     uint64      `boil:"damage_done" json:"damage_done" toml:"damage_done" yaml:"damage_done"`
+	FinalBlow      bool        `boil:"final_blow" json:"final_blow" toml:"final_blow" yaml:"final_blow"`
+	SecurityStatus float64     `boil:"security_status" json:"security_status" toml:"security_status" yaml:"security_status"`
+	ShipTypeID     null.Uint64 `boil:"ship_type_id" json:"ship_type_id,omitempty" toml:"ship_type_id" yaml:"ship_type_id,omitempty"`
+	WeaponTypeID   null.Uint64 `boil:"weapon_type_id" json:"weapon_type_id,omitempty" toml:"weapon_type_id" yaml:"weapon_type_id,omitempty"`
+	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 
 	R *killmailAttackerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailAttackerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -75,46 +74,16 @@ var KillmailAttackerColumns = struct {
 
 // Generated where
 
-type whereHelperbool struct{ field string }
-
-func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
-type whereHelpertypes_Decimal struct{ field string }
-
-func (w whereHelpertypes_Decimal) EQ(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertypes_Decimal) NEQ(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertypes_Decimal) LT(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertypes_Decimal) LTE(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertypes_Decimal) GT(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertypes_Decimal) GTE(x types.Decimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var KillmailAttackerWhere = struct {
 	ID             whereHelperuint64
 	KillmailID     whereHelperuint64
 	AllianceID     whereHelpernull_Uint64
 	CharacterID    whereHelpernull_Uint64
-	CorporationID  whereHelperuint64
+	CorporationID  whereHelpernull_Uint64
 	FactionID      whereHelpernull_Uint64
 	DamageDone     whereHelperuint64
 	FinalBlow      whereHelperbool
-	SecurityStatus whereHelpertypes_Decimal
+	SecurityStatus whereHelperfloat64
 	ShipTypeID     whereHelpernull_Uint64
 	WeaponTypeID   whereHelpernull_Uint64
 	CreatedAt      whereHelpertime_Time
@@ -124,11 +93,11 @@ var KillmailAttackerWhere = struct {
 	KillmailID:     whereHelperuint64{field: "`killmail_attackers`.`killmail_id`"},
 	AllianceID:     whereHelpernull_Uint64{field: "`killmail_attackers`.`alliance_id`"},
 	CharacterID:    whereHelpernull_Uint64{field: "`killmail_attackers`.`character_id`"},
-	CorporationID:  whereHelperuint64{field: "`killmail_attackers`.`corporation_id`"},
+	CorporationID:  whereHelpernull_Uint64{field: "`killmail_attackers`.`corporation_id`"},
 	FactionID:      whereHelpernull_Uint64{field: "`killmail_attackers`.`faction_id`"},
 	DamageDone:     whereHelperuint64{field: "`killmail_attackers`.`damage_done`"},
 	FinalBlow:      whereHelperbool{field: "`killmail_attackers`.`final_blow`"},
-	SecurityStatus: whereHelpertypes_Decimal{field: "`killmail_attackers`.`security_status`"},
+	SecurityStatus: whereHelperfloat64{field: "`killmail_attackers`.`security_status`"},
 	ShipTypeID:     whereHelpernull_Uint64{field: "`killmail_attackers`.`ship_type_id`"},
 	WeaponTypeID:   whereHelpernull_Uint64{field: "`killmail_attackers`.`weapon_type_id`"},
 	CreatedAt:      whereHelpertime_Time{field: "`killmail_attackers`.`created_at`"},
@@ -563,7 +532,9 @@ func (killmailAttackerL) LoadCorporation(ctx context.Context, e boil.ContextExec
 		if object.R == nil {
 			object.R = &killmailAttackerR{}
 		}
-		args = append(args, object.CorporationID)
+		if !queries.IsNil(object.CorporationID) {
+			args = append(args, object.CorporationID)
+		}
 
 	} else {
 	Outer:
@@ -573,12 +544,14 @@ func (killmailAttackerL) LoadCorporation(ctx context.Context, e boil.ContextExec
 			}
 
 			for _, a := range args {
-				if a == obj.CorporationID {
+				if queries.Equal(a, obj.CorporationID) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.CorporationID)
+			if !queries.IsNil(obj.CorporationID) {
+				args = append(args, obj.CorporationID)
+			}
 
 		}
 	}
@@ -625,7 +598,7 @@ func (killmailAttackerL) LoadCorporation(ctx context.Context, e boil.ContextExec
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.CorporationID == foreign.ID {
+			if queries.Equal(local.CorporationID, foreign.ID) {
 				local.R.Corporation = foreign
 				if foreign.R == nil {
 					foreign.R = &corporationR{}
@@ -1109,7 +1082,7 @@ func (o *KillmailAttacker) SetCorporation(ctx context.Context, exec boil.Context
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.CorporationID = related.ID
+	queries.Assign(&o.CorporationID, related.ID)
 	if o.R == nil {
 		o.R = &killmailAttackerR{
 			Corporation: related,
@@ -1126,6 +1099,37 @@ func (o *KillmailAttacker) SetCorporation(ctx context.Context, exec boil.Context
 		related.R.KillmailAttackers = append(related.R.KillmailAttackers, o)
 	}
 
+	return nil
+}
+
+// RemoveCorporation relationship.
+// Sets o.R.Corporation to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *KillmailAttacker) RemoveCorporation(ctx context.Context, exec boil.ContextExecutor, related *Corporation) error {
+	var err error
+
+	queries.SetScanner(&o.CorporationID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("corporation_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.R.Corporation = nil
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.KillmailAttackers {
+		if queries.Equal(o.CorporationID, ri.CorporationID) {
+			continue
+		}
+
+		ln := len(related.R.KillmailAttackers)
+		if ln > 1 && i < ln-1 {
+			related.R.KillmailAttackers[i] = related.R.KillmailAttackers[ln-1]
+		}
+		related.R.KillmailAttackers = related.R.KillmailAttackers[:ln-1]
+		break
+	}
 	return nil
 }
 

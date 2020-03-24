@@ -69,7 +69,7 @@ func New(client *http.Client, host, uagent string) *Client {
 		Remain:        100,
 		Reset:         60,
 		MaxAttempts:   3,
-		SleepDuration: time.Second * 2,
+		SleepDuration: time.Duration(2),
 	}
 
 }

@@ -14,7 +14,7 @@ import (
 
 func (i *Ingresser) GetSolarSystemByID(id uint64) (*killboard.SolarSystem, error) {
 
-	var solarSystem killboard.SolarSystem
+	var solarSystem = new(killboard.SolarSystem)
 
 	key := fmt.Sprintf("system:%d", id)
 
@@ -25,17 +25,17 @@ func (i *Ingresser) GetSolarSystemByID(id uint64) (*killboard.SolarSystem, error
 
 	if result != "" {
 		bStr := []byte(result)
-		err = json.Unmarshal(bStr, &solarSystem)
+		err = json.Unmarshal(bStr, solarSystem)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to unmarshal result onto struct")
 		}
 
-		return &solarSystem, nil
+		return solarSystem, nil
 	}
 
 	err = boiler.SolarSystems(
 		qm.Where(boiler.SolarSystemColumns.ID+"=?", id),
-	).Bind(context.Background(), i.DB, &solarSystem)
+	).Bind(context.Background(), i.DB, solarSystem)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to query solar system record from the database")
 	}
@@ -50,6 +50,6 @@ func (i *Ingresser) GetSolarSystemByID(id uint64) (*killboard.SolarSystem, error
 		i.Logger.WithField("id", id).WithError(err).Error("failed to cache solar system")
 	}
 
-	return &solarSystem, nil
+	return solarSystem, nil
 
 }

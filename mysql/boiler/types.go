@@ -20,22 +20,21 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 	"github.com/volatiletech/sqlboiler/queries/qmhelper"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/types"
 )
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint64            `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GroupID       uint64            `boil:"group_id" json:"group_id" toml:"group_id" yaml:"group_id"`
-	Name          string            `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description   string            `boil:"description" json:"description" toml:"description" yaml:"description"`
-	Volume        float64           `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
-	RaceID        null.Uint64       `boil:"race_id" json:"race_id,omitempty" toml:"race_id" yaml:"race_id,omitempty"`
-	BasePrice     types.NullDecimal `boil:"base_price" json:"base_price,omitempty" toml:"base_price" yaml:"base_price,omitempty"`
-	Published     bool              `boil:"published" json:"published" toml:"published" yaml:"published"`
-	MarketGroupID null.Uint64       `boil:"market_group_id" json:"market_group_id,omitempty" toml:"market_group_id" yaml:"market_group_id,omitempty"`
-	CreatedAt     null.Time         `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt     null.Time         `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	ID            uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GroupID       uint64       `boil:"group_id" json:"group_id" toml:"group_id" yaml:"group_id"`
+	Name          string       `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description   string       `boil:"description" json:"description" toml:"description" yaml:"description"`
+	Volume        float64      `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
+	RaceID        null.Uint64  `boil:"race_id" json:"race_id,omitempty" toml:"race_id" yaml:"race_id,omitempty"`
+	BasePrice     null.Float64 `boil:"base_price" json:"base_price,omitempty" toml:"base_price" yaml:"base_price,omitempty"`
+	Published     bool         `boil:"published" json:"published" toml:"published" yaml:"published"`
+	MarketGroupID null.Uint64  `boil:"market_group_id" json:"market_group_id,omitempty" toml:"market_group_id" yaml:"market_group_id,omitempty"`
+	CreatedAt     null.Time    `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UpdatedAt     null.Time    `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 
 	R *typeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L typeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -69,31 +68,6 @@ var TypeColumns = struct {
 
 // Generated where
 
-type whereHelpertypes_NullDecimal struct{ field string }
-
-func (w whereHelpertypes_NullDecimal) EQ(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpertypes_NullDecimal) NEQ(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpertypes_NullDecimal) IsNull() qm.QueryMod { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpertypes_NullDecimal) IsNotNull() qm.QueryMod {
-	return qmhelper.WhereIsNotNull(w.field)
-}
-func (w whereHelpertypes_NullDecimal) LT(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertypes_NullDecimal) LTE(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertypes_NullDecimal) GT(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertypes_NullDecimal) GTE(x types.NullDecimal) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelpernull_Time struct{ field string }
 
 func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
@@ -124,7 +98,7 @@ var TypeWhere = struct {
 	Description   whereHelperstring
 	Volume        whereHelperfloat64
 	RaceID        whereHelpernull_Uint64
-	BasePrice     whereHelpertypes_NullDecimal
+	BasePrice     whereHelpernull_Float64
 	Published     whereHelperbool
 	MarketGroupID whereHelpernull_Uint64
 	CreatedAt     whereHelpernull_Time
@@ -136,7 +110,7 @@ var TypeWhere = struct {
 	Description:   whereHelperstring{field: "`types`.`description`"},
 	Volume:        whereHelperfloat64{field: "`types`.`volume`"},
 	RaceID:        whereHelpernull_Uint64{field: "`types`.`race_id`"},
-	BasePrice:     whereHelpertypes_NullDecimal{field: "`types`.`base_price`"},
+	BasePrice:     whereHelpernull_Float64{field: "`types`.`base_price`"},
 	Published:     whereHelperbool{field: "`types`.`published`"},
 	MarketGroupID: whereHelpernull_Uint64{field: "`types`.`market_group_id`"},
 	CreatedAt:     whereHelpernull_Time{field: "`types`.`created_at`"},

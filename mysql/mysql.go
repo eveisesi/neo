@@ -1,15 +1,15 @@
 package mysql
 
 import (
-	"database/sql"
 	"errors"
 
 	sqlDriver "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
-func Connect(conf *sqlDriver.Config) (db *sql.DB, err error) {
+func Connect(conf *sqlDriver.Config) (db *sqlx.DB, err error) {
 
-	db, err = sql.Open("mysql", conf.FormatDSN())
+	db, err = sqlx.Open("mysql", conf.FormatDSN())
 	if err != nil {
 		err = errors.New("unable to create mysql connection")
 		return

@@ -3,19 +3,19 @@ package esi
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/ddouglas/killboard"
 	"github.com/pkg/errors"
 )
 
-func (e *Client) GetKillmailsKillmailIDKillmailHash(id, hash string) (Response, error) {
-	var response Response
+var TypeNotFound = errors.New("not found")
 
-	path := fmt.Sprintf("/v1/killmails/%s/%s/", id, hash)
+func (e *Client) GetUniverseTypesTypeID(id uint64) (Response, error) {
+
+	var response Response
+	path := fmt.Sprintf("/v3/universe/types/%d/", id)
 
 	url := url.URL{
 		Scheme: "https",
@@ -26,13 +26,13 @@ func (e *Client) GetKillmailsKillmailIDKillmailHash(id, hash string) (Response, 
 	headers := make(map[string]string)
 
 	request := Request{
-		Method:  http.MethodGet,
+		Method:  "GET",
 		Path:    url,
 		Headers: headers,
 	}
-
 	attempts := uint64(0)
 	for {
+
 		if attempts >= e.MaxAttempts {
 			return response, errors.New("max attempts exceeded")
 		}
@@ -40,6 +40,10 @@ func (e *Client) GetKillmailsKillmailIDKillmailHash(id, hash string) (Response, 
 		response, err = e.Request(request)
 		if err != nil {
 			return response, err
+		}
+
+		if response.Code == 404 {
+			return response, TypeNotFound
 		}
 
 		if response.Code < 400 {
@@ -51,19 +55,16 @@ func (e *Client) GetKillmailsKillmailIDKillmailHash(id, hash string) (Response, 
 
 	}
 
-	killmail := killboard.Killmail{}
+	var invType killboard.Type
+	invType.ID = id
 
-	err = json.Unmarshal(response.Data.([]byte), &killmail)
+	err = json.Unmarshal(response.Data.([]byte), &invType)
 	if err != nil {
-		err = errors.Wrap(err, "unable to unmarshel response body")
-		return response, err
+		return response, errors.Wrapf(err, "unable to unmarshel response body on request %s", path)
 	}
 
-	u, _ := strconv.ParseUint(id, 10, 64)
-
-	killmail.ID = uint64(u)
-
-	response.Data = killmail
+	response.Data = &invType
 
 	return response, err
+
 }

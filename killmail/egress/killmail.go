@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"time"
 
@@ -12,9 +13,9 @@ import (
 
 	"github.com/ddouglas/killboard"
 
-	"github.com/ddouglas/killboard/app"
-
 	"github.com/urfave/cli"
+
+	core "github.com/ddouglas/killboard/app"
 )
 
 type Message struct {
@@ -22,13 +23,19 @@ type Message struct {
 	Hash string `json:"hash"`
 }
 
+type Egressor struct {
+	*core.App
+}
+
 func Action(c *cli.Context) error {
 
-	app := app.New()
+	e := &Egressor{
+		core.New(),
+	}
 
 	date, err := time.Parse("20060102", c.String("date"))
 	if err != nil {
-		app.Logger.WithError(err).Fatal("unable to parse provided date")
+		e.Logger.WithError(err).Fatal("unable to parse provided date")
 	}
 
 	attempts := 1
@@ -38,20 +45,20 @@ func Action(c *cli.Context) error {
 			return cli.NewExitError("maximum allowed attempts reeached", 1)
 		}
 
-		entry := app.Logger.WithField("date", date.Format("20060102"))
+		entry := e.Logger.WithField("date", date.Format("20060102"))
 
 		uri := fmt.Sprintf(killboard.ZKILLBOARD_HISTORY_API, date.Format("20060102"))
 
 		request, err := http.NewRequest(http.MethodGet, uri, nil)
 		if err != nil {
-			app.Logger.WithError(err).Fatal("unable to generate request for zkillboard history api")
+			e.Logger.WithError(err).Fatal("unable to generate request for zkillboard history api")
 		}
 
-		request.Header.Set("User-Agent", app.Config.ZUAgent)
+		request.Header.Set("User-Agent", e.Config.ZUAgent)
 
-		response, err := app.Client.Do(request)
+		response, err := e.Client.Do(request)
 		if err != nil {
-			app.Logger.WithError(err).Warn("unable to execute request to zkillboard history api")
+			e.Logger.WithError(err).Warn("unable to execute request to zkillboard history api")
 		}
 		entry = entry.WithField("code", response.StatusCode)
 
@@ -94,10 +101,8 @@ func Action(c *cli.Context) error {
 		}
 
 		entry.Info("handling hashes")
-		HandleHashes(c, app, hashes)
+		e.HandleHashes(c, hashes)
 		entry.Info("finished with hashes")
-
-		time.Sleep(time.Second * 2)
 
 		attempts = 1
 		date = date.AddDate(0, 0, 1)
@@ -106,30 +111,32 @@ func Action(c *cli.Context) error {
 
 }
 
-func HandleHashes(c *cli.Context, app *app.App, hashes map[string]string) {
+func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 
 	// Make Sure the Redis Server is still alive and nothing has happened to it
-	pong, err := app.Redis.Ping().Result()
+	pong, err := e.Redis.Ping().Result()
 	if err != nil {
-		app.Logger.WithError(err).Fatal("unable to ping redis server")
+		e.Logger.WithError(err).Fatal("unable to ping redis server")
 	}
 
 	if pong != "PONG" {
-		app.Logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
+		e.Logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
 	}
 	channel := c.String("channel")
 
-	results, err := app.Redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
+	results, err := e.Redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
 	if err != nil {
-		app.Logger.WithError(err).Fatal("unable to get max score of redis z range")
+		e.Logger.WithError(err).Fatal("unable to get max score of redis z range")
 	}
 	if len(results) > 1 {
-		app.Logger.WithError(err).Fatal("unabel to determine score")
+		e.Logger.WithError(err).Fatal("unable to determine score")
 	}
 	score := float64(0)
 	if len(results) == 1 {
 		score = results[0].Score
 	}
+
+	dispatched := 0
 
 	for id, hash := range hashes {
 		score++
@@ -138,17 +145,38 @@ func HandleHashes(c *cli.Context, app *app.App, hashes map[string]string) {
 			Hash: hash,
 		})
 		if err != nil {
-			app.Logger.WithFields(logrus.Fields{
+			e.Logger.WithFields(logrus.Fields{
 				"id":   id,
 				"hash": hash,
 			}).Error("unable to marshal id and hash for pubsub")
 			continue
 		}
 
-		app.Redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
+		e.Redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
+		dispatched++
 
-		// app.Redis.Publish(channel, msg)
-		time.Sleep(time.Millisecond * 500)
+		for {
+			count, err := e.Redis.ZCount("killhashes", "-inf", "+inf").Result()
+			if err != nil {
+				e.Logger.WithError(err).Fatal("unable to get count of redis zset")
+			}
+
+			if math.Mod(float64(dispatched), 100) == float64(0) {
+				e.Logger.WithFields(logrus.Fields{
+					"total":         len(hashes),
+					"dispatched":    dispatched,
+					"remaining":     len(hashes) - dispatched,
+					"current_queue": count,
+				}).Info("dispatched hold")
+			}
+
+			if count < 1000 {
+				break
+			}
+
+			time.Sleep(time.Second * 5)
+		}
+
 	}
 
 }
