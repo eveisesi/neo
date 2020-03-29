@@ -3,9 +3,9 @@ package dataloaders
 import (
 	"context"
 
-	"github.com/ddouglas/neo"
-	"github.com/ddouglas/neo/graphql/dataloaders/generated"
-	"github.com/ddouglas/neo/services/killmail"
+	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/graphql/dataloaders/generated"
+	"github.com/eveisesi/neo/services/killmail"
 )
 
 func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *generated.KillmailAttackersLoader {

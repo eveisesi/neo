@@ -1,4 +1,4 @@
-module github.com/ddouglas/neo
+module github.com/eveisesi/neo
 
 go 1.14
 

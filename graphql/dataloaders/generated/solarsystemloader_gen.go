@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/ddouglas/neo"
+	killboard "github.com/eveisesi/neo"
 )
 
 // SolarSystemLoaderConfig captures the config to create a new SolarSystemLoader

@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 
-	"github.com/ddouglas/neo/graphql/service"
-	"github.com/ddouglas/neo/services/killmail"
+	"github.com/eveisesi/neo/graphql/service"
+	"github.com/eveisesi/neo/services/killmail"
 )
 
 // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.

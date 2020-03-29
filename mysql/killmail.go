@@ -6,9 +6,9 @@ import (
 
 	"github.com/volatiletech/sqlboiler/queries/qm"
 
-	"github.com/ddouglas/neo/mysql/boiler"
+	"github.com/eveisesi/neo/mysql/boiler"
 
-	"github.com/ddouglas/neo"
+	"github.com/eveisesi/neo"
 	"github.com/jmoiron/sqlx"
 )
 

@@ -11,11 +11,11 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 
-	"github.com/ddouglas/neo"
+	"github.com/eveisesi/neo"
 
 	"github.com/urfave/cli"
 
-	core "github.com/ddouglas/neo/app"
+	core "github.com/eveisesi/neo/app"
 )
 
 type Message struct {

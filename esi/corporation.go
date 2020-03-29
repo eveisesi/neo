@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ddouglas/neo"
+	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
 )
 

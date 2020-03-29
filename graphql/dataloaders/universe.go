@@ -3,9 +3,9 @@ package dataloaders
 import (
 	"context"
 
-	"github.com/ddouglas/neo"
-	"github.com/ddouglas/neo/graphql/dataloaders/generated"
-	"github.com/ddouglas/neo/services/universe"
+	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/graphql/dataloaders/generated"
+	"github.com/eveisesi/neo/services/universe"
 )
 
 func SolarSystemLoader(ctx context.Context, universe universe.Service) *generated.SolarSystemLoader {

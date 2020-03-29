@@ -1,6 +1,6 @@
 package alliance
 
-import "github.com/ddouglas/neo"
+import "github.com/eveisesi/neo"
 
 type Service interface {
 	killboard.AllianceRespository

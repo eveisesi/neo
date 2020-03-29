@@ -3,9 +3,9 @@ package dataloaders
 import (
 	"context"
 
-	"github.com/ddouglas/neo"
-	"github.com/ddouglas/neo/graphql/dataloaders/generated"
-	"github.com/ddouglas/neo/services/character"
+	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/graphql/dataloaders/generated"
+	"github.com/eveisesi/neo/services/character"
 )
 
 func CharacterLoader(ctx context.Context, character character.Service) *generated.CharacterLoader {

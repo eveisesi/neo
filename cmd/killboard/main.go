@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/ddouglas/neo/killmail/egress"
-	"github.com/ddouglas/neo/killmail/ingress"
-	"github.com/ddouglas/neo/server"
+	"github.com/eveisesi/neo/killmail/egress"
+	"github.com/eveisesi/neo/killmail/ingress"
+	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
 )

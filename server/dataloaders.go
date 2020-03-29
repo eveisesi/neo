@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/ddouglas/neo/graphql/dataloaders"
+	"github.com/eveisesi/neo/graphql/dataloaders"
 
-	"github.com/ddouglas/neo/graphql/dataloaders/generated"
+	"github.com/eveisesi/neo/graphql/dataloaders/generated"
 )
 
 type ctxKeyType struct{ string }

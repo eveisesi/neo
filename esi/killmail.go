@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ddouglas/neo"
+	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
 )
 

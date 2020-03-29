@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ddouglas/neo"
-	"github.com/ddouglas/neo/mysql/boiler"
+	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/mysql/boiler"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
