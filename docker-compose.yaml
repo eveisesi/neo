@@ -19,7 +19,7 @@ services:
         image: neo:latest
         network_mode: "host"
         restart: on-failure
-        command: ./killboard egress --channel=killhashes --date=20080617
+        command: ./killboard egress --channel=killhashes --date=20120810
         container_name: egress
         hostname: egress
         env_file:
