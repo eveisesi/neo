@@ -2,7 +2,7 @@ extend type Query {
     killmail(id: Int!): Killmail!
 }
 
-type Killmail @goModel(model: "github.com/ddouglas/killboard.Killmail") {
+type Killmail @goModel(model: "github.com/ddouglas/neo.Killmail") {
     id: Int!
     hash: String!
     moon_id: Int
@@ -14,7 +14,7 @@ type Killmail @goModel(model: "github.com/ddouglas/killboard.Killmail") {
 }
 
 type KillmailAttacker
-    @goModel(model: "github.com/ddouglas/killboard.KillmailAttacker") {
+    @goModel(model: "github.com/ddouglas/neo.KillmailAttacker") {
     id: Int!
     killmailID: Int!
     allianceID: Int
@@ -28,8 +28,7 @@ type KillmailAttacker
     weaponTypeID: Int
 }
 
-type KillmailVictim
-    @goModel(model: "github.com/ddouglas/killboard.KillmailVictim") {
+type KillmailVictim @goModel(model: "github.com/ddouglas/neo.KillmailVictim") {
     id: Int!
     killmailID: Int!
     allianceID: Int

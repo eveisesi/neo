@@ -1,7 +1,7 @@
 package killmail
 
 import (
-	"github.com/ddouglas/killboard"
+	"github.com/ddouglas/neo"
 )
 
 type Service interface {

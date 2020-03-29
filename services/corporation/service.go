@@ -1,6 +1,6 @@
 package corporation
 
-import "github.com/ddouglas/killboard"
+import "github.com/ddouglas/neo"
 
 type Service interface {
 	killboard.CorporationRespository

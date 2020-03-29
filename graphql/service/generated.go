@@ -13,9 +13,9 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
-	"github.com/ddouglas/killboard"
-	"github.com/ddouglas/killboard/graphql/scalar"
-	null1 "github.com/ddouglas/killboard/graphql/scalar/null"
+	"github.com/ddouglas/neo"
+	"github.com/ddouglas/neo/graphql/scalar"
+	null1 "github.com/ddouglas/neo/graphql/scalar/null"
 	"github.com/vektah/gqlparser"
 	"github.com/vektah/gqlparser/ast"
 	"github.com/volatiletech/null"
@@ -402,7 +402,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
     killmail(id: Int!): Killmail!
 }
 
-type Killmail @goModel(model: "github.com/ddouglas/killboard.Killmail") {
+type Killmail @goModel(model: "github.com/ddouglas/neo.Killmail") {
     id: Int!
     hash: String!
     moon_id: Int
@@ -414,7 +414,7 @@ type Killmail @goModel(model: "github.com/ddouglas/killboard.Killmail") {
 }
 
 type KillmailAttacker
-    @goModel(model: "github.com/ddouglas/killboard.KillmailAttacker") {
+    @goModel(model: "github.com/ddouglas/neo.KillmailAttacker") {
     id: Int!
     killmailID: Int!
     allianceID: Int
@@ -429,7 +429,7 @@ type KillmailAttacker
 }
 
 type KillmailVictim
-    @goModel(model: "github.com/ddouglas/killboard.KillmailVictim") {
+    @goModel(model: "github.com/ddouglas/neo.KillmailVictim") {
     id: Int!
     killmailID: Int!
     allianceID: Int

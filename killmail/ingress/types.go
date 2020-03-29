@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ddouglas/killboard/esi"
+	"github.com/ddouglas/neo/esi"
 
-	"github.com/ddouglas/killboard"
-	"github.com/ddouglas/killboard/mysql/boiler"
+	"github.com/ddouglas/neo"
+	"github.com/ddouglas/neo/mysql/boiler"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"

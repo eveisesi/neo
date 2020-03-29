@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ddouglas/killboard"
+	killboard "github.com/ddouglas/neo"
 )
 
 // CharacterLoaderConfig captures the config to create a new CharacterLoader

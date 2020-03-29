@@ -3,9 +3,9 @@ package dataloaders
 import (
 	"context"
 
-	"github.com/ddouglas/killboard"
-	"github.com/ddouglas/killboard/graphql/dataloaders/generated"
-	"github.com/ddouglas/killboard/services/alliance"
+	"github.com/ddouglas/neo"
+	"github.com/ddouglas/neo/graphql/dataloaders/generated"
+	"github.com/ddouglas/neo/services/alliance"
 )
 
 func AllianceLoader(ctx context.Context, alliance alliance.Service) *generated.AllianceLoader {

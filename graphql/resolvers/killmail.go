@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 
-	"github.com/ddouglas/killboard"
-	"github.com/ddouglas/killboard/graphql/service"
+	"github.com/ddouglas/neo"
+	"github.com/ddouglas/neo/graphql/service"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int) (*killboard.Killmail, error) {

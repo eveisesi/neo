@@ -1,4 +1,4 @@
-module github.com/ddouglas/killboard
+module github.com/ddouglas/neo
 
 go 1.14
 
