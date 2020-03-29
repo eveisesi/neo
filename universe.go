@@ -24,7 +24,7 @@ type Type struct {
 	RaceID        null.Uint64  `json:"raceID"`
 	BasePrice     null.Float64 `json:"base_price"`
 	Published     bool         `json:"published"`
-	MarketGroupID null.Uint64  `json:"market_groupID"`
+	MarketGroupID null.Uint64  `json:"marketGroupID"`
 	CreatedAt     null.Time    `json:"created_at"`
 	UpdatedAt     null.Time    `json:"updated_at"`
 }
