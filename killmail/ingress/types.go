@@ -17,9 +17,9 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func (i *Ingresser) GetTypeByID(id uint64) (*killboard.Type, error) {
+func (i *Ingresser) GetTypeByID(id uint64) (*neo.Type, error) {
 
-	var invType = new(killboard.Type)
+	var invType = new(neo.Type)
 
 	key := fmt.Sprintf("type:%d", id)
 	ikey := fmt.Sprintf("itype:%d", id)
@@ -84,7 +84,7 @@ func (i *Ingresser) GetTypeByID(id uint64) (*killboard.Type, error) {
 		return nil, errors.Wrap(err, "unable to retrieve type for provided id")
 	}
 
-	invType = response.Data.(*killboard.Type)
+	invType = response.Data.(*neo.Type)
 
 	bType := boiler.Type{}
 	err = copier.Copy(&bType, invType)

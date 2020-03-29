@@ -21,7 +21,7 @@ package esi
 // 		return response, err
 // 	}
 
-// 	killmail := killboard.Killmail{}
+// 	killmail := neo.Killmail{}
 
 // 	err = json.Unmarshal(response.Data.([]byte), &killmail)
 // 	if err != nil {

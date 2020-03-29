@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/eveisesi/neo/graphql/dataloaders"
 	"github.com/eveisesi/neo/graphql/service"
 	"github.com/eveisesi/neo/services/killmail"
 )
@@ -11,6 +12,8 @@ import (
 
 type Resolver struct {
 	KillmailServ killmail.Service
+
+	Dataloader func(ctx context.Context) dataloaders.Loaders
 }
 
 func (r *Resolver) Mutation() service.MutationResolver {

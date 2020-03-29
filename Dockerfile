@@ -1,4 +1,4 @@
-FROM golang:1.14.1 as builder
+FROM golang:1.13.9 as builder
 WORKDIR /app
 COPY . .
 WORKDIR /app/cmd/killboard

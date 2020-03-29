@@ -26,12 +26,12 @@ type Alliance struct {
 	ID          uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker      string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	MemberCount uint64    `boil:"member_count" json:"member_count" toml:"member_count" yaml:"member_count"`
-	IsClosed    bool      `boil:"is_closed" json:"is_closed" toml:"is_closed" yaml:"is_closed"`
+	MemberCount uint64    `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
+	IsClosed    bool      `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
 	Etag        string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil time.Time `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CachedUntil time.Time `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt   time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt   time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *allianceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L allianceL  `boil:"-" json:"-" toml:"-" yaml:"-"`

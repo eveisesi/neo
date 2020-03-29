@@ -5,14 +5,14 @@ import (
 )
 
 type Service interface {
-	killboard.KillmailRespository
+	neo.KillmailRespository
 }
 
 type service struct {
-	killboard.KillmailRespository
+	neo.KillmailRespository
 }
 
-func NewService(killmail killboard.KillmailRespository) Service {
+func NewService(killmail neo.KillmailRespository) Service {
 	return &service{
 		killmail,
 	}

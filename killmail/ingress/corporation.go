@@ -14,9 +14,9 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-func (i *Ingresser) GetCorporationByID(id uint64) (*killboard.Corporation, error) {
+func (i *Ingresser) GetCorporationByID(id uint64) (*neo.Corporation, error) {
 
-	var corporation = new(killboard.Corporation)
+	var corporation = new(neo.Corporation)
 
 	key := fmt.Sprintf("corporation:%d", id)
 
@@ -62,7 +62,7 @@ func (i *Ingresser) GetCorporationByID(id uint64) (*killboard.Corporation, error
 		return nil, errors.Wrap(err, "unable to retrieve corporation for provided id")
 	}
 
-	corporation = response.Data.(*killboard.Corporation)
+	corporation = response.Data.(*neo.Corporation)
 
 	bCorporation := boiler.Corporation{}
 	err = copier.Copy(&bCorporation, corporation)

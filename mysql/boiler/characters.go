@@ -26,13 +26,13 @@ import (
 type Character struct {
 	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CorporationID uint64      `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
-	AllianceID    null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	FactionID     null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
+	CorporationID uint64      `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
+	AllianceID    null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	FactionID     null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	Etag          string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil   time.Time   `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
-	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CachedUntil   time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt     time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt     time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *characterR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L characterL  `boil:"-" json:"-" toml:"-" yaml:"-"`

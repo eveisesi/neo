@@ -3,14 +3,14 @@ package universe
 import "github.com/eveisesi/neo"
 
 type Service interface {
-	killboard.UniverseRepository
+	neo.UniverseRepository
 }
 
 type service struct {
-	killboard.UniverseRepository
+	neo.UniverseRepository
 }
 
-func NewService(killmail killboard.UniverseRepository) Service {
+func NewService(killmail neo.UniverseRepository) Service {
 	return &service{
 		killmail,
 	}

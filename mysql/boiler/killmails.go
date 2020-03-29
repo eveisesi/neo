@@ -26,12 +26,12 @@ import (
 type Killmail struct {
 	ID            uint64     `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Hash          string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	MoonID        null.Int64 `boil:"moon_id" json:"moon_id,omitempty" toml:"moon_id" yaml:"moon_id,omitempty"`
-	SolarSystemID uint64     `boil:"solar_system_id" json:"solar_system_id" toml:"solar_system_id" yaml:"solar_system_id"`
-	WarID         null.Int64 `boil:"war_id" json:"war_id,omitempty" toml:"war_id" yaml:"war_id,omitempty"`
-	KillmailTime  time.Time  `boil:"killmail_time" json:"killmail_time" toml:"killmail_time" yaml:"killmail_time"`
-	CreatedAt     time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time  `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	MoonID        null.Int64 `boil:"moon_id" json:"moonID,omitempty" toml:"moonID" yaml:"moonID,omitempty"`
+	SolarSystemID uint64     `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
+	WarID         null.Int64 `boil:"war_id" json:"warID,omitempty" toml:"warID" yaml:"warID,omitempty"`
+	KillmailTime  time.Time  `boil:"killmail_time" json:"killmailTime" toml:"killmailTime" yaml:"killmailTime"`
+	CreatedAt     time.Time  `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt     time.Time  `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *killmailR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailL  `boil:"-" json:"-" toml:"-" yaml:"-"`

@@ -26,12 +26,12 @@ import (
 type Region struct {
 	ID        int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	PosX      float64   `boil:"pos_x" json:"pos_x" toml:"pos_x" yaml:"pos_x"`
-	PosY      float64   `boil:"pos_y" json:"pos_y" toml:"pos_y" yaml:"pos_y"`
-	PosZ      float64   `boil:"pos_z" json:"pos_z" toml:"pos_z" yaml:"pos_z"`
-	FactionID null.Int  `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	PosX      float64   `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
+	PosY      float64   `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
+	PosZ      float64   `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
+	FactionID null.Int  `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *regionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L regionL  `boil:"-" json:"-" toml:"-" yaml:"-"`

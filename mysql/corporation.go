@@ -14,15 +14,15 @@ type corporationRepository struct {
 	db *sqlx.DB
 }
 
-func NewCorporationRepository(db *sqlx.DB) killboard.CorporationRespository {
+func NewCorporationRepository(db *sqlx.DB) neo.CorporationRespository {
 	return &corporationRepository{
 		db,
 	}
 }
 
-func (r *corporationRepository) Corporation(ctx context.Context, id uint64) (*killboard.Corporation, error) {
+func (r *corporationRepository) Corporation(ctx context.Context, id uint64) (*neo.Corporation, error) {
 
-	var corporation = killboard.Corporation{}
+	var corporation = neo.Corporation{}
 	err := boiler.Corporations(
 		boiler.CorporationWhere.ID.EQ(id),
 	).Bind(ctx, r.db, &corporation)
@@ -31,9 +31,9 @@ func (r *corporationRepository) Corporation(ctx context.Context, id uint64) (*ki
 
 }
 
-func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*killboard.Corporation, error) {
+func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*neo.Corporation, error) {
 
-	var corporations = make([]*killboard.Corporation, 0)
+	var corporations = make([]*neo.Corporation, 0)
 	err := boiler.Corporations(
 		qm.WhereIn(
 			fmt.Sprintf(

@@ -25,17 +25,17 @@ import (
 // SolarSystem is an object representing the database table.
 type SolarSystem struct {
 	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name            null.String `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
-	RegionID        uint64      `boil:"region_id" json:"region_id" toml:"region_id" yaml:"region_id"`
-	ConstellationID uint64      `boil:"constellation_id" json:"constellation_id" toml:"constellation_id" yaml:"constellation_id"`
-	FactionID       null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	SunTypeID       null.Uint64 `boil:"sun_type_id" json:"sun_type_id,omitempty" toml:"sun_type_id" yaml:"sun_type_id,omitempty"`
-	PosX            float64     `boil:"pos_x" json:"pos_x" toml:"pos_x" yaml:"pos_x"`
-	PosY            float64     `boil:"pos_y" json:"pos_y" toml:"pos_y" yaml:"pos_y"`
-	PosZ            float64     `boil:"pos_z" json:"pos_z" toml:"pos_z" yaml:"pos_z"`
+	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	RegionID        uint64      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
+	ConstellationID uint64      `boil:"constellation_id" json:"constellationID" toml:"constellationID" yaml:"constellationID"`
+	FactionID       null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	SunTypeID       null.Uint64 `boil:"sun_type_id" json:"sunTypeID,omitempty" toml:"sunTypeID" yaml:"sunTypeID,omitempty"`
+	PosX            float64     `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
+	PosY            float64     `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
+	PosZ            float64     `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
 	Security        float64     `boil:"security" json:"security" toml:"security" yaml:"security"`
-	CreatedAt       time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt       time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CreatedAt       time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt       time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *solarSystemR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L solarSystemL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -71,32 +71,9 @@ var SolarSystemColumns = struct {
 
 // Generated where
 
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var SolarSystemWhere = struct {
 	ID              whereHelperuint64
-	Name            whereHelpernull_String
+	Name            whereHelperstring
 	RegionID        whereHelperuint64
 	ConstellationID whereHelperuint64
 	FactionID       whereHelpernull_Uint64
@@ -109,7 +86,7 @@ var SolarSystemWhere = struct {
 	UpdatedAt       whereHelpertime_Time
 }{
 	ID:              whereHelperuint64{field: "`solar_systems`.`id`"},
-	Name:            whereHelpernull_String{field: "`solar_systems`.`name`"},
+	Name:            whereHelperstring{field: "`solar_systems`.`name`"},
 	RegionID:        whereHelperuint64{field: "`solar_systems`.`region_id`"},
 	ConstellationID: whereHelperuint64{field: "`solar_systems`.`constellation_id`"},
 	FactionID:       whereHelpernull_Uint64{field: "`solar_systems`.`faction_id`"},

@@ -25,18 +25,18 @@ import (
 // KillmailAttacker is an object representing the database table.
 type KillmailAttacker struct {
 	ID             uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	KillmailID     uint64      `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
-	AllianceID     null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	CharacterID    null.Uint64 `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
-	CorporationID  null.Uint64 `boil:"corporation_id" json:"corporation_id,omitempty" toml:"corporation_id" yaml:"corporation_id,omitempty"`
-	FactionID      null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	DamageDone     uint64      `boil:"damage_done" json:"damage_done" toml:"damage_done" yaml:"damage_done"`
-	FinalBlow      bool        `boil:"final_blow" json:"final_blow" toml:"final_blow" yaml:"final_blow"`
-	SecurityStatus float64     `boil:"security_status" json:"security_status" toml:"security_status" yaml:"security_status"`
-	ShipTypeID     null.Uint64 `boil:"ship_type_id" json:"ship_type_id,omitempty" toml:"ship_type_id" yaml:"ship_type_id,omitempty"`
-	WeaponTypeID   null.Uint64 `boil:"weapon_type_id" json:"weapon_type_id,omitempty" toml:"weapon_type_id" yaml:"weapon_type_id,omitempty"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	KillmailID     uint64      `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
+	AllianceID     null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	CharacterID    null.Uint64 `boil:"character_id" json:"characterID,omitempty" toml:"characterID" yaml:"characterID,omitempty"`
+	CorporationID  null.Uint64 `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
+	FactionID      null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	DamageDone     uint64      `boil:"damage_done" json:"damageDone" toml:"damageDone" yaml:"damageDone"`
+	FinalBlow      bool        `boil:"final_blow" json:"finalBlow" toml:"finalBlow" yaml:"finalBlow"`
+	SecurityStatus float64     `boil:"security_status" json:"securityStatus" toml:"securityStatus" yaml:"securityStatus"`
+	ShipTypeID     null.Uint64 `boil:"ship_type_id" json:"shipTypeID,omitempty" toml:"shipTypeID" yaml:"shipTypeID,omitempty"`
+	WeaponTypeID   null.Uint64 `boil:"weapon_type_id" json:"weaponTypeID,omitempty" toml:"weaponTypeID" yaml:"weaponTypeID,omitempty"`
+	CreatedAt      time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt      time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *killmailAttackerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailAttackerL  `boil:"-" json:"-" toml:"-" yaml:"-"`

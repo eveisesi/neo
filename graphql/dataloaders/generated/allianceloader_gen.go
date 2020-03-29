@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // AllianceLoaderConfig captures the config to create a new AllianceLoader
 type AllianceLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.Alliance, []error)
+	Fetch func(keys []uint64) ([]*neo.Alliance, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewAllianceLoader(config AllianceLoaderConfig) *AllianceLoader {
 // AllianceLoader batches and caches requests
 type AllianceLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.Alliance, []error)
+	fetch func(keys []uint64) ([]*neo.Alliance, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type AllianceLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.Alliance
+	cache map[uint64]*neo.Alliance
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type AllianceLoader struct {
 
 type allianceLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.Alliance
+	data    []*neo.Alliance
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Alliance by key, batching and caching will be applied automatically
-func (l *AllianceLoader) Load(key uint64) (*killboard.Alliance, error) {
+func (l *AllianceLoader) Load(key uint64) (*neo.Alliance, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Alliance.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *AllianceLoader) LoadThunk(key uint64) func() (*killboard.Alliance, error) {
+func (l *AllianceLoader) LoadThunk(key uint64) func() (*neo.Alliance, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.Alliance, error) {
+		return func() (*neo.Alliance, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *AllianceLoader) LoadThunk(key uint64) func() (*killboard.Alliance, erro
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.Alliance, error) {
+	return func() (*neo.Alliance, error) {
 		<-batch.done
 
-		var data *killboard.Alliance
+		var data *neo.Alliance
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *AllianceLoader) LoadThunk(key uint64) func() (*killboard.Alliance, erro
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *AllianceLoader) LoadAll(keys []uint64) ([]*killboard.Alliance, []error) {
-	results := make([]func() (*killboard.Alliance, error), len(keys))
+func (l *AllianceLoader) LoadAll(keys []uint64) ([]*neo.Alliance, []error) {
+	results := make([]func() (*neo.Alliance, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	alliances := make([]*killboard.Alliance, len(keys))
+	alliances := make([]*neo.Alliance, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		alliances[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *AllianceLoader) LoadAll(keys []uint64) ([]*killboard.Alliance, []error)
 // LoadAllThunk returns a function that when called will block waiting for a Alliances.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *AllianceLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Alliance, []error) {
-	results := make([]func() (*killboard.Alliance, error), len(keys))
+func (l *AllianceLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Alliance, []error) {
+	results := make([]func() (*neo.Alliance, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.Alliance, []error) {
-		alliances := make([]*killboard.Alliance, len(keys))
+	return func() ([]*neo.Alliance, []error) {
+		alliances := make([]*neo.Alliance, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			alliances[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *AllianceLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Allian
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *AllianceLoader) Prime(key uint64, value *killboard.Alliance) bool {
+func (l *AllianceLoader) Prime(key uint64, value *neo.Alliance) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *AllianceLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *AllianceLoader) unsafeSet(key uint64, value *killboard.Alliance) {
+func (l *AllianceLoader) unsafeSet(key uint64, value *neo.Alliance) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.Alliance{}
+		l.cache = map[uint64]*neo.Alliance{}
 	}
 	l.cache[key] = value
 }

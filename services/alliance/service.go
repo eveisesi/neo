@@ -3,14 +3,14 @@ package alliance
 import "github.com/eveisesi/neo"
 
 type Service interface {
-	killboard.AllianceRespository
+	neo.AllianceRespository
 }
 
 type service struct {
-	killboard.AllianceRespository
+	neo.AllianceRespository
 }
 
-func NewService(alliance killboard.AllianceRespository) Service {
+func NewService(alliance neo.AllianceRespository) Service {
 	return &service{
 		alliance,
 	}

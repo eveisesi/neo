@@ -26,8 +26,8 @@ type TypeFlag struct {
 	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Text      string    `boil:"text" json:"text" toml:"text" yaml:"text"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *typeFlagR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L typeFlagL  `boil:"-" json:"-" toml:"-" yaml:"-"`

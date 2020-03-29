@@ -55,7 +55,7 @@ func (e *Client) GetUniverseTypesTypeID(id uint64) (Response, error) {
 
 	}
 
-	var invType killboard.Type
+	var invType neo.Type
 	invType.ID = id
 
 	err = json.Unmarshal(response.Data.([]byte), &invType)

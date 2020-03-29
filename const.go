@@ -1,4 +1,4 @@
-package killboard
+package neo
 
 const ZKILLBOARD_URL = "https://zkillboard.com"
 

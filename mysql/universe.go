@@ -14,15 +14,15 @@ type universeRepository struct {
 	db *sqlx.DB
 }
 
-func NewUniverseRepository(db *sqlx.DB) killboard.UniverseRepository {
+func NewUniverseRepository(db *sqlx.DB) neo.UniverseRepository {
 	return &universeRepository{
 		db,
 	}
 }
 
-func (r *universeRepository) Type(ctx context.Context, id uint64) (*killboard.Type, error) {
+func (r *universeRepository) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 
-	var invType = killboard.Type{}
+	var invType = neo.Type{}
 	err := boiler.Types(
 		boiler.TypeWhere.ID.EQ(id),
 	).Bind(ctx, r.db, &invType)
@@ -31,9 +31,9 @@ func (r *universeRepository) Type(ctx context.Context, id uint64) (*killboard.Ty
 
 }
 
-func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*killboard.Type, error) {
+func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type, error) {
 
-	var invTypes = make([]*killboard.Type, 0)
+	var invTypes = make([]*neo.Type, 0)
 	err := boiler.Types(
 		qm.WhereIn(
 			fmt.Sprintf(
@@ -47,9 +47,9 @@ func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) (
 	return invTypes, err
 }
 
-func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*killboard.SolarSystem, error) {
+func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
 
-	var solarSystem = killboard.SolarSystem{}
+	var solarSystem = neo.SolarSystem{}
 	err := boiler.SolarSystems(
 		boiler.SolarSystemWhere.ID.EQ(id),
 	).Bind(ctx, r.db, &solarSystem)
@@ -58,9 +58,9 @@ func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*killb
 
 }
 
-func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*killboard.SolarSystem, error) {
+func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*neo.SolarSystem, error) {
 
-	var systems = make([]*killboard.SolarSystem, 0)
+	var systems = make([]*neo.SolarSystem, 0)
 	err := boiler.SolarSystems(
 		qm.WhereIn(
 			fmt.Sprintf(

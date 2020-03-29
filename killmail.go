@@ -1,4 +1,4 @@
-package killboard
+package neo
 
 import (
 	"context"
@@ -83,7 +83,7 @@ type KillmailItem struct {
 	QuantityDropped   null.Uint64 `json:"quantity_dropped"`
 	QuantityDestroyed null.Uint64 `json:"quantity_destroyed"`
 	Singleton         uint64      `json:"singleton"`
-	IsParent          int8        `json:"is_parent"`
+	IsParent          bool        `json:"is_parent"`
 
 	Items []*KillmailItem `json:"items"`
 }
@@ -97,7 +97,7 @@ type KillmailVictim struct {
 	FactionID     null.Uint64       `json:"faction_id"`
 	DamageTaken   uint64            `json:"damage_taken"`
 	ShipTypeID    uint64            `json:"ship_type_id"`
-	Position      *KillmailPosition `json:"postition"`
+	Position      *KillmailPosition `json:"position"`
 	PosX          null.Float64      `json:"pos_x"`
 	PosY          null.Float64      `json:"pos_y"`
 	PosZ          null.Float64      `json:"pos_z"`

@@ -14,15 +14,15 @@ type allianceRepository struct {
 	db *sqlx.DB
 }
 
-func NewAllianceRepository(db *sqlx.DB) killboard.AllianceRespository {
+func NewAllianceRepository(db *sqlx.DB) neo.AllianceRespository {
 	return &allianceRepository{
 		db,
 	}
 }
 
-func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*killboard.Alliance, error) {
+func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error) {
 
-	var alliance = killboard.Alliance{}
+	var alliance = neo.Alliance{}
 	err := boiler.Alliances(
 		boiler.AllianceWhere.ID.EQ(id),
 	).Bind(ctx, r.db, &alliance)
@@ -31,9 +31,9 @@ func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*killboar
 
 }
 
-func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*killboard.Alliance, error) {
+func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Alliance, error) {
 
-	var alliances = make([]*killboard.Alliance, 0)
+	var alliances = make([]*neo.Alliance, 0)
 	err := boiler.Alliances(
 		qm.WhereIn(
 			fmt.Sprintf(

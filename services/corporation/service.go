@@ -3,14 +3,14 @@ package corporation
 import "github.com/eveisesi/neo"
 
 type Service interface {
-	killboard.CorporationRespository
+	neo.CorporationRespository
 }
 
 type service struct {
-	killboard.CorporationRespository
+	neo.CorporationRespository
 }
 
-func NewService(corporation killboard.CorporationRespository) Service {
+func NewService(corporation neo.CorporationRespository) Service {
 	return &service{
 		corporation,
 	}

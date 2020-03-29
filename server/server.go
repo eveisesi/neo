@@ -42,7 +42,15 @@ func Action(c *cli.Context) {
 
 	app.Logger.WithField("port", app.Config.ServerPort).Info("attempting to start server...")
 
-	server := NewServer(app.Config.ServerPort, app.Logger, app.Killmail)
+	server := NewServer(
+		app.Config.ServerPort,
+		app.Logger,
+		app.Alliance,
+		app.Character,
+		app.Corporation,
+		app.Killmail,
+		app.Universe,
+	)
 
 	go func() {
 		if err := server.server.ListenAndServe(); err != nil {
@@ -61,14 +69,26 @@ func Action(c *cli.Context) {
 
 }
 
-func NewServer(port uint, logger *logrus.Logger, killmail killmail.Service) *Server {
+func NewServer(
+	port uint,
+	logger *logrus.Logger,
+	alliance alliance.Service,
+	character character.Service,
+	corporation corporation.Service,
+	killmail killmail.Service,
+	universe universe.Service,
+) *Server {
 
 	visitors = make(map[string]*visitor)
 
 	s := Server{
 		logger: logger,
 
-		killmail: killmail,
+		alliance:    alliance,
+		character:   character,
+		corporation: corporation,
+		killmail:    killmail,
+		universe:    universe,
 	}
 
 	s.server = &http.Server{
@@ -93,6 +113,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 	schema := service.NewExecutableSchema(service.Config{
 		Resolvers: &resolvers.Resolver{
 			KillmailServ: s.killmail,
+			Dataloader:   CtxLoaders,
 		},
 	})
 

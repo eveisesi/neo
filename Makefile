@@ -1,2 +1,2 @@
 boiler:
-	sqlboiler --config .config/sqlboiler.toml --no-tests --no-hooks --wipe mysql
+	sqlboiler --config .config/sqlboiler.toml --struct-tag-casing=camel --no-tests --no-hooks --wipe mysql

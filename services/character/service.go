@@ -3,14 +3,14 @@ package character
 import "github.com/eveisesi/neo"
 
 type Service interface {
-	killboard.CharacterRespository
+	neo.CharacterRespository
 }
 
 type service struct {
-	killboard.CharacterRespository
+	neo.CharacterRespository
 }
 
-func NewService(character killboard.CharacterRespository) Service {
+func NewService(character neo.CharacterRespository) Service {
 	return &service{
 		character,
 	}

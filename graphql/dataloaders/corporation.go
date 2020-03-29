@@ -12,8 +12,8 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 	return generated.NewCorporationLoader(generated.CorporationLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*killboard.Corporation, []error) {
-			corporations := make([]*killboard.Corporation, len(ids))
+		Fetch: func(ids []uint64) ([]*neo.Corporation, []error) {
+			corporations := make([]*neo.Corporation, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := corporation.CorporationsByCorporationIDs(ctx, ids)
@@ -22,7 +22,7 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 				return nil, errors
 			}
 
-			corporationByCorporationID := map[uint64]*killboard.Corporation{}
+			corporationByCorporationID := map[uint64]*neo.Corporation{}
 			for _, c := range rows {
 				corporationByCorporationID[c.ID] = c
 			}

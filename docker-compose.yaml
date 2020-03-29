@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
     ingress:
-        image: killboard:latest
+        image: neo:latest
         network_mode: "host"
         restart: on-failure
         command: ./killboard ingress --channel=killhashes
@@ -10,8 +10,13 @@ services:
         hostname: ingress
         env_file:
             - ./cmd/killboard/.env
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: 10
     egress:
-        image: killboard:latest
+        image: neo:latest
         network_mode: "host"
         restart: on-failure
         command: ./killboard egress --channel=killhashes --date=20080617
@@ -19,3 +24,8 @@ services:
         hostname: egress
         env_file:
             - ./cmd/killboard/.env
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+                max-file: 10

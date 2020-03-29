@@ -1,0 +1,5 @@
+type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
+    id: Int!
+    name: String!
+    ticker: String!
+}

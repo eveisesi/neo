@@ -9,6 +9,8 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     solar_system_id: Int!
     war_id: Int
     killmail_time: Time!
+
+    system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)
     victim: KillmailVictim! @goField(forceResolver: true)
 }
@@ -26,6 +28,12 @@ type KillmailAttacker
     securityStatus: Float!
     shipTypeID: Int
     weaponTypeID: Int
+
+    alliance: Alliance
+    corporation: Corporation
+    character: Character
+    ship: Type
+    weapon: Type
 }
 
 type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
@@ -37,4 +45,33 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     factionID: Int
     damageTaken: Int!
     shipTypeID: Int!
+
+    alliance: Alliance
+    corporation: Corporation
+    character: Character
+    ship: Type
+    position: KillmailPosition @goField(forceResolver: true)
+    items: [KillmailItem]! @goField(forceResolver: true)
+}
+
+type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
+    id: Int!
+    parentID: Int
+    killmailID: Int!
+    flagID: Int!
+    itemTypeID: Int!
+    quantityDropped: Int
+    quantityDestroyed: Int
+    singleton: Int!
+    isParent: Boolean!
+
+    type: Type
+    items: [KillmailItem]! @goField(forceResolver: true)
+}
+
+type KillmailPosition
+    @goModel(model: "github.com/eveisesi/neo.KillmailPosition") {
+    x: Float
+    y: Float
+    z: Float
 }

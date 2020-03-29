@@ -12,9 +12,9 @@ import (
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
-func (i *Ingresser) GetSolarSystemByID(id uint64) (*killboard.SolarSystem, error) {
+func (i *Ingresser) GetSolarSystemByID(id uint64) (*neo.SolarSystem, error) {
 
-	var solarSystem = new(killboard.SolarSystem)
+	var solarSystem = new(neo.SolarSystem)
 
 	key := fmt.Sprintf("system:%d", id)
 

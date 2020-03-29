@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // KillmailAttackersLoaderConfig captures the config to create a new KillmailAttackersLoader
 type KillmailAttackersLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([][]*killboard.KillmailAttacker, []error)
+	Fetch func(keys []uint64) ([][]*neo.KillmailAttacker, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewKillmailAttackersLoader(config KillmailAttackersLoaderConfig) *KillmailA
 // KillmailAttackersLoader batches and caches requests
 type KillmailAttackersLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([][]*killboard.KillmailAttacker, []error)
+	fetch func(keys []uint64) ([][]*neo.KillmailAttacker, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type KillmailAttackersLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64][]*killboard.KillmailAttacker
+	cache map[uint64][]*neo.KillmailAttacker
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type KillmailAttackersLoader struct {
 
 type killmailAttackersLoaderBatch struct {
 	keys    []uint64
-	data    [][]*killboard.KillmailAttacker
+	data    [][]*neo.KillmailAttacker
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a KillmailAttacker by key, batching and caching will be applied automatically
-func (l *KillmailAttackersLoader) Load(key uint64) ([]*killboard.KillmailAttacker, error) {
+func (l *KillmailAttackersLoader) Load(key uint64) ([]*neo.KillmailAttacker, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a KillmailAttacker.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *KillmailAttackersLoader) LoadThunk(key uint64) func() ([]*killboard.KillmailAttacker, error) {
+func (l *KillmailAttackersLoader) LoadThunk(key uint64) func() ([]*neo.KillmailAttacker, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() ([]*killboard.KillmailAttacker, error) {
+		return func() ([]*neo.KillmailAttacker, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *KillmailAttackersLoader) LoadThunk(key uint64) func() ([]*killboard.Kil
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() ([]*killboard.KillmailAttacker, error) {
+	return func() ([]*neo.KillmailAttacker, error) {
 		<-batch.done
 
-		var data []*killboard.KillmailAttacker
+		var data []*neo.KillmailAttacker
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *KillmailAttackersLoader) LoadThunk(key uint64) func() ([]*killboard.Kil
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *KillmailAttackersLoader) LoadAll(keys []uint64) ([][]*killboard.KillmailAttacker, []error) {
-	results := make([]func() ([]*killboard.KillmailAttacker, error), len(keys))
+func (l *KillmailAttackersLoader) LoadAll(keys []uint64) ([][]*neo.KillmailAttacker, []error) {
+	results := make([]func() ([]*neo.KillmailAttacker, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	killmailAttackers := make([][]*killboard.KillmailAttacker, len(keys))
+	killmailAttackers := make([][]*neo.KillmailAttacker, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		killmailAttackers[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *KillmailAttackersLoader) LoadAll(keys []uint64) ([][]*killboard.Killmai
 // LoadAllThunk returns a function that when called will block waiting for a KillmailAttackers.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *KillmailAttackersLoader) LoadAllThunk(keys []uint64) func() ([][]*killboard.KillmailAttacker, []error) {
-	results := make([]func() ([]*killboard.KillmailAttacker, error), len(keys))
+func (l *KillmailAttackersLoader) LoadAllThunk(keys []uint64) func() ([][]*neo.KillmailAttacker, []error) {
+	results := make([]func() ([]*neo.KillmailAttacker, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([][]*killboard.KillmailAttacker, []error) {
-		killmailAttackers := make([][]*killboard.KillmailAttacker, len(keys))
+	return func() ([][]*neo.KillmailAttacker, []error) {
+		killmailAttackers := make([][]*neo.KillmailAttacker, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			killmailAttackers[i], errors[i] = thunk()
@@ -149,13 +149,13 @@ func (l *KillmailAttackersLoader) LoadAllThunk(keys []uint64) func() ([][]*killb
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *KillmailAttackersLoader) Prime(key uint64, value []*killboard.KillmailAttacker) bool {
+func (l *KillmailAttackersLoader) Prime(key uint64, value []*neo.KillmailAttacker) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
 		// make a copy when writing to the cache, its easy to pass a pointer in from a loop var
 		// and end up with the whole cache pointing to the same value.
-		cpy := make([]*killboard.KillmailAttacker, len(value))
+		cpy := make([]*neo.KillmailAttacker, len(value))
 		copy(cpy, value)
 		l.unsafeSet(key, cpy)
 	}
@@ -170,9 +170,9 @@ func (l *KillmailAttackersLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *KillmailAttackersLoader) unsafeSet(key uint64, value []*killboard.KillmailAttacker) {
+func (l *KillmailAttackersLoader) unsafeSet(key uint64, value []*neo.KillmailAttacker) {
 	if l.cache == nil {
-		l.cache = map[uint64][]*killboard.KillmailAttacker{}
+		l.cache = map[uint64][]*neo.KillmailAttacker{}
 	}
 	l.cache[key] = value
 }

@@ -1,0 +1,4 @@
+type Character @goModel(model: "github.com/eveisesi/neo.Character") {
+    id: Int!
+    name: String!
+}

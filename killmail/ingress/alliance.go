@@ -14,8 +14,8 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-func (i *Ingresser) GetAllianceByID(id uint64) (*killboard.Alliance, error) {
-	var alliance = new(killboard.Alliance)
+func (i *Ingresser) GetAllianceByID(id uint64) (*neo.Alliance, error) {
+	var alliance = new(neo.Alliance)
 
 	key := fmt.Sprintf("alliance:%d", id)
 
@@ -61,7 +61,7 @@ func (i *Ingresser) GetAllianceByID(id uint64) (*killboard.Alliance, error) {
 		return nil, errors.Wrap(err, "unable to retrieve alliance for provided id")
 	}
 
-	alliance = response.Data.(*killboard.Alliance)
+	alliance = response.Data.(*neo.Alliance)
 
 	bAlliance := boiler.Alliance{}
 	err = copier.Copy(&bAlliance, alliance)

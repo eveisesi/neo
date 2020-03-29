@@ -12,9 +12,9 @@ func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *ge
 	return generated.NewKillmailAttackersLoader(generated.KillmailAttackersLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([][]*killboard.KillmailAttacker, []error) {
+		Fetch: func(ids []uint64) ([][]*neo.KillmailAttacker, []error) {
 
-			attackers := make([][]*killboard.KillmailAttacker, len(ids))
+			attackers := make([][]*neo.KillmailAttacker, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := killmail.KillmailAttackersByKillmailIDs(ctx, ids)
@@ -23,7 +23,7 @@ func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *ge
 				return nil, errors
 			}
 
-			attackersByKillmailID := map[uint64][]*killboard.KillmailAttacker{}
+			attackersByKillmailID := map[uint64][]*neo.KillmailAttacker{}
 			for _, row := range rows {
 				attackersByKillmailID[row.KillmailID] = append(attackersByKillmailID[row.KillmailID], row)
 			}
@@ -42,16 +42,16 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 	return generated.NewKillmailItemsLoader(generated.KillmailItemsLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(objs []*killboard.KillmailItemLoader) ([][]*killboard.KillmailItem, []error) {
+		Fetch: func(objs []*neo.KillmailItemLoader) ([][]*neo.KillmailItem, []error) {
 
-			items := make([][]*killboard.KillmailItem, len(objs))
+			items := make([][]*neo.KillmailItem, len(objs))
 			errors := make([]error, len(objs))
 
-			itemsByID := map[uint64][]*killboard.KillmailItem{}
+			itemsByID := map[uint64][]*neo.KillmailItem{}
 
 			killmailIDs := make([]uint64, 0)
 			for _, v := range objs {
-				if v.Type.IsValid() && v.Type == killboard.ParentKillmailItem {
+				if v.Type.IsValid() && v.Type == neo.ParentKillmailItem {
 					killmailIDs = append(killmailIDs, v.ID)
 				}
 			}
@@ -69,7 +69,7 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 
 			parentIDs := make([]uint64, 0)
 			for _, v := range objs {
-				if v.Type.IsValid() && v.Type == killboard.ChildKillmailItem {
+				if v.Type.IsValid() && v.Type == neo.ChildKillmailItem {
 					parentIDs = append(parentIDs, v.ID)
 				}
 			}
@@ -98,8 +98,8 @@ func KillmailVictimLoader(ctx context.Context, killmail killmail.Service) *gener
 	return generated.NewKillmailVictimLoader(generated.KillmailVictimLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*killboard.KillmailVictim, []error) {
-			victims := make([]*killboard.KillmailVictim, len(ids))
+		Fetch: func(ids []uint64) ([]*neo.KillmailVictim, []error) {
+			victims := make([]*neo.KillmailVictim, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := killmail.KillmailVictimsByKillmailIDs(ctx, ids)
@@ -108,7 +108,7 @@ func KillmailVictimLoader(ctx context.Context, killmail killmail.Service) *gener
 				return nil, errors
 			}
 
-			victimByKillmailID := map[uint64]*killboard.KillmailVictim{}
+			victimByKillmailID := map[uint64]*neo.KillmailVictim{}
 			for _, row := range rows {
 				victimByKillmailID[row.KillmailID] = row
 			}

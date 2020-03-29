@@ -57,7 +57,7 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 
 	}
 
-	var character killboard.Character
+	var character neo.Character
 
 	switch response.Code {
 	case 200:

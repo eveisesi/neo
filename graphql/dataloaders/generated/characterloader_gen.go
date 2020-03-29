@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // CharacterLoaderConfig captures the config to create a new CharacterLoader
 type CharacterLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.Character, []error)
+	Fetch func(keys []uint64) ([]*neo.Character, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewCharacterLoader(config CharacterLoaderConfig) *CharacterLoader {
 // CharacterLoader batches and caches requests
 type CharacterLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.Character, []error)
+	fetch func(keys []uint64) ([]*neo.Character, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type CharacterLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.Character
+	cache map[uint64]*neo.Character
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type CharacterLoader struct {
 
 type characterLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.Character
+	data    []*neo.Character
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Character by key, batching and caching will be applied automatically
-func (l *CharacterLoader) Load(key uint64) (*killboard.Character, error) {
+func (l *CharacterLoader) Load(key uint64) (*neo.Character, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Character.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *CharacterLoader) LoadThunk(key uint64) func() (*killboard.Character, error) {
+func (l *CharacterLoader) LoadThunk(key uint64) func() (*neo.Character, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.Character, error) {
+		return func() (*neo.Character, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *CharacterLoader) LoadThunk(key uint64) func() (*killboard.Character, er
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.Character, error) {
+	return func() (*neo.Character, error) {
 		<-batch.done
 
-		var data *killboard.Character
+		var data *neo.Character
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *CharacterLoader) LoadThunk(key uint64) func() (*killboard.Character, er
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *CharacterLoader) LoadAll(keys []uint64) ([]*killboard.Character, []error) {
-	results := make([]func() (*killboard.Character, error), len(keys))
+func (l *CharacterLoader) LoadAll(keys []uint64) ([]*neo.Character, []error) {
+	results := make([]func() (*neo.Character, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	characters := make([]*killboard.Character, len(keys))
+	characters := make([]*neo.Character, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		characters[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *CharacterLoader) LoadAll(keys []uint64) ([]*killboard.Character, []erro
 // LoadAllThunk returns a function that when called will block waiting for a Characters.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *CharacterLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Character, []error) {
-	results := make([]func() (*killboard.Character, error), len(keys))
+func (l *CharacterLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Character, []error) {
+	results := make([]func() (*neo.Character, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.Character, []error) {
-		characters := make([]*killboard.Character, len(keys))
+	return func() ([]*neo.Character, []error) {
+		characters := make([]*neo.Character, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			characters[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *CharacterLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Chara
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *CharacterLoader) Prime(key uint64, value *killboard.Character) bool {
+func (l *CharacterLoader) Prime(key uint64, value *neo.Character) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *CharacterLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *CharacterLoader) unsafeSet(key uint64, value *killboard.Character) {
+func (l *CharacterLoader) unsafeSet(key uint64, value *neo.Character) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.Character{}
+		l.cache = map[uint64]*neo.Character{}
 	}
 	l.cache[key] = value
 }

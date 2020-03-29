@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -23,14 +24,14 @@ import (
 
 // Corporation is an object representing the database table.
 type Corporation struct {
-	ID          uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Ticker      string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	AllianceID  uint64    `boil:"alliance_id" json:"alliance_id" toml:"alliance_id" yaml:"alliance_id"`
-	Etag        string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil time.Time `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
-	CreatedAt   time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID          uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name        string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Ticker      string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
+	AllianceID  null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	Etag        string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	CachedUntil time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt   time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt   time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *corporationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L corporationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -62,7 +63,7 @@ var CorporationWhere = struct {
 	ID          whereHelperuint64
 	Name        whereHelperstring
 	Ticker      whereHelperstring
-	AllianceID  whereHelperuint64
+	AllianceID  whereHelpernull_Uint64
 	Etag        whereHelperstring
 	CachedUntil whereHelpertime_Time
 	CreatedAt   whereHelpertime_Time
@@ -71,7 +72,7 @@ var CorporationWhere = struct {
 	ID:          whereHelperuint64{field: "`corporations`.`id`"},
 	Name:        whereHelperstring{field: "`corporations`.`name`"},
 	Ticker:      whereHelperstring{field: "`corporations`.`ticker`"},
-	AllianceID:  whereHelperuint64{field: "`corporations`.`alliance_id`"},
+	AllianceID:  whereHelpernull_Uint64{field: "`corporations`.`alliance_id`"},
 	Etag:        whereHelperstring{field: "`corporations`.`etag`"},
 	CachedUntil: whereHelpertime_Time{field: "`corporations`.`cached_until`"},
 	CreatedAt:   whereHelpertime_Time{field: "`corporations`.`created_at`"},

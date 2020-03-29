@@ -14,9 +14,9 @@ import (
 	"github.com/volatiletech/sqlboiler/boil"
 )
 
-func (i *Ingresser) GetCharacterByID(id uint64) (*killboard.Character, error) {
+func (i *Ingresser) GetCharacterByID(id uint64) (*neo.Character, error) {
 
-	var character = new(killboard.Character)
+	var character = new(neo.Character)
 
 	key := fmt.Sprintf("character:%d", id)
 
@@ -62,7 +62,7 @@ func (i *Ingresser) GetCharacterByID(id uint64) (*killboard.Character, error) {
 		return nil, errors.Wrap(err, "unable to retrieve character for provided id")
 	}
 
-	character = response.Data.(*killboard.Character)
+	character = response.Data.(*neo.Character)
 
 	bCharacter := boiler.Character{}
 	err = copier.Copy(&bCharacter, character)

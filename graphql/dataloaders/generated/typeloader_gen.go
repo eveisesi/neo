@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // TypeLoaderConfig captures the config to create a new TypeLoader
 type TypeLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.Type, []error)
+	Fetch func(keys []uint64) ([]*neo.Type, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewTypeLoader(config TypeLoaderConfig) *TypeLoader {
 // TypeLoader batches and caches requests
 type TypeLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.Type, []error)
+	fetch func(keys []uint64) ([]*neo.Type, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type TypeLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.Type
+	cache map[uint64]*neo.Type
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type TypeLoader struct {
 
 type typeLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.Type
+	data    []*neo.Type
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Type by key, batching and caching will be applied automatically
-func (l *TypeLoader) Load(key uint64) (*killboard.Type, error) {
+func (l *TypeLoader) Load(key uint64) (*neo.Type, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Type.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeLoader) LoadThunk(key uint64) func() (*killboard.Type, error) {
+func (l *TypeLoader) LoadThunk(key uint64) func() (*neo.Type, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.Type, error) {
+		return func() (*neo.Type, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *TypeLoader) LoadThunk(key uint64) func() (*killboard.Type, error) {
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.Type, error) {
+	return func() (*neo.Type, error) {
 		<-batch.done
 
-		var data *killboard.Type
+		var data *neo.Type
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *TypeLoader) LoadThunk(key uint64) func() (*killboard.Type, error) {
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *TypeLoader) LoadAll(keys []uint64) ([]*killboard.Type, []error) {
-	results := make([]func() (*killboard.Type, error), len(keys))
+func (l *TypeLoader) LoadAll(keys []uint64) ([]*neo.Type, []error) {
+	results := make([]func() (*neo.Type, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	types := make([]*killboard.Type, len(keys))
+	types := make([]*neo.Type, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		types[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *TypeLoader) LoadAll(keys []uint64) ([]*killboard.Type, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a Types.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Type, []error) {
-	results := make([]func() (*killboard.Type, error), len(keys))
+func (l *TypeLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Type, []error) {
+	results := make([]func() (*neo.Type, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.Type, []error) {
-		types := make([]*killboard.Type, len(keys))
+	return func() ([]*neo.Type, []error) {
+		types := make([]*neo.Type, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			types[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *TypeLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Type, []er
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *TypeLoader) Prime(key uint64, value *killboard.Type) bool {
+func (l *TypeLoader) Prime(key uint64, value *neo.Type) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *TypeLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *TypeLoader) unsafeSet(key uint64, value *killboard.Type) {
+func (l *TypeLoader) unsafeSet(key uint64, value *neo.Type) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.Type{}
+		l.cache = map[uint64]*neo.Type{}
 	}
 	l.cache[key] = value
 }

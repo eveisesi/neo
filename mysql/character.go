@@ -14,15 +14,15 @@ type characterRepository struct {
 	db *sqlx.DB
 }
 
-func NewCharacterRepository(db *sqlx.DB) killboard.CharacterRespository {
+func NewCharacterRepository(db *sqlx.DB) neo.CharacterRespository {
 	return &characterRepository{
 		db,
 	}
 }
 
-func (r *characterRepository) Character(ctx context.Context, id uint64) (*killboard.Character, error) {
+func (r *characterRepository) Character(ctx context.Context, id uint64) (*neo.Character, error) {
 
-	var character = killboard.Character{}
+	var character = neo.Character{}
 	err := boiler.Characters(
 		boiler.CharacterWhere.ID.EQ(id),
 	).Bind(ctx, r.db, &character)
@@ -31,9 +31,9 @@ func (r *characterRepository) Character(ctx context.Context, id uint64) (*killbo
 
 }
 
-func (r *characterRepository) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*killboard.Character, error) {
+func (r *characterRepository) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
 
-	var characters = make([]*killboard.Character, 0)
+	var characters = make([]*neo.Character, 0)
 	err := boiler.Characters(
 		qm.WhereIn(
 			fmt.Sprintf(

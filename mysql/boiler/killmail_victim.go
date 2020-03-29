@@ -25,18 +25,18 @@ import (
 // KillmailVictim is an object representing the database table.
 type KillmailVictim struct {
 	ID            uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	KillmailID    uint64       `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
-	AllianceID    null.Uint64  `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	CharacterID   null.Uint64  `boil:"character_id" json:"character_id,omitempty" toml:"character_id" yaml:"character_id,omitempty"`
-	CorporationID uint64       `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
-	FactionID     null.Uint64  `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	DamageTaken   uint64       `boil:"damage_taken" json:"damage_taken" toml:"damage_taken" yaml:"damage_taken"`
-	ShipTypeID    uint64       `boil:"ship_type_id" json:"ship_type_id" toml:"ship_type_id" yaml:"ship_type_id"`
-	PosX          null.Float64 `boil:"pos_x" json:"pos_x,omitempty" toml:"pos_x" yaml:"pos_x,omitempty"`
-	PosY          null.Float64 `boil:"pos_y" json:"pos_y,omitempty" toml:"pos_y" yaml:"pos_y,omitempty"`
-	PosZ          null.Float64 `boil:"pos_z" json:"pos_z,omitempty" toml:"pos_z" yaml:"pos_z,omitempty"`
-	CreatedAt     time.Time    `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time    `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	KillmailID    uint64       `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
+	AllianceID    null.Uint64  `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	CharacterID   null.Uint64  `boil:"character_id" json:"characterID,omitempty" toml:"characterID" yaml:"characterID,omitempty"`
+	CorporationID uint64       `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
+	FactionID     null.Uint64  `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	DamageTaken   uint64       `boil:"damage_taken" json:"damageTaken" toml:"damageTaken" yaml:"damageTaken"`
+	ShipTypeID    uint64       `boil:"ship_type_id" json:"shipTypeID" toml:"shipTypeID" yaml:"shipTypeID"`
+	PosX          null.Float64 `boil:"pos_x" json:"posX,omitempty" toml:"posX" yaml:"posX,omitempty"`
+	PosY          null.Float64 `boil:"pos_y" json:"posY,omitempty" toml:"posY" yaml:"posY,omitempty"`
+	PosZ          null.Float64 `boil:"pos_z" json:"posZ,omitempty" toml:"posZ" yaml:"posZ,omitempty"`
+	CreatedAt     time.Time    `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt     time.Time    `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *killmailVictimR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailVictimL  `boil:"-" json:"-" toml:"-" yaml:"-"`

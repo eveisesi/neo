@@ -47,7 +47,7 @@ func Action(c *cli.Context) error {
 
 		entry := e.Logger.WithField("date", date.Format("20060102"))
 
-		uri := fmt.Sprintf(killboard.ZKILLBOARD_HISTORY_API, date.Format("20060102"))
+		uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, date.Format("20060102"))
 
 		request, err := http.NewRequest(http.MethodGet, uri, nil)
 		if err != nil {

@@ -25,16 +25,16 @@ import (
 // KillmailItem is an object representing the database table.
 type KillmailItem struct {
 	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ParentID          null.Uint64 `boil:"parent_id" json:"parent_id,omitempty" toml:"parent_id" yaml:"parent_id,omitempty"`
-	KillmailID        uint64      `boil:"killmail_id" json:"killmail_id" toml:"killmail_id" yaml:"killmail_id"`
-	FlagID            uint64      `boil:"flag_id" json:"flag_id" toml:"flag_id" yaml:"flag_id"`
-	ItemTypeID        uint64      `boil:"item_type_id" json:"item_type_id" toml:"item_type_id" yaml:"item_type_id"`
-	QuantityDropped   null.Uint64 `boil:"quantity_dropped" json:"quantity_dropped,omitempty" toml:"quantity_dropped" yaml:"quantity_dropped,omitempty"`
-	QuantityDestroyed null.Uint64 `boil:"quantity_destroyed" json:"quantity_destroyed,omitempty" toml:"quantity_destroyed" yaml:"quantity_destroyed,omitempty"`
+	ParentID          null.Uint64 `boil:"parent_id" json:"parentID,omitempty" toml:"parentID" yaml:"parentID,omitempty"`
+	KillmailID        uint64      `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
+	FlagID            uint64      `boil:"flag_id" json:"flagID" toml:"flagID" yaml:"flagID"`
+	ItemTypeID        uint64      `boil:"item_type_id" json:"itemTypeID" toml:"itemTypeID" yaml:"itemTypeID"`
+	QuantityDropped   null.Uint64 `boil:"quantity_dropped" json:"quantityDropped,omitempty" toml:"quantityDropped" yaml:"quantityDropped,omitempty"`
+	QuantityDestroyed null.Uint64 `boil:"quantity_destroyed" json:"quantityDestroyed,omitempty" toml:"quantityDestroyed" yaml:"quantityDestroyed,omitempty"`
 	Singleton         uint64      `boil:"singleton" json:"singleton" toml:"singleton" yaml:"singleton"`
-	IsParent          bool        `boil:"is_parent" json:"is_parent" toml:"is_parent" yaml:"is_parent"`
-	CreatedAt         time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt         time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	IsParent          bool        `boil:"is_parent" json:"isParent" toml:"isParent" yaml:"isParent"`
+	CreatedAt         time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt         time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *killmailItemR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailItemL  `boil:"-" json:"-" toml:"-" yaml:"-"`

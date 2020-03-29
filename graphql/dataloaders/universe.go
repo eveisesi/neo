@@ -12,8 +12,8 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 	return generated.NewSolarSystemLoader(generated.SolarSystemLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*killboard.SolarSystem, []error) {
-			solarSystems := make([]*killboard.SolarSystem, len(ids))
+		Fetch: func(ids []uint64) ([]*neo.SolarSystem, []error) {
+			solarSystems := make([]*neo.SolarSystem, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := universe.SolarSystemsBySolarSystemIDs(ctx, ids)
@@ -22,7 +22,7 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 				return nil, errors
 			}
 
-			solarSystemsBySolarSystemID := map[uint64]*killboard.SolarSystem{}
+			solarSystemsBySolarSystemID := map[uint64]*neo.SolarSystem{}
 			for _, row := range rows {
 				solarSystemsBySolarSystemID[row.ID] = row
 			}
@@ -40,8 +40,8 @@ func TypeLoader(ctx context.Context, univsere universe.Service) *generated.TypeL
 	return generated.NewTypeLoader(generated.TypeLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*killboard.Type, []error) {
-			invTypes := make([]*killboard.Type, len(ids))
+		Fetch: func(ids []uint64) ([]*neo.Type, []error) {
+			invTypes := make([]*neo.Type, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := univsere.TypesByTypeIDs(ctx, ids)
@@ -50,7 +50,7 @@ func TypeLoader(ctx context.Context, univsere universe.Service) *generated.TypeL
 				return nil, errors
 			}
 
-			invTypesByTypeID := map[uint64]*killboard.Type{}
+			invTypesByTypeID := map[uint64]*neo.Type{}
 			for _, row := range rows {
 				invTypesByTypeID[row.ID] = row
 			}

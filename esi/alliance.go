@@ -58,7 +58,7 @@ func (e *Client) GetAlliancesAllianceID(id uint64, etag string) (Response, error
 
 	}
 
-	var alliance killboard.Alliance
+	var alliance neo.Alliance
 
 	switch response.Code {
 	case 200:

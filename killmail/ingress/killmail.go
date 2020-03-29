@@ -158,7 +158,7 @@ func (i *Ingresser) HandleMessage(msg string, workerID int) {
 		time.Sleep(5 * time.Second)
 	}
 
-	killmail := response.Data.(killboard.Killmail)
+	killmail := response.Data.(neo.Killmail)
 
 	_, err = i.GetSolarSystemByID(killmail.SolarSystemID)
 	if err != nil {
@@ -318,7 +318,7 @@ func (i *Ingresser) HandleMessage(msg string, workerID int) {
 
 }
 
-func (i *Ingresser) HandleVictimItems(items []*killboard.KillmailItem) {
+func (i *Ingresser) HandleVictimItems(items []*neo.KillmailItem) {
 	for _, item := range items {
 		_, err := i.GetTypeByID(item.ItemTypeID)
 		if err != nil {

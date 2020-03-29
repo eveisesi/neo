@@ -60,7 +60,7 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response,
 
 	}
 
-	var corporation killboard.Corporation
+	var corporation neo.Corporation
 
 	switch response.Code {
 	case 200:

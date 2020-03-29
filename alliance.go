@@ -1,4 +1,4 @@
-package killboard
+package neo
 
 import (
 	"context"

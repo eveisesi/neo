@@ -1,0 +1,21 @@
+type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
+    id: Int!
+    name: String!
+    regionID: Int!
+    constellationID: Int!
+    factionID: Int
+    sunTypeID: Int
+    security: Float!
+}
+
+type Type @goModel(model: "github.com/eveisesi/neo.Type") {
+    id: Int!
+    groupID: Int!
+    name: String!
+    description: String!
+    volume: Float!
+    raceID: Int
+    basePrice: Float
+    published: Boolean!
+    marketGroupID: Int
+}

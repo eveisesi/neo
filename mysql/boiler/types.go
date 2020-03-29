@@ -25,16 +25,16 @@ import (
 // Type is an object representing the database table.
 type Type struct {
 	ID            uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GroupID       uint64       `boil:"group_id" json:"group_id" toml:"group_id" yaml:"group_id"`
+	GroupID       uint64       `boil:"group_id" json:"groupID" toml:"groupID" yaml:"groupID"`
 	Name          string       `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Description   string       `boil:"description" json:"description" toml:"description" yaml:"description"`
 	Volume        float64      `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
-	RaceID        null.Uint64  `boil:"race_id" json:"race_id,omitempty" toml:"race_id" yaml:"race_id,omitempty"`
-	BasePrice     null.Float64 `boil:"base_price" json:"base_price,omitempty" toml:"base_price" yaml:"base_price,omitempty"`
+	RaceID        null.Uint64  `boil:"race_id" json:"raceID,omitempty" toml:"raceID" yaml:"raceID,omitempty"`
+	BasePrice     null.Float64 `boil:"base_price" json:"basePrice,omitempty" toml:"basePrice" yaml:"basePrice,omitempty"`
 	Published     bool         `boil:"published" json:"published" toml:"published" yaml:"published"`
-	MarketGroupID null.Uint64  `boil:"market_group_id" json:"market_group_id,omitempty" toml:"market_group_id" yaml:"market_group_id,omitempty"`
-	CreatedAt     null.Time    `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt     null.Time    `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	MarketGroupID null.Uint64  `boil:"market_group_id" json:"marketGroupID,omitempty" toml:"marketGroupID" yaml:"marketGroupID,omitempty"`
+	CreatedAt     null.Time    `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt     null.Time    `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
 
 	R *typeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L typeL  `boil:"-" json:"-" toml:"-" yaml:"-"`

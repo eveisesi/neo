@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // KillmailVictimLoaderConfig captures the config to create a new KillmailVictimLoader
 type KillmailVictimLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.KillmailVictim, []error)
+	Fetch func(keys []uint64) ([]*neo.KillmailVictim, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewKillmailVictimLoader(config KillmailVictimLoaderConfig) *KillmailVictimL
 // KillmailVictimLoader batches and caches requests
 type KillmailVictimLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.KillmailVictim, []error)
+	fetch func(keys []uint64) ([]*neo.KillmailVictim, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type KillmailVictimLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.KillmailVictim
+	cache map[uint64]*neo.KillmailVictim
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type KillmailVictimLoader struct {
 
 type killmailVictimLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.KillmailVictim
+	data    []*neo.KillmailVictim
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a KillmailVictim by key, batching and caching will be applied automatically
-func (l *KillmailVictimLoader) Load(key uint64) (*killboard.KillmailVictim, error) {
+func (l *KillmailVictimLoader) Load(key uint64) (*neo.KillmailVictim, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a KillmailVictim.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *KillmailVictimLoader) LoadThunk(key uint64) func() (*killboard.KillmailVictim, error) {
+func (l *KillmailVictimLoader) LoadThunk(key uint64) func() (*neo.KillmailVictim, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.KillmailVictim, error) {
+		return func() (*neo.KillmailVictim, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *KillmailVictimLoader) LoadThunk(key uint64) func() (*killboard.Killmail
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.KillmailVictim, error) {
+	return func() (*neo.KillmailVictim, error) {
 		<-batch.done
 
-		var data *killboard.KillmailVictim
+		var data *neo.KillmailVictim
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *KillmailVictimLoader) LoadThunk(key uint64) func() (*killboard.Killmail
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *KillmailVictimLoader) LoadAll(keys []uint64) ([]*killboard.KillmailVictim, []error) {
-	results := make([]func() (*killboard.KillmailVictim, error), len(keys))
+func (l *KillmailVictimLoader) LoadAll(keys []uint64) ([]*neo.KillmailVictim, []error) {
+	results := make([]func() (*neo.KillmailVictim, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	killmailVictims := make([]*killboard.KillmailVictim, len(keys))
+	killmailVictims := make([]*neo.KillmailVictim, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		killmailVictims[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *KillmailVictimLoader) LoadAll(keys []uint64) ([]*killboard.KillmailVict
 // LoadAllThunk returns a function that when called will block waiting for a KillmailVictims.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *KillmailVictimLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.KillmailVictim, []error) {
-	results := make([]func() (*killboard.KillmailVictim, error), len(keys))
+func (l *KillmailVictimLoader) LoadAllThunk(keys []uint64) func() ([]*neo.KillmailVictim, []error) {
+	results := make([]func() (*neo.KillmailVictim, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.KillmailVictim, []error) {
-		killmailVictims := make([]*killboard.KillmailVictim, len(keys))
+	return func() ([]*neo.KillmailVictim, []error) {
+		killmailVictims := make([]*neo.KillmailVictim, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			killmailVictims[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *KillmailVictimLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *KillmailVictimLoader) Prime(key uint64, value *killboard.KillmailVictim) bool {
+func (l *KillmailVictimLoader) Prime(key uint64, value *neo.KillmailVictim) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *KillmailVictimLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *KillmailVictimLoader) unsafeSet(key uint64, value *killboard.KillmailVictim) {
+func (l *KillmailVictimLoader) unsafeSet(key uint64, value *neo.KillmailVictim) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.KillmailVictim{}
+		l.cache = map[uint64]*neo.KillmailVictim{}
 	}
 	l.cache[key] = value
 }

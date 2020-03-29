@@ -27,11 +27,11 @@ type Faction struct {
 	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Description   string      `boil:"description" json:"description" toml:"description" yaml:"description"`
-	RaceID        uint64      `boil:"race_id" json:"race_id" toml:"race_id" yaml:"race_id"`
-	SolarSystemID uint64      `boil:"solar_system_id" json:"solar_system_id" toml:"solar_system_id" yaml:"solar_system_id"`
-	CorporationID null.Uint64 `boil:"corporation_id" json:"corporation_id,omitempty" toml:"corporation_id" yaml:"corporation_id,omitempty"`
-	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	RaceID        uint64      `boil:"race_id" json:"raceID" toml:"raceID" yaml:"raceID"`
+	SolarSystemID uint64      `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
+	CorporationID null.Uint64 `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
+	CreatedAt     time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt     time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *factionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L factionL  `boil:"-" json:"-" toml:"-" yaml:"-"`

@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // CorporationLoaderConfig captures the config to create a new CorporationLoader
 type CorporationLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.Corporation, []error)
+	Fetch func(keys []uint64) ([]*neo.Corporation, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewCorporationLoader(config CorporationLoaderConfig) *CorporationLoader {
 // CorporationLoader batches and caches requests
 type CorporationLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.Corporation, []error)
+	fetch func(keys []uint64) ([]*neo.Corporation, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type CorporationLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.Corporation
+	cache map[uint64]*neo.Corporation
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type CorporationLoader struct {
 
 type corporationLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.Corporation
+	data    []*neo.Corporation
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a Corporation by key, batching and caching will be applied automatically
-func (l *CorporationLoader) Load(key uint64) (*killboard.Corporation, error) {
+func (l *CorporationLoader) Load(key uint64) (*neo.Corporation, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Corporation.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *CorporationLoader) LoadThunk(key uint64) func() (*killboard.Corporation, error) {
+func (l *CorporationLoader) LoadThunk(key uint64) func() (*neo.Corporation, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.Corporation, error) {
+		return func() (*neo.Corporation, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *CorporationLoader) LoadThunk(key uint64) func() (*killboard.Corporation
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.Corporation, error) {
+	return func() (*neo.Corporation, error) {
 		<-batch.done
 
-		var data *killboard.Corporation
+		var data *neo.Corporation
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *CorporationLoader) LoadThunk(key uint64) func() (*killboard.Corporation
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *CorporationLoader) LoadAll(keys []uint64) ([]*killboard.Corporation, []error) {
-	results := make([]func() (*killboard.Corporation, error), len(keys))
+func (l *CorporationLoader) LoadAll(keys []uint64) ([]*neo.Corporation, []error) {
+	results := make([]func() (*neo.Corporation, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	corporations := make([]*killboard.Corporation, len(keys))
+	corporations := make([]*neo.Corporation, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		corporations[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *CorporationLoader) LoadAll(keys []uint64) ([]*killboard.Corporation, []
 // LoadAllThunk returns a function that when called will block waiting for a Corporations.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *CorporationLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Corporation, []error) {
-	results := make([]func() (*killboard.Corporation, error), len(keys))
+func (l *CorporationLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Corporation, []error) {
+	results := make([]func() (*neo.Corporation, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.Corporation, []error) {
-		corporations := make([]*killboard.Corporation, len(keys))
+	return func() ([]*neo.Corporation, []error) {
+		corporations := make([]*neo.Corporation, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			corporations[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *CorporationLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Cor
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *CorporationLoader) Prime(key uint64, value *killboard.Corporation) bool {
+func (l *CorporationLoader) Prime(key uint64, value *neo.Corporation) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *CorporationLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *CorporationLoader) unsafeSet(key uint64, value *killboard.Corporation) {
+func (l *CorporationLoader) unsafeSet(key uint64, value *neo.Corporation) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.Corporation{}
+		l.cache = map[uint64]*neo.Corporation{}
 	}
 	l.cache[key] = value
 }

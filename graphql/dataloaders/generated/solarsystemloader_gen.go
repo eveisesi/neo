@@ -6,13 +6,13 @@ import (
 	"sync"
 	"time"
 
-	killboard "github.com/eveisesi/neo"
+	"github.com/eveisesi/neo"
 )
 
 // SolarSystemLoaderConfig captures the config to create a new SolarSystemLoader
 type SolarSystemLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*killboard.SolarSystem, []error)
+	Fetch func(keys []uint64) ([]*neo.SolarSystem, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewSolarSystemLoader(config SolarSystemLoaderConfig) *SolarSystemLoader {
 // SolarSystemLoader batches and caches requests
 type SolarSystemLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*killboard.SolarSystem, []error)
+	fetch func(keys []uint64) ([]*neo.SolarSystem, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type SolarSystemLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*killboard.SolarSystem
+	cache map[uint64]*neo.SolarSystem
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -56,25 +56,25 @@ type SolarSystemLoader struct {
 
 type solarSystemLoaderBatch struct {
 	keys    []uint64
-	data    []*killboard.SolarSystem
+	data    []*neo.SolarSystem
 	error   []error
 	closing bool
 	done    chan struct{}
 }
 
 // Load a SolarSystem by key, batching and caching will be applied automatically
-func (l *SolarSystemLoader) Load(key uint64) (*killboard.SolarSystem, error) {
+func (l *SolarSystemLoader) Load(key uint64) (*neo.SolarSystem, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a SolarSystem.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *SolarSystemLoader) LoadThunk(key uint64) func() (*killboard.SolarSystem, error) {
+func (l *SolarSystemLoader) LoadThunk(key uint64) func() (*neo.SolarSystem, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
-		return func() (*killboard.SolarSystem, error) {
+		return func() (*neo.SolarSystem, error) {
 			return it, nil
 		}
 	}
@@ -85,10 +85,10 @@ func (l *SolarSystemLoader) LoadThunk(key uint64) func() (*killboard.SolarSystem
 	pos := batch.keyIndex(l, key)
 	l.mu.Unlock()
 
-	return func() (*killboard.SolarSystem, error) {
+	return func() (*neo.SolarSystem, error) {
 		<-batch.done
 
-		var data *killboard.SolarSystem
+		var data *neo.SolarSystem
 		if pos < len(batch.data) {
 			data = batch.data[pos]
 		}
@@ -113,14 +113,14 @@ func (l *SolarSystemLoader) LoadThunk(key uint64) func() (*killboard.SolarSystem
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *SolarSystemLoader) LoadAll(keys []uint64) ([]*killboard.SolarSystem, []error) {
-	results := make([]func() (*killboard.SolarSystem, error), len(keys))
+func (l *SolarSystemLoader) LoadAll(keys []uint64) ([]*neo.SolarSystem, []error) {
+	results := make([]func() (*neo.SolarSystem, error), len(keys))
 
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
 
-	solarSystems := make([]*killboard.SolarSystem, len(keys))
+	solarSystems := make([]*neo.SolarSystem, len(keys))
 	errors := make([]error, len(keys))
 	for i, thunk := range results {
 		solarSystems[i], errors[i] = thunk()
@@ -131,13 +131,13 @@ func (l *SolarSystemLoader) LoadAll(keys []uint64) ([]*killboard.SolarSystem, []
 // LoadAllThunk returns a function that when called will block waiting for a SolarSystems.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *SolarSystemLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.SolarSystem, []error) {
-	results := make([]func() (*killboard.SolarSystem, error), len(keys))
+func (l *SolarSystemLoader) LoadAllThunk(keys []uint64) func() ([]*neo.SolarSystem, []error) {
+	results := make([]func() (*neo.SolarSystem, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
 	}
-	return func() ([]*killboard.SolarSystem, []error) {
-		solarSystems := make([]*killboard.SolarSystem, len(keys))
+	return func() ([]*neo.SolarSystem, []error) {
+		solarSystems := make([]*neo.SolarSystem, len(keys))
 		errors := make([]error, len(keys))
 		for i, thunk := range results {
 			solarSystems[i], errors[i] = thunk()
@@ -149,7 +149,7 @@ func (l *SolarSystemLoader) LoadAllThunk(keys []uint64) func() ([]*killboard.Sol
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *SolarSystemLoader) Prime(key uint64, value *killboard.SolarSystem) bool {
+func (l *SolarSystemLoader) Prime(key uint64, value *neo.SolarSystem) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -169,9 +169,9 @@ func (l *SolarSystemLoader) Clear(key uint64) {
 	l.mu.Unlock()
 }
 
-func (l *SolarSystemLoader) unsafeSet(key uint64, value *killboard.SolarSystem) {
+func (l *SolarSystemLoader) unsafeSet(key uint64, value *neo.SolarSystem) {
 	if l.cache == nil {
-		l.cache = map[uint64]*killboard.SolarSystem{}
+		l.cache = map[uint64]*neo.SolarSystem{}
 	}
 	l.cache[key] = value
 }
