@@ -118,27 +118,36 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 	if err != nil {
 		e.Logger.WithError(err).Fatal("unable to ping redis server")
 	}
-
+	// Make sure that redis returned pong to ping
 	if pong != "PONG" {
 		e.Logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
 	}
+	// Lets retrieve the channel from the cli
 	channel := c.String("channel")
 
+	// Lets get the most recent record from the end of the set to determine the score to use
 	results, err := e.Redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
 	if err != nil {
 		e.Logger.WithError(err).Fatal("unable to get max score of redis z range")
 	}
+
+	// If we received more than one result, something is wrong and we need to bail
 	if len(results) > 1 {
 		e.Logger.WithError(err).Fatal("unable to determine score")
 	}
+	// Default the score to 0 incase the set is empty
 	score := float64(0)
 	if len(results) == 1 {
+		// Get the score
 		score = results[0].Score
 	}
 
+	// Start the dispatch iterator
 	dispatched := 0
 
+	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
+
 		score++
 		msg, err := json.Marshal(Message{
 			ID:   id,
@@ -156,7 +165,8 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 		dispatched++
 
 		for {
-			count, err := e.Redis.ZCount("killhashes", "-inf", "+inf").Result()
+
+			count, err := e.Redis.ZCount(channel, "-inf", "+inf").Result()
 			if err != nil {
 				e.Logger.WithError(err).Fatal("unable to get count of redis zset")
 			}
@@ -175,6 +185,7 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 			}
 
 			time.Sleep(time.Second * 5)
+
 		}
 
 	}

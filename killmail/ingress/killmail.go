@@ -31,13 +31,15 @@ type Ingresser struct {
 
 func Action(c *cli.Context) {
 	channel := c.String("channel")
+	gSleep := c.Int64("gSleep")
+	gLimit := c.Int64("gLimit")
 
 	i := &Ingresser{
 		core.New(),
 	}
 
 	// Limiter is a wrapper around our job thats track GoRoutines and makes sure we don't have tomany in flight at a time.
-	limit := limiter.NewConcurrencyLimiter(50)
+	limit := limiter.NewConcurrencyLimiter(int(gLimit))
 
 	for {
 		count, err := i.Redis.ZCount(channel, "-inf", "+inf").Result()
@@ -63,7 +65,7 @@ func Action(c *cli.Context) {
 			limit.ExecuteWithTicket(func(workerID int) {
 				i.HandleMessage(message, workerID)
 			})
-			time.Sleep(time.Millisecond * 20)
+			time.Sleep(time.Millisecond * time.Duration(gSleep))
 		}
 
 	}

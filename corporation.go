@@ -1,8 +1,14 @@
 package killboard
 
 import (
+	"context"
 	"time"
 )
+
+type CorporationRespository interface {
+	Corporation(ctx context.Context, id uint64) (*Corporation, error)
+	CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*Corporation, error)
+}
 
 type Corporation struct {
 	ID          uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`

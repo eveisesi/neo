@@ -6,7 +6,8 @@ import (
 )
 
 type AllianceRespository interface {
-	One(ctx context.Context, id uint64) *Alliance
+	Alliance(ctx context.Context, id uint64) (*Alliance, error)
+	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*Alliance, error)
 }
 
 // Alliance is an object representing the database table.

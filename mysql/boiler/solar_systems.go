@@ -24,12 +24,12 @@ import (
 
 // SolarSystem is an object representing the database table.
 type SolarSystem struct {
-	ID              int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name            null.String `boil:"name" json:"name,omitempty" toml:"name" yaml:"name,omitempty"`
-	RegionID        int64       `boil:"region_id" json:"region_id" toml:"region_id" yaml:"region_id"`
-	ConstellationID int64       `boil:"constellation_id" json:"constellation_id" toml:"constellation_id" yaml:"constellation_id"`
-	FactionID       null.Int64  `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	SunTypeID       null.Int64  `boil:"sun_type_id" json:"sun_type_id,omitempty" toml:"sun_type_id" yaml:"sun_type_id,omitempty"`
+	RegionID        uint64      `boil:"region_id" json:"region_id" toml:"region_id" yaml:"region_id"`
+	ConstellationID uint64      `boil:"constellation_id" json:"constellation_id" toml:"constellation_id" yaml:"constellation_id"`
+	FactionID       null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
+	SunTypeID       null.Uint64 `boil:"sun_type_id" json:"sun_type_id,omitempty" toml:"sun_type_id" yaml:"sun_type_id,omitempty"`
 	PosX            float64     `boil:"pos_x" json:"pos_x" toml:"pos_x" yaml:"pos_x"`
 	PosY            float64     `boil:"pos_y" json:"pos_y" toml:"pos_y" yaml:"pos_y"`
 	PosZ            float64     `boil:"pos_z" json:"pos_z" toml:"pos_z" yaml:"pos_z"`
@@ -95,12 +95,12 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 }
 
 var SolarSystemWhere = struct {
-	ID              whereHelperint64
+	ID              whereHelperuint64
 	Name            whereHelpernull_String
-	RegionID        whereHelperint64
-	ConstellationID whereHelperint64
-	FactionID       whereHelpernull_Int64
-	SunTypeID       whereHelpernull_Int64
+	RegionID        whereHelperuint64
+	ConstellationID whereHelperuint64
+	FactionID       whereHelpernull_Uint64
+	SunTypeID       whereHelpernull_Uint64
 	PosX            whereHelperfloat64
 	PosY            whereHelperfloat64
 	PosZ            whereHelperfloat64
@@ -108,12 +108,12 @@ var SolarSystemWhere = struct {
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
 }{
-	ID:              whereHelperint64{field: "`solar_systems`.`id`"},
+	ID:              whereHelperuint64{field: "`solar_systems`.`id`"},
 	Name:            whereHelpernull_String{field: "`solar_systems`.`name`"},
-	RegionID:        whereHelperint64{field: "`solar_systems`.`region_id`"},
-	ConstellationID: whereHelperint64{field: "`solar_systems`.`constellation_id`"},
-	FactionID:       whereHelpernull_Int64{field: "`solar_systems`.`faction_id`"},
-	SunTypeID:       whereHelpernull_Int64{field: "`solar_systems`.`sun_type_id`"},
+	RegionID:        whereHelperuint64{field: "`solar_systems`.`region_id`"},
+	ConstellationID: whereHelperuint64{field: "`solar_systems`.`constellation_id`"},
+	FactionID:       whereHelpernull_Uint64{field: "`solar_systems`.`faction_id`"},
+	SunTypeID:       whereHelpernull_Uint64{field: "`solar_systems`.`sun_type_id`"},
 	PosX:            whereHelperfloat64{field: "`solar_systems`.`pos_x`"},
 	PosY:            whereHelperfloat64{field: "`solar_systems`.`pos_y`"},
 	PosZ:            whereHelperfloat64{field: "`solar_systems`.`pos_z`"},
@@ -244,7 +244,7 @@ func SolarSystems(mods ...qm.QueryMod) solarSystemQuery {
 
 // FindSolarSystem retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindSolarSystem(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*SolarSystem, error) {
+func FindSolarSystem(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*SolarSystem, error) {
 	solarSystemObj := &SolarSystem{}
 
 	sel := "*"
@@ -765,7 +765,7 @@ func (o *SolarSystemSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // SolarSystemExists checks if the SolarSystem row exists.
-func SolarSystemExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
+func SolarSystemExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `solar_systems` where `id`=? limit 1)"
 

@@ -1,10 +1,16 @@
 package killboard
 
 import (
+	"context"
 	"time"
 
 	"github.com/volatiletech/null"
 )
+
+type CharacterRespository interface {
+	Character(ctx context.Context, id uint64) (*Character, error)
+	CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*Character, error)
+}
 
 type Character struct {
 	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`

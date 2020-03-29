@@ -1,10 +1,52 @@
 package killboard
 
 import (
+	"context"
 	"time"
 
 	"github.com/volatiletech/null"
 )
+
+type KillmailRespository interface {
+	Killmail(ctx context.Context, id uint64) (*Killmail, error)
+	KillmailsByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
+	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
+	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
+	KillmailsByFactionID(ctx context.Context, id uint64) ([]*Killmail, error)
+	KillmailAttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailAttacker, error)
+	KillmailItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
+	KillmailItemsByParentIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
+	KillmailVictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailVictim, error)
+}
+
+type KillmailItemLoaderType string
+
+const (
+	ParentKillmailItem KillmailItemLoaderType = "parent"
+	ChildKillmailItem  KillmailItemLoaderType = "child"
+)
+
+var AllKillmailItemLoaderTypes = []KillmailItemLoaderType{
+	ParentKillmailItem,
+	ChildKillmailItem,
+}
+
+func (e KillmailItemLoaderType) IsValid() bool {
+	switch e {
+	case ParentKillmailItem, ChildKillmailItem:
+		return true
+	}
+	return false
+}
+
+func (e KillmailItemLoaderType) String() string {
+	return string(e)
+}
+
+type KillmailItemLoader struct {
+	ID   uint64
+	Type KillmailItemLoaderType // Will be set to either parent or child. If parent, calls KillmailItemsByKillmailIDs, else calls KillmailItemsByParentIDs
+}
 
 type Killmail struct {
 	ID            uint64     `json:"id"`
@@ -47,7 +89,7 @@ type KillmailItem struct {
 }
 
 type KillmailVictim struct {
-	ID            uint              `json:"id"`
+	ID            uint64            `json:"id"`
 	KillmailID    uint64            `json:"killmail_id"`
 	AllianceID    null.Uint64       `json:"alliance_id"`
 	CharacterID   null.Uint64       `json:"character_id"`

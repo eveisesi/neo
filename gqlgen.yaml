@@ -1,0 +1,42 @@
+schema:
+  - "graphql/schema/*.graphql"
+exec:
+  filename: graphql/service/generated.go
+  package: service
+model:
+  filename: graphql/models/generated.go
+  package: models
+resolver:
+  filename: graphql/resolvers/resolver.go # where to write them
+  type: Resolver # what's the resolver root implementation type called?
+
+autobind: []
+
+models:
+  Float:
+    model:
+      - github.com/99designs/gqlgen/graphql.Float
+      - github.com/ddouglas/killboard/graphql/scalar.Float64
+      - github.com/ddouglas/killboard/graphql/scalar/null.Float64
+  String:
+    model:
+      - github.com/99designs/gqlgen/graphql.String
+      - github.com/ddouglas/killboard/graphql/scalar.String
+      - github.com/ddouglas/killboard/graphql/scalar/null.String
+  Int:
+    model:
+      - github.com/99designs/gqlgen/graphql.Int
+      - github.com/ddouglas/killboard/graphql/scalar.Int64
+      - github.com/ddouglas/killboard/graphql/scalar.Uint64
+      - github.com/ddouglas/killboard/graphql/scalar/null.Int64
+      - github.com/ddouglas/killboard/graphql/scalar/null.Uint64
+  Time:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
+      - github.com/ddouglas/killboard/graphql/scalar.Time
+      - github.com/ddouglas/killboard/graphql/scalar/null.Time
+  Boolean:
+    model:
+      - github.com/99designs/gqlgen/graphql.Boolean
+      - github.com/ddouglas/killboard/graphql/scalar.Bool
+      - github.com/ddouglas/killboard/graphql/scalar/null.Bool

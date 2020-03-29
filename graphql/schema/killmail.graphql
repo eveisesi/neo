@@ -1,0 +1,41 @@
+extend type Query {
+    killmail(id: Int!): Killmail!
+}
+
+type Killmail @goModel(model: "github.com/ddouglas/killboard.Killmail") {
+    id: Int!
+    hash: String!
+    moon_id: Int
+    solar_system_id: Int!
+    war_id: Int
+    killmail_time: Time!
+    attackers: [KillmailAttacker]! @goField(forceResolver: true)
+    victim: KillmailVictim! @goField(forceResolver: true)
+}
+
+type KillmailAttacker
+    @goModel(model: "github.com/ddouglas/killboard.KillmailAttacker") {
+    id: Int!
+    killmailID: Int!
+    allianceID: Int
+    characterID: Int
+    corporationID: Int
+    factionID: Int
+    damageDone: Int!
+    finalBlow: Boolean!
+    securityStatus: Float!
+    shipTypeID: Int
+    weaponTypeID: Int
+}
+
+type KillmailVictim
+    @goModel(model: "github.com/ddouglas/killboard.KillmailVictim") {
+    id: Int!
+    killmailID: Int!
+    allianceID: Int
+    characterID: Int
+    corporationID: Int!
+    factionID: Int
+    damageTaken: Int!
+    shipTypeID: Int!
+}

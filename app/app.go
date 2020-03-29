@@ -6,11 +6,18 @@ import (
 	"os"
 	"time"
 
+	"github.com/ddouglas/killboard/services/alliance"
+	"github.com/ddouglas/killboard/services/character"
+	"github.com/ddouglas/killboard/services/corporation"
+	"github.com/ddouglas/killboard/services/universe"
+
 	"github.com/ddouglas/killboard/esi"
 	"github.com/ddouglas/killboard/mysql"
+	"github.com/ddouglas/killboard/services/killmail"
 	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -18,12 +25,18 @@ import (
 )
 
 type App struct {
-	Logger *logrus.Entry
+	Logger *logrus.Logger
 	DB     *sqlx.DB
 	Redis  *redis.Client
 	Client *http.Client
 	ESI    *esi.Client
 	Config *config
+
+	Alliance    alliance.Service
+	Character   character.Service
+	Corporation corporation.Service
+	Killmail    killmail.Service
+	Universe    universe.Service
 }
 
 type config struct {
@@ -45,6 +58,8 @@ type config struct {
 
 	// zkillboard params
 	ZUAgent string `required:"true"`
+
+	ServerPort uint `envconfig:"SERVER_PORT" required:"true"`
 }
 
 func New() *App {
@@ -54,19 +69,13 @@ func New() *App {
 		log.Fatal(err)
 	}
 
-	logger := logrus.New()
-
-	logger.SetOutput(os.Stdout)
-
-	level, err := logrus.ParseLevel(cfg.LogLevel)
+	logger, err := makeLogger(cfg.LogLevel)
 	if err != nil {
-		logger.WithError(err).Fatal("failed to configure log level")
+		if logger != nil {
+			logger.WithError(err).Fatal("failed to configure logger")
+		}
+		log.Fatal(err)
 	}
-
-	logger.SetLevel(level)
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
 
 	db, err := makeDB(cfg)
 	if err != nil {
@@ -101,20 +110,25 @@ func New() *App {
 
 	esiClient := esi.New(client, cfg.ESIHost, cfg.ESIUAgent)
 
-	host, err := os.Hostname()
-	if err != nil {
-		logger.WithError(err).Fatal("unable to determine hostname")
-	}
-
-	entry := logger.WithField("host", host)
+	alliance := alliance.NewService(mysql.NewAllianceRepository(db))
+	character := character.NewService(mysql.NewCharacterRepository(db))
+	corporation := corporation.NewService(mysql.NewCorporationRepository(db))
+	killmail := killmail.NewService(mysql.NewKillmailRepository(db))
+	universe := universe.NewService(mysql.NewUniverseRepository(db))
 
 	return &App{
-		Logger: entry,
+		Logger: logger,
 		DB:     db,
 		Redis:  redisClient,
 		Client: client,
 		ESI:    esiClient,
 		Config: &cfg,
+
+		Alliance:    alliance,
+		Character:   character,
+		Corporation: corporation,
+		Killmail:    killmail,
+		Universe:    universe,
 	}
 
 }
@@ -144,4 +158,22 @@ func loadEnv() (config config, err error) {
 	err = envconfig.Process("", &config)
 
 	return
+}
+
+func makeLogger(logLevel string) (*logrus.Logger, error) {
+	logger := logrus.New()
+
+	logger.SetOutput(os.Stdout)
+
+	level, err := logrus.ParseLevel(logLevel)
+	if err != nil {
+		return logger, errors.Wrap(err, "failed to configure log level")
+	}
+
+	logger.SetLevel(level)
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
+
+	return logger, err
 }

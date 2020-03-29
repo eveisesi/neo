@@ -6,11 +6,14 @@ import (
 
 	"github.com/ddouglas/killboard/killmail/egress"
 	"github.com/ddouglas/killboard/killmail/ingress"
+	"github.com/ddouglas/killboard/server"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
 )
 
-var app *cli.App
+var (
+	app *cli.App
+)
 
 func init() {
 	err := godotenv.Load("cmd/killboard/.env")
@@ -30,7 +33,17 @@ func init() {
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:     "channel",
-					Usage:    "Channel to subscribe to using Redis Subscribe",
+					Usage:    "channel is the key to use when push killmail ids and hashes to redis",
+					Required: true,
+				},
+				cli.Int64Flag{
+					Name:     "gLimit",
+					Usage:    "gLimit is the number of goroutines that the limiter should allow to be in flight at any one time",
+					Required: true,
+				},
+				cli.Int64Flag{
+					Name:     "gSleep",
+					Usage:    "gSleep is the number of milliseconds the limiter will sleep between launching go routines when a slot is available",
 					Required: true,
 				},
 			},
@@ -41,16 +54,21 @@ func init() {
 			Action: egress.Action,
 			Flags: []cli.Flag{
 				cli.StringFlag{
+					Name:     "channel",
+					Usage:    "channel is the key to use when  pulling killmail ids and hashes from redis to be resolved and inserted into the database",
+					Required: true,
+				},
+				cli.StringFlag{
 					Name:     "date",
 					Usage:    "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
 					Required: true,
 				},
-				cli.StringFlag{
-					Name:     "channel",
-					Usage:    "Channel to publish messages to using Redis Publish",
-					Required: true,
-				},
 			},
+		},
+		cli.Command{
+			Name:   "serve",
+			Usage:  "Starts an HTTP Server to serve killmail data",
+			Action: server.Action,
 		},
 	}
 }
