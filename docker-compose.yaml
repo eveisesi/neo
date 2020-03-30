@@ -14,12 +14,12 @@ services:
             driver: "json-file"
             options:
                 max-size: "50m"
-                max-file: 10
+                max-file: "10"
     egress:
         image: neo:latest
         network_mode: "host"
         restart: on-failure
-        command: ./killboard egress --channel=killhashes --date=20080617
+        command: ./killboard egress --channel=killhashes --date=20120810
         container_name: egress
         hostname: egress
         env_file:
@@ -28,4 +28,4 @@ services:
             driver: "json-file"
             options:
                 max-size: "50m"
-                max-file: 10
+                max-file: "10"
