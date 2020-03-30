@@ -141,7 +141,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Killmail         func(childComplexity int, id int) int
+		Killmail         func(childComplexity int, id int, hash string) int
+		KillmailRecent   func(childComplexity int, page *int) int
 		QueryPlaceholder func(childComplexity int) int
 	}
 
@@ -197,7 +198,8 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	QueryPlaceholder(ctx context.Context) (bool, error)
-	Killmail(ctx context.Context, id int) (*neo.Killmail, error)
+	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
+	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
 }
 
 type executableSchema struct {
@@ -659,7 +661,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Killmail(childComplexity, args["id"].(int)), true
+		return e.complexity.Query.Killmail(childComplexity, args["id"].(int), args["hash"].(string)), true
+
+	case "Query.killmailRecent":
+		if e.complexity.Query.KillmailRecent == nil {
+			break
+		}
+
+		args, err := ec.field_Query_killmailRecent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.KillmailRecent(childComplexity, args["page"].(*int)), true
 
 	case "Query.queryPlaceholder":
 		if e.complexity.Query.QueryPlaceholder == nil {
@@ -860,7 +874,8 @@ var parsedSchema = gqlparser.MustLoadSchema(
 }
 `},
 	&ast.Source{Name: "graphql/schema/killmail.graphql", Input: `extend type Query {
-    killmail(id: Int!): Killmail!
+    killmail(id: Int!, hash: String!): Killmail!
+    killmailRecent(page: Int = 1): [Killmail]!
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
@@ -993,6 +1008,20 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_killmailRecent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_killmail_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1004,6 +1033,14 @@ func (ec *executionContext) field_Query_killmail_args(ctx context.Context, rawAr
 		}
 	}
 	args["id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["hash"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["hash"] = arg1
 	return args, nil
 }
 
@@ -3316,7 +3353,7 @@ func (ec *executionContext) _Query_killmail(ctx context.Context, field graphql.C
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Killmail(rctx, args["id"].(int))
+		return ec.resolvers.Query().Killmail(rctx, args["id"].(int), args["hash"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3332,6 +3369,50 @@ func (ec *executionContext) _Query_killmail(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_killmailRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_killmailRecent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().KillmailRecent(rctx, args["page"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.Killmail)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5760,6 +5841,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "killmailRecent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_killmailRecent(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -6187,6 +6282,43 @@ func (ec *executionContext) marshalNInt2uint64(ctx context.Context, sel ast.Sele
 
 func (ec *executionContext) marshalNKillmail2githubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v neo.Killmail) graphql.Marshaler {
 	return ec._Killmail(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v []*neo.Killmail) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v *neo.Killmail) graphql.Marshaler {
@@ -6633,6 +6765,40 @@ func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐU
 
 func (ec *executionContext) marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx context.Context, sel ast.SelectionSet, v null.Uint64) graphql.Marshaler {
 	return null1.MarshalUint64(v)
+}
+
+func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2int(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2int(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOKillmail2githubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v neo.Killmail) graphql.Marshaler {
+	return ec._Killmail(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v *neo.Killmail) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Killmail(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOKillmailAttacker2githubᚗcomᚋeveisesiᚋneoᚐKillmailAttacker(ctx context.Context, sel ast.SelectionSet, v neo.KillmailAttacker) graphql.Marshaler {

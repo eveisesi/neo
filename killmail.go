@@ -8,7 +8,8 @@ import (
 )
 
 type KillmailRespository interface {
-	Killmail(ctx context.Context, id uint64) (*Killmail, error)
+	Killmail(ctx context.Context, id uint64, hash string) (*Killmail, error)
+	KillmailRecent(ctx context.Context, page *int) ([]*Killmail, error)
 	KillmailsByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)

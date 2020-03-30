@@ -7,8 +7,12 @@ import (
 	"github.com/eveisesi/neo/graphql/service"
 )
 
-func (r *queryResolver) Killmail(ctx context.Context, id int) (*neo.Killmail, error) {
-	return r.KillmailServ.Killmail(ctx, uint64(id))
+func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error) {
+	return r.KillmailServ.Killmail(ctx, uint64(id), hash)
+}
+
+func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
+	return r.KillmailServ.KillmailRecent(ctx, page)
 }
 
 func (r *Resolver) Killmail() service.KillmailResolver {

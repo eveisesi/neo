@@ -1,5 +1,6 @@
 extend type Query {
-    killmail(id: Int!): Killmail!
+    killmail(id: Int!, hash: String!): Killmail!
+    killmailRecent(page: Int = 1): [Killmail]!
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {

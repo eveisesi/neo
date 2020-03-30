@@ -22,14 +22,41 @@ func NewKillmailRepository(db *sqlx.DB) neo.KillmailRespository {
 	}
 }
 
-func (r *killmailRepository) Killmail(ctx context.Context, id uint64) (*neo.Killmail, error) {
+func (r *killmailRepository) Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
 
 	var killmail = neo.Killmail{}
 	err := boiler.Killmails(
 		boiler.KillmailWhere.ID.EQ(id),
+		boiler.KillmailWhere.Hash.EQ(hash),
 	).Bind(ctx, r.db, &killmail)
 
 	return &killmail, err
+
+}
+
+func (r *killmailRepository) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
+
+	limit := 50
+	offset := 0
+
+	if page != nil {
+		limit = *page * 50
+		offset = limit - 50
+	}
+
+	var killmails = make([]*neo.Killmail, 0)
+	err := boiler.Killmails(
+		qm.Limit(limit),
+		qm.Offset(offset),
+		qm.OrderBy(
+			fmt.Sprintf(
+				"%s DESC",
+				boiler.KillmailColumns.ID,
+			),
+		),
+	).Bind(ctx, r.db, &killmails)
+
+	return killmails, err
 
 }
 
