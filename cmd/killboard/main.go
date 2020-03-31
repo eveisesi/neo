@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-	err := godotenv.Load("cmd/killboard/.env")
+	err := godotenv.Load(".env")
 	if err != nil {
 		log.Println("godotenv: ", err)
 	}
