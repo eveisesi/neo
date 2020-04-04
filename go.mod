@@ -35,5 +35,6 @@ require (
 	github.com/volatiletech/sqlboiler v3.6.1+incompatible
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20200328031815-3db5fc6bac03 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.2.8 // indirect
 )
