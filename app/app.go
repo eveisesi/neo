@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +13,7 @@ import (
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/universe"
+	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/eveisesi/neo/esi"
 	"github.com/eveisesi/neo/mysql"
@@ -163,7 +167,31 @@ func loadEnv() (config config, err error) {
 func makeLogger(logLevel string) (*logrus.Logger, error) {
 	logger := logrus.New()
 
-	logger.SetOutput(os.Stdout)
+	logger.SetOutput(ioutil.Discard)
+
+	logger.AddHook(&writerHook{
+		Writer:    os.Stdout,
+		LogLevels: logrus.AllLevels,
+	})
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+
+	logger.AddHook(&writerHook{
+		Writer: &lumberjack.Logger{
+			Filename: fmt.Sprintf("logs/%s/%s.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
+			MaxSize:  50,
+			Compress: true,
+		},
+		LogLevels: []logrus.Level{
+			logrus.PanicLevel,
+			logrus.FatalLevel,
+			logrus.ErrorLevel,
+			logrus.WarnLevel,
+		},
+	})
 
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
@@ -176,4 +204,23 @@ func makeLogger(logLevel string) (*logrus.Logger, error) {
 	})
 
 	return logger, err
+}
+
+type writerHook struct {
+	Writer    io.Writer
+	LogLevels []logrus.Level
+}
+
+func (w *writerHook) Fire(entry *logrus.Entry) error {
+	line, err := entry.String()
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Writer.Write([]byte(line))
+	return err
+}
+
+func (w *writerHook) Levels() []logrus.Level {
+	return w.LogLevels
 }
