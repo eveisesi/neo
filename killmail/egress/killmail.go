@@ -199,7 +199,7 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 			return
 		}
 
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Second * 15)
 
 	}
 
