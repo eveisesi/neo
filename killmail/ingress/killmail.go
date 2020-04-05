@@ -54,7 +54,7 @@ func Action(c *cli.Context) {
 		}
 
 		// Hashes are on the set. Fetch them
-		results, err := i.Redis.ZPopMax(channel, 10).Result()
+		results, err := i.Redis.ZPopMax(channel, gLimit).Result()
 		if err != nil {
 			i.Logger.WithError(err).Fatal("unable to retrieve records from Redis")
 		}
