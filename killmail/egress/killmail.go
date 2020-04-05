@@ -4,17 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"time"
 
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 
-	"github.com/eveisesi/neo"
-
 	"github.com/urfave/cli"
 
+	"github.com/eveisesi/neo"
 	core "github.com/eveisesi/neo/app"
 )
 
@@ -33,9 +31,24 @@ func Action(c *cli.Context) error {
 		core.New(),
 	}
 
-	date, err := time.Parse("20060102", c.String("date"))
+	redisKey := "neo:egress:date"
+	result, err := e.Redis.Get(redisKey).Result()
+	if err != nil && err.Error() != "redis: nil" {
+		e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+	}
+
+	if result == "" {
+		result = c.String("date")
+	}
+
+	date, err := time.Parse("20060102", result)
 	if err != nil {
 		e.Logger.WithError(err).Fatal("unable to parse provided date")
+	}
+
+	_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
+	if err != nil {
+		e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
 	}
 
 	attempts := 1
@@ -106,7 +119,10 @@ func Action(c *cli.Context) error {
 
 		attempts = 1
 		date = date.AddDate(0, 0, 1)
-
+		_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
+		if err != nil {
+			e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
+		}
 	}
 
 }
@@ -164,29 +180,26 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 		e.Redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
 		dispatched++
 
-		for {
+	}
 
-			count, err := e.Redis.ZCount(channel, "-inf", "+inf").Result()
-			if err != nil {
-				e.Logger.WithError(err).Fatal("unable to get count of redis zset")
-			}
+	for {
 
-			if math.Mod(float64(dispatched), 100) == float64(0) {
-				e.Logger.WithFields(logrus.Fields{
-					"total":         len(hashes),
-					"dispatched":    dispatched,
-					"remaining":     len(hashes) - dispatched,
-					"current_queue": count,
-				}).Info("dispatched hold")
-			}
-
-			if count < 1000 {
-				break
-			}
-
-			time.Sleep(time.Second * 5)
-
+		count, err := e.Redis.ZCount(channel, "-inf", "+inf").Result()
+		if err != nil {
+			e.Logger.WithError(err).Fatal("unable to get count of redis zset")
 		}
+
+		e.Logger.WithFields(logrus.Fields{
+			"total":         len(hashes),
+			"dispatched":    dispatched,
+			"remaining":     len(hashes) - dispatched,
+			"current_queue": count,
+		}).Info("queue status")
+		if count < 200 {
+			return
+		}
+
+		time.Sleep(time.Minute * 1)
 
 	}
 
