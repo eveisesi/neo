@@ -12,7 +12,9 @@ import (
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/universe"
+	"golang.org/x/oauth2"
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/eveisesi/neo/esi"
@@ -40,6 +42,7 @@ type App struct {
 	Character   character.Service
 	Corporation corporation.Service
 	Killmail    killmail.Service
+	Token       token.Service
 	Universe    universe.Service
 }
 
@@ -64,6 +67,13 @@ type config struct {
 	ZUAgent string `required:"true"`
 
 	ServerPort uint `envconfig:"SERVER_PORT" required:"true"`
+
+	SSOClientID         string `envconfig:"SSO_CLIENT_ID" required:"true"`
+	SSOClientSecret     string `envconfig:"SSO_CLIENT_SECRET" required:"true"`
+	SSOCallback         string `envconfig:"SSO_CALLBACK" required:"true"`
+	SSOAuthorizationURL string `envconfig:"SSO_AUTHORIZATION_URL" required:"true"`
+	SSOTokenURL         string `envconfig:"SSO_TOKEN_URL" required:"true"`
+	SSOJWKSURL          string `envconfig:"SSO_JWKS_URL" required:"true"`
 }
 
 func New() *App {
@@ -114,11 +124,15 @@ func New() *App {
 
 	esiClient := esi.New(client, cfg.ESIHost, cfg.ESIUAgent)
 
-	alliance := alliance.NewService(mysql.NewAllianceRepository(db))
-	character := character.NewService(mysql.NewCharacterRepository(db))
-	corporation := corporation.NewService(mysql.NewCorporationRepository(db))
-	killmail := killmail.NewService(mysql.NewKillmailRepository(db))
-	universe := universe.NewService(mysql.NewUniverseRepository(db))
+	oauthConf := &oauth2.Config{
+		ClientID:     cfg.SSOClientID,
+		ClientSecret: cfg.SSOClientSecret,
+		RedirectURL:  cfg.SSOCallback,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  cfg.SSOAuthorizationURL,
+			TokenURL: cfg.SSOTokenURL,
+		},
+	}
 
 	return &App{
 		Logger: logger,
@@ -128,11 +142,12 @@ func New() *App {
 		ESI:    esiClient,
 		Config: &cfg,
 
-		Alliance:    alliance,
-		Character:   character,
-		Corporation: corporation,
-		Killmail:    killmail,
-		Universe:    universe,
+		Alliance:    alliance.NewService(mysql.NewAllianceRepository(db)),
+		Character:   character.NewService(mysql.NewCharacterRepository(db)),
+		Corporation: corporation.NewService(mysql.NewCorporationRepository(db)),
+		Killmail:    killmail.NewService(mysql.NewKillmailRepository(db)),
+		Token:       token.NewService(client, oauthConf, logger, redisClient, cfg.SSOJWKSURL, mysql.NewTokenRepository(db)),
+		Universe:    universe.NewService(mysql.NewUniverseRepository(db)),
 	}
 
 }
@@ -158,9 +173,7 @@ func makeDB(cfg config) (*sqlx.DB, error) {
 }
 
 func loadEnv() (config config, err error) {
-
 	err = envconfig.Process("", &config)
-
 	return
 }
 

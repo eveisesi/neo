@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/handler"
+	"github.com/go-redis/redis"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"
@@ -20,6 +21,7 @@ import (
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/killmail"
+	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
@@ -29,8 +31,10 @@ import (
 type Server struct {
 	server *http.Server
 	logger *logrus.Logger
+	redis  *redis.Client
 
 	alliance    alliance.Service
+	token       token.Service
 	character   character.Service
 	corporation corporation.Service
 	killmail    killmail.Service
@@ -45,10 +49,12 @@ func Action(c *cli.Context) {
 	server := NewServer(
 		app.Config.ServerPort,
 		app.Logger,
+		app.Redis,
 		app.Alliance,
 		app.Character,
 		app.Corporation,
 		app.Killmail,
+		app.Token,
 		app.Universe,
 	)
 
@@ -72,10 +78,12 @@ func Action(c *cli.Context) {
 func NewServer(
 	port uint,
 	logger *logrus.Logger,
+	redis *redis.Client,
 	alliance alliance.Service,
 	character character.Service,
 	corporation corporation.Service,
 	killmail killmail.Service,
+	token token.Service,
 	universe universe.Service,
 ) *Server {
 
@@ -83,11 +91,13 @@ func NewServer(
 
 	s := Server{
 		logger: logger,
+		redis:  redis,
 
 		alliance:    alliance,
 		character:   character,
 		corporation: corporation,
 		killmail:    killmail,
+		token:       token,
 		universe:    universe,
 	}
 
@@ -127,6 +137,9 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		"/query",
 	))
 
+	r.Get("/auth/state", s.handleGetState)
+	r.Post("/auth/token", s.handlePostCode)
+
 	return r
 
 }
@@ -136,7 +149,7 @@ func (s *Server) GracefullyShutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *Server) WriteSuccess(w http.ResponseWriter, data interface{}, status int) error {
+func (s *Server) WriteSuccess(w http.ResponseWriter, status int, data interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 
 	if status != 0 {
