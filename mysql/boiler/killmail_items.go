@@ -27,7 +27,7 @@ type KillmailItem struct {
 	ID                uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	ParentID          null.Uint64 `boil:"parent_id" json:"parentID,omitempty" toml:"parentID" yaml:"parentID,omitempty"`
 	KillmailID        uint64      `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
-	FlagID            uint64      `boil:"flag_id" json:"flagID" toml:"flagID" yaml:"flagID"`
+	Flag              uint64      `boil:"flag" json:"flag" toml:"flag" yaml:"flag"`
 	ItemTypeID        uint64      `boil:"item_type_id" json:"itemTypeID" toml:"itemTypeID" yaml:"itemTypeID"`
 	QuantityDropped   null.Uint64 `boil:"quantity_dropped" json:"quantityDropped,omitempty" toml:"quantityDropped" yaml:"quantityDropped,omitempty"`
 	QuantityDestroyed null.Uint64 `boil:"quantity_destroyed" json:"quantityDestroyed,omitempty" toml:"quantityDestroyed" yaml:"quantityDestroyed,omitempty"`
@@ -45,7 +45,7 @@ var KillmailItemColumns = struct {
 	ID                string
 	ParentID          string
 	KillmailID        string
-	FlagID            string
+	Flag              string
 	ItemTypeID        string
 	QuantityDropped   string
 	QuantityDestroyed string
@@ -58,7 +58,7 @@ var KillmailItemColumns = struct {
 	ID:                "id",
 	ParentID:          "parent_id",
 	KillmailID:        "killmail_id",
-	FlagID:            "flag_id",
+	Flag:              "flag",
 	ItemTypeID:        "item_type_id",
 	QuantityDropped:   "quantity_dropped",
 	QuantityDestroyed: "quantity_destroyed",
@@ -75,7 +75,7 @@ var KillmailItemWhere = struct {
 	ID                whereHelperuint64
 	ParentID          whereHelpernull_Uint64
 	KillmailID        whereHelperuint64
-	FlagID            whereHelperuint64
+	Flag              whereHelperuint64
 	ItemTypeID        whereHelperuint64
 	QuantityDropped   whereHelpernull_Uint64
 	QuantityDestroyed whereHelpernull_Uint64
@@ -88,7 +88,7 @@ var KillmailItemWhere = struct {
 	ID:                whereHelperuint64{field: "`killmail_items`.`id`"},
 	ParentID:          whereHelpernull_Uint64{field: "`killmail_items`.`parent_id`"},
 	KillmailID:        whereHelperuint64{field: "`killmail_items`.`killmail_id`"},
-	FlagID:            whereHelperuint64{field: "`killmail_items`.`flag_id`"},
+	Flag:              whereHelperuint64{field: "`killmail_items`.`flag`"},
 	ItemTypeID:        whereHelperuint64{field: "`killmail_items`.`item_type_id`"},
 	QuantityDropped:   whereHelpernull_Uint64{field: "`killmail_items`.`quantity_dropped`"},
 	QuantityDestroyed: whereHelpernull_Uint64{field: "`killmail_items`.`quantity_destroyed`"},
@@ -120,8 +120,8 @@ func (*killmailItemR) NewStruct() *killmailItemR {
 type killmailItemL struct{}
 
 var (
-	killmailItemAllColumns            = []string{"id", "parent_id", "killmail_id", "flag_id", "item_type_id", "quantity_dropped", "quantity_destroyed", "item_value", "singleton", "is_parent", "created_at", "updated_at"}
-	killmailItemColumnsWithoutDefault = []string{"parent_id", "killmail_id", "flag_id", "item_type_id", "quantity_dropped", "quantity_destroyed", "singleton", "is_parent", "created_at", "updated_at"}
+	killmailItemAllColumns            = []string{"id", "parent_id", "killmail_id", "flag", "item_type_id", "quantity_dropped", "quantity_destroyed", "item_value", "singleton", "is_parent", "created_at", "updated_at"}
+	killmailItemColumnsWithoutDefault = []string{"parent_id", "killmail_id", "flag", "item_type_id", "quantity_dropped", "quantity_destroyed", "singleton", "is_parent", "created_at", "updated_at"}
 	killmailItemColumnsWithDefault    = []string{"id", "item_value"}
 	killmailItemPrimaryKeyColumns     = []string{"id"}
 )

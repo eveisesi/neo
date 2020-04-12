@@ -19,3 +19,9 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     published: Boolean!
     marketGroupID: Int
 }
+
+type TypeFlag @goModel(model: "github.com/eveisesi/neo.TypeFlag") {
+    id: Int!
+    name: String!
+    text: String!
+}

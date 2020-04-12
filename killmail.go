@@ -79,7 +79,7 @@ type KillmailItem struct {
 	ID                uint64      `json:"id"`
 	ParentID          null.Uint64 `json:"parent_id"`
 	KillmailID        uint64      `json:"killmail_id"`
-	FlagID            uint64      `json:"flag_id"`
+	Flag              uint64      `json:"flag"`
 	ItemTypeID        uint64      `json:"item_type_id"`
 	QuantityDropped   null.Uint64 `json:"quantity_dropped"`
 	QuantityDestroyed null.Uint64 `json:"quantity_destroyed"`

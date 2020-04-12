@@ -44,8 +44,6 @@ type Server struct {
 func Action(c *cli.Context) {
 	app := core.New()
 
-	app.Logger.WithField("port", app.Config.ServerPort).Info("attempting to start server...")
-
 	server := NewServer(
 		app.Config.ServerPort,
 		app.Logger,
@@ -57,6 +55,7 @@ func Action(c *cli.Context) {
 		app.Token,
 		app.Universe,
 	)
+	app.Logger.WithField("port", app.Config.ServerPort).Info("attempting to start server...")
 
 	go func() {
 		if err := server.server.ListenAndServe(); err != nil {
@@ -65,13 +64,20 @@ func Action(c *cli.Context) {
 		}
 	}()
 
+	app.Logger.WithField("port", app.Config.ServerPort).Info("server started")
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	<-stop
 	app.Logger.Info("attempting to gracefully shutdown server")
 
-	server.GracefullyShutdown(context.Background())
+	err := server.GracefullyShutdown(context.Background())
+	if err != nil {
+		app.Logger.WithError(err).Error("unable to start serve")
+	}
+
+	app.Logger.Info("server gracefully shutdown")
 
 }
 

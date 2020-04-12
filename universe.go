@@ -8,6 +8,8 @@ import (
 )
 
 type UniverseRepository interface {
+	TypeFlag(context.Context, uint64) (*TypeFlag, error)
+	TypeFlagsByTypeFlagIDs(context.Context, []uint64) ([]*TypeFlag, error)
 	Type(ctx context.Context, id uint64) (*Type, error)
 	TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*Type, error)
 	SolarSystem(ctx context.Context, id uint64) (*SolarSystem, error)
@@ -27,6 +29,15 @@ type Type struct {
 	MarketGroupID null.Uint64  `json:"marketGroupID"`
 	CreatedAt     null.Time    `json:"created_at"`
 	UpdatedAt     null.Time    `json:"updated_at"`
+}
+
+// TypeFlag is an object representing the database table.
+type TypeFlag struct {
+	ID        uint64    `json:"id"`
+	Name      string    `json:"name"`
+	Text      string    `json:"text"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 type SolarSystem struct {

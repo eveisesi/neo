@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/eveisesi/neo/tools"
@@ -20,7 +21,12 @@ func (s *Server) handleGetState(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := s.token.GetState(random)
+	scopes := make([]string, 0)
+	if r.URL.Query().Get("scopes") != "" {
+		scopes = strings.Split(r.URL.Query().Get("scopes"), ",")
+	}
+
+	url := s.token.GetState(random, scopes)
 
 	s.WriteSuccess(w, http.StatusOK, struct {
 		URL string `json:"url"`
@@ -39,6 +45,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 	state := query.Get("state")
 	if code == "" || state == "" {
 		s.WriteError(w, http.StatusBadRequest, errors.New("code and state are required"))
+		return
 	}
 	key := fmt.Sprintf("neo:state:%s", state)
 	_, err := s.redis.Get(key).Result()

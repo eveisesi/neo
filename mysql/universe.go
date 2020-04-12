@@ -73,3 +73,30 @@ func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, i
 
 	return systems, err
 }
+
+func (r *universeRepository) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error) {
+
+	flag := neo.TypeFlag{}
+	err := boiler.TypeFlags(
+		boiler.TypeFlagWhere.ID.EQ(id),
+	).Bind(ctx, r.db, &flag)
+
+	return &flag, err
+
+}
+func (r *universeRepository) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*neo.TypeFlag, error) {
+
+	flags := make([]*neo.TypeFlag, 0)
+	err := boiler.TypeFlags(
+		qm.WhereIn(
+			fmt.Sprintf(
+				"%s IN ?",
+				boiler.TypeFlagColumns.ID,
+			),
+			convertSliceUint64ToSliceInterface(ids)...,
+		),
+	).Bind(ctx, r.db, &flags)
+
+	return flags, err
+
+}

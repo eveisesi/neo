@@ -68,6 +68,13 @@ func (r *killmailItemResolver) Type(ctx context.Context, obj *neo.KillmailItem) 
 	return r.Dataloader(ctx).TypeLoader.Load(obj.ItemTypeID)
 }
 
+func (r *killmailItemResolver) Typeflag(ctx context.Context, obj *neo.KillmailItem) (*neo.TypeFlag, error) {
+	if obj.Flag == 0 {
+		return nil, nil
+	}
+	return r.Dataloader(ctx).TypeFlagLoader.Load(obj.Flag)
+}
+
 func (r *killmailItemResolver) Items(ctx context.Context, obj *neo.KillmailItem) ([]*neo.KillmailItem, error) {
 	return r.Dataloader(ctx).KillmailItemsLoader.Load(&neo.KillmailItemLoader{
 		ID:   obj.ParentID.Uint64,

@@ -14,7 +14,7 @@ import (
 // var ssoTimeLayout = "2006-01-02T15:04:05"
 
 type Service interface {
-	GetState(state string) string
+	GetState(state string, scopes []string) string
 	GetTokenForCode(ctx context.Context, state, code string) (*neo.Token, error)
 	neo.TokenRepository
 }

@@ -30,15 +30,16 @@ func Action(c *cli.Context) error {
 	e := &Egressor{
 		core.New(),
 	}
-
 	redisKey := "neo:egress:date"
-	result, err := e.Redis.Get(redisKey).Result()
-	if err != nil && err.Error() != "redis: nil" {
-		e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
-	}
 
+	result := c.String("date")
 	if result == "" {
-		result = c.String("date")
+		var err error
+		result, err = e.Redis.Get(redisKey).Result()
+		if err != nil && err.Error() != "redis: nil" {
+			e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+			return nil
+		}
 	}
 
 	date, err := time.Parse("20060102", result)
@@ -89,11 +90,12 @@ func Action(c *cli.Context) error {
 			attempts++
 			continue
 		}
+		response.Body.Close()
 
 		if len(data) == 0 {
 			entry.WithField("uri", uri).Warn("no data received from zkillboard api")
-			// This maybe a bad date. Let increment the date and try again. If attempts reaches 3, then this process will terminate
-			date = date.AddDate(0, 0, 1)
+			// This maybe a bad date. Let decrement the date and try again. If attempts reaches 3, then this process will terminate
+			date = date.AddDate(0, 0, -1)
 			time.Sleep(time.Second * 10)
 			attempts++
 			continue
@@ -113,16 +115,17 @@ func Action(c *cli.Context) error {
 			continue
 		}
 
+		date = date.AddDate(0, 0, -1)
+		_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
+		if err != nil {
+			e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
+		}
+
 		entry.Info("handling hashes")
 		e.HandleHashes(c, hashes)
 		entry.Info("finished with hashes")
 
 		attempts = 1
-		date = date.AddDate(0, 0, 1)
-		_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
-		if err != nil {
-			e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
-		}
 	}
 
 }

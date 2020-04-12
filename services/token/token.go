@@ -12,14 +12,16 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/oauth2"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/eveisesi/neo"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetState(state string) string {
-	return s.oauth.AuthCodeURL(state)
+func (s *service) GetState(state string, scopes []string) string {
+	return s.oauth.AuthCodeURL(state, oauth2.SetAuthURLParam("scope", strings.Join(scopes, " ")))
 }
 
 func (s *service) GetTokenForCode(ctx context.Context, state, code string) (*neo.Token, error) {

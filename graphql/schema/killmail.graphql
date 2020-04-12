@@ -59,7 +59,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     id: Int!
     parentID: Int
     killmailID: Int!
-    flagID: Int!
+    flag: Int!
     itemTypeID: Int!
     quantityDropped: Int
     quantityDestroyed: Int
@@ -67,6 +67,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     isParent: Boolean!
 
     type: Type
+    typeflag: TypeFlag
     items: [KillmailItem]! @goField(forceResolver: true)
 }
 

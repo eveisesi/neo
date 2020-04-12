@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 	}
 
 	KillmailItem struct {
-		FlagID            func(childComplexity int) int
+		Flag              func(childComplexity int) int
 		ID                func(childComplexity int) int
 		IsParent          func(childComplexity int) int
 		ItemTypeID        func(childComplexity int) int
@@ -111,6 +111,7 @@ type ComplexityRoot struct {
 		QuantityDropped   func(childComplexity int) int
 		Singleton         func(childComplexity int) int
 		Type              func(childComplexity int) int
+		Typeflag          func(childComplexity int) int
 	}
 
 	KillmailPosition struct {
@@ -167,6 +168,12 @@ type ComplexityRoot struct {
 		RaceID        func(childComplexity int) int
 		Volume        func(childComplexity int) int
 	}
+
+	TypeFlag struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+		Text func(childComplexity int) int
+	}
 }
 
 type KillmailResolver interface {
@@ -183,6 +190,7 @@ type KillmailAttackerResolver interface {
 }
 type KillmailItemResolver interface {
 	Type(ctx context.Context, obj *neo.KillmailItem) (*neo.Type, error)
+	Typeflag(ctx context.Context, obj *neo.KillmailItem) (*neo.TypeFlag, error)
 	Items(ctx context.Context, obj *neo.KillmailItem) ([]*neo.KillmailItem, error)
 }
 type KillmailVictimResolver interface {
@@ -448,12 +456,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailAttacker.WeaponTypeID(childComplexity), true
 
-	case "KillmailItem.flagID":
-		if e.complexity.KillmailItem.FlagID == nil {
+	case "KillmailItem.flag":
+		if e.complexity.KillmailItem.Flag == nil {
 			break
 		}
 
-		return e.complexity.KillmailItem.FlagID(childComplexity), true
+		return e.complexity.KillmailItem.Flag(childComplexity), true
 
 	case "KillmailItem.id":
 		if e.complexity.KillmailItem.ID == nil {
@@ -524,6 +532,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KillmailItem.Type(childComplexity), true
+
+	case "KillmailItem.typeflag":
+		if e.complexity.KillmailItem.Typeflag == nil {
+			break
+		}
+
+		return e.complexity.KillmailItem.Typeflag(childComplexity), true
 
 	case "KillmailPosition.x":
 		if e.complexity.KillmailPosition.X == nil {
@@ -794,6 +809,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Type.Volume(childComplexity), true
 
+	case "TypeFlag.id":
+		if e.complexity.TypeFlag.ID == nil {
+			break
+		}
+
+		return e.complexity.TypeFlag.ID(childComplexity), true
+
+	case "TypeFlag.name":
+		if e.complexity.TypeFlag.Name == nil {
+			break
+		}
+
+		return e.complexity.TypeFlag.Name(childComplexity), true
+
+	case "TypeFlag.text":
+		if e.complexity.TypeFlag.Text == nil {
+			break
+		}
+
+		return e.complexity.TypeFlag.Text(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -934,7 +970,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     id: Int!
     parentID: Int
     killmailID: Int!
-    flagID: Int!
+    flag: Int!
     itemTypeID: Int!
     quantityDropped: Int
     quantityDestroyed: Int
@@ -942,6 +978,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     isParent: Boolean!
 
     type: Type
+    typeflag: TypeFlag
     items: [KillmailItem]! @goField(forceResolver: true)
 }
 
@@ -986,6 +1023,12 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     basePrice: Float
     published: Boolean!
     marketGroupID: Int
+}
+
+type TypeFlag @goModel(model: "github.com/eveisesi/neo.TypeFlag") {
+    id: Int!
+    name: String!
+    text: String!
 }
 `},
 )
@@ -2370,7 +2413,7 @@ func (ec *executionContext) _KillmailItem_killmailID(ctx context.Context, field 
 	return ec.marshalNInt2uint64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KillmailItem_flagID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
+func (ec *executionContext) _KillmailItem_flag(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -2389,7 +2432,7 @@ func (ec *executionContext) _KillmailItem_flagID(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.FlagID, nil
+		return obj.Flag, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2618,6 +2661,40 @@ func (ec *executionContext) _KillmailItem_type(ctx context.Context, field graphq
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _KillmailItem_typeflag(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "KillmailItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KillmailItem().Typeflag(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo.TypeFlag)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTypeFlag2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeFlag(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailItem_items(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
@@ -4065,6 +4142,117 @@ func (ec *executionContext) _Type_marketGroupID(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeFlag_id(ctx context.Context, field graphql.CollectedField, obj *neo.TypeFlag) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeFlag",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeFlag_name(ctx context.Context, field graphql.CollectedField, obj *neo.TypeFlag) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeFlag",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeFlag_text(ctx context.Context, field graphql.CollectedField, obj *neo.TypeFlag) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeFlag",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Text, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -5557,8 +5745,8 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "flagID":
-			out.Values[i] = ec._KillmailItem_flagID(ctx, field, obj)
+		case "flag":
+			out.Values[i] = ec._KillmailItem_flag(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -5590,6 +5778,17 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._KillmailItem_type(ctx, field, obj)
+				return res
+			})
+		case "typeflag":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KillmailItem_typeflag(ctx, field, obj)
 				return res
 			})
 		case "items":
@@ -5968,6 +6167,43 @@ func (ec *executionContext) _Type(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "marketGroupID":
 			out.Values[i] = ec._Type_marketGroupID(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var typeFlagImplementors = []string{"TypeFlag"}
+
+func (ec *executionContext) _TypeFlag(ctx context.Context, sel ast.SelectionSet, obj *neo.TypeFlag) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, typeFlagImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeFlag")
+		case "id":
+			out.Values[i] = ec._TypeFlag_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._TypeFlag_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "text":
+			out.Values[i] = ec._TypeFlag_text(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6866,6 +7102,17 @@ func (ec *executionContext) marshalOType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType
 		return graphql.Null
 	}
 	return ec._Type(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTypeFlag2githubᚗcomᚋeveisesiᚋneoᚐTypeFlag(ctx context.Context, sel ast.SelectionSet, v neo.TypeFlag) graphql.Marshaler {
+	return ec._TypeFlag(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTypeFlag2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeFlag(ctx context.Context, sel ast.SelectionSet, v *neo.TypeFlag) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TypeFlag(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

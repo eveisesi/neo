@@ -6,6 +6,7 @@ import (
 
 	"github.com/eveisesi/neo/killmail/egress"
 	"github.com/eveisesi/neo/killmail/ingress"
+	"github.com/eveisesi/neo/killmail/websocket"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli"
@@ -69,6 +70,23 @@ func init() {
 			Name:   "serve",
 			Usage:  "Starts an HTTP Server to serve killmail data",
 			Action: server.Action,
+		},
+		// cli.Command{
+		// 	Name:   "market",
+		// 	Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+		// 	Action: market.Action,
+		// },
+		cli.Command{
+			Name:   "listen",
+			Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+			Action: websocket.Action,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:  "channel",
+					Usage: "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
+					// Required: true,
+				},
+			},
 		},
 	}
 }

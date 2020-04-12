@@ -1,6 +1,6 @@
 #!/bin/sh
 
-source scripts/builder/.env
+source /scripts/builder/.env
 
 # Login to Docker
 echo $GITHUB_TOKEN | docker login docker.pkg.github.com -u $DOCKER_USERNAME --password-stdin

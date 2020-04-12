@@ -16,6 +16,7 @@ type Loaders struct {
 	KillmailAttackersLoader *generated.KillmailAttackersLoader
 	KillmailItemsLoader     *generated.KillmailItemsLoader
 	KillmailVictimLoader    *generated.KillmailVictimLoader
-	TypeLoader              *generated.TypeLoader
 	SolarSystemLoader       *generated.SolarSystemLoader
+	TypeLoader              *generated.TypeLoader
+	TypeFlagLoader          *generated.TypeFlagLoader
 }

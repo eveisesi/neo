@@ -36,7 +36,7 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 	})
 }
 
-func TypeLoader(ctx context.Context, univsere universe.Service) *generated.TypeLoader {
+func TypeLoader(ctx context.Context, universe universe.Service) *generated.TypeLoader {
 	return generated.NewTypeLoader(generated.TypeLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
@@ -44,7 +44,7 @@ func TypeLoader(ctx context.Context, univsere universe.Service) *generated.TypeL
 			invTypes := make([]*neo.Type, len(ids))
 			errors := make([]error, len(ids))
 
-			rows, err := univsere.TypesByTypeIDs(ctx, ids)
+			rows, err := universe.TypesByTypeIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors
@@ -60,6 +60,34 @@ func TypeLoader(ctx context.Context, univsere universe.Service) *generated.TypeL
 			}
 
 			return invTypes, nil
+		},
+	})
+}
+
+func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.TypeFlagLoader {
+	return generated.NewTypeFlagLoader(generated.TypeFlagLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([]*neo.TypeFlag, []error) {
+			invTypeFlags := make([]*neo.TypeFlag, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.TypeFlagsByTypeFlagIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			invTypeFlagsByTypeFlagID := map[uint64]*neo.TypeFlag{}
+			for _, row := range rows {
+				invTypeFlagsByTypeFlagID[row.ID] = row
+			}
+
+			for i, v := range ids {
+				invTypeFlags[i] = invTypeFlagsByTypeFlagID[v]
+			}
+
+			return invTypeFlags, nil
 		},
 	})
 }
