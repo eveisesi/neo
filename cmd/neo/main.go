@@ -60,9 +60,9 @@ func init() {
 					Required: true,
 				},
 				cli.StringFlag{
-					Name:     "date",
-					Usage:    "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
-					Required: true,
+					Name:  "date",
+					Usage: "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
+					// Required: true,
 				},
 			},
 		},
@@ -82,9 +82,9 @@ func init() {
 			Action: websocket.Action,
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:  "channel",
-					Usage: "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
-					// Required: true,
+					Name:     "channel",
+					Usage:    "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
+					Required: true,
 				},
 			},
 		},
