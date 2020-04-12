@@ -32,12 +32,14 @@ func Action(c *cli.Context) error {
 	}
 	redisKey := "neo:egress:date"
 
-	result := c.String("date")
+	result, err := e.Redis.Get(redisKey).Result()
+	if err != nil && err.Error() != "redis: nil" {
+		e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+	}
+
 	if result == "" {
-		var err error
-		result, err = e.Redis.Get(redisKey).Result()
-		if err != nil && err.Error() != "redis: nil" {
-			e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+		result = c.String("date")
+		if result == "" {
 			return nil
 		}
 	}
