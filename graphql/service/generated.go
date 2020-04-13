@@ -45,6 +45,8 @@ type ResolverRoot interface {
 	KillmailVictim() KillmailVictimResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Type() TypeResolver
+	TypeGroup() TypeGroupResolver
 }
 
 type DirectiveRoot struct {
@@ -158,8 +160,10 @@ type ComplexityRoot struct {
 	}
 
 	Type struct {
+		Attributes    func(childComplexity int) int
 		BasePrice     func(childComplexity int) int
 		Description   func(childComplexity int) int
+		Group         func(childComplexity int) int
 		GroupID       func(childComplexity int) int
 		ID            func(childComplexity int) int
 		MarketGroupID func(childComplexity int) int
@@ -169,10 +173,30 @@ type ComplexityRoot struct {
 		Volume        func(childComplexity int) int
 	}
 
+	TypeAttribute struct {
+		AttributeID func(childComplexity int) int
+		TypeID      func(childComplexity int) int
+		Value       func(childComplexity int) int
+	}
+
+	TypeCategory struct {
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Published func(childComplexity int) int
+	}
+
 	TypeFlag struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
 		Text func(childComplexity int) int
+	}
+
+	TypeGroup struct {
+		Category   func(childComplexity int) int
+		CategoryID func(childComplexity int) int
+		ID         func(childComplexity int) int
+		Name       func(childComplexity int) int
+		Published  func(childComplexity int) int
 	}
 }
 
@@ -208,6 +232,13 @@ type QueryResolver interface {
 	QueryPlaceholder(ctx context.Context) (bool, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
+}
+type TypeResolver interface {
+	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
+	Attributes(ctx context.Context, obj *neo.Type) ([]*neo.TypeAttribute, error)
+}
+type TypeGroupResolver interface {
+	Category(ctx context.Context, obj *neo.TypeGroup) (*neo.TypeCategory, error)
 }
 
 type executableSchema struct {
@@ -746,6 +777,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SolarSystem.SunTypeID(childComplexity), true
 
+	case "Type.attributes":
+		if e.complexity.Type.Attributes == nil {
+			break
+		}
+
+		return e.complexity.Type.Attributes(childComplexity), true
+
 	case "Type.basePrice":
 		if e.complexity.Type.BasePrice == nil {
 			break
@@ -759,6 +797,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Type.Description(childComplexity), true
+
+	case "Type.group":
+		if e.complexity.Type.Group == nil {
+			break
+		}
+
+		return e.complexity.Type.Group(childComplexity), true
 
 	case "Type.groupID":
 		if e.complexity.Type.GroupID == nil {
@@ -809,6 +854,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Type.Volume(childComplexity), true
 
+	case "TypeAttribute.attributeID":
+		if e.complexity.TypeAttribute.AttributeID == nil {
+			break
+		}
+
+		return e.complexity.TypeAttribute.AttributeID(childComplexity), true
+
+	case "TypeAttribute.typeID":
+		if e.complexity.TypeAttribute.TypeID == nil {
+			break
+		}
+
+		return e.complexity.TypeAttribute.TypeID(childComplexity), true
+
+	case "TypeAttribute.value":
+		if e.complexity.TypeAttribute.Value == nil {
+			break
+		}
+
+		return e.complexity.TypeAttribute.Value(childComplexity), true
+
+	case "TypeCategory.id":
+		if e.complexity.TypeCategory.ID == nil {
+			break
+		}
+
+		return e.complexity.TypeCategory.ID(childComplexity), true
+
+	case "TypeCategory.name":
+		if e.complexity.TypeCategory.Name == nil {
+			break
+		}
+
+		return e.complexity.TypeCategory.Name(childComplexity), true
+
+	case "TypeCategory.published":
+		if e.complexity.TypeCategory.Published == nil {
+			break
+		}
+
+		return e.complexity.TypeCategory.Published(childComplexity), true
+
 	case "TypeFlag.id":
 		if e.complexity.TypeFlag.ID == nil {
 			break
@@ -829,6 +916,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TypeFlag.Text(childComplexity), true
+
+	case "TypeGroup.category":
+		if e.complexity.TypeGroup.Category == nil {
+			break
+		}
+
+		return e.complexity.TypeGroup.Category(childComplexity), true
+
+	case "TypeGroup.categoryID":
+		if e.complexity.TypeGroup.CategoryID == nil {
+			break
+		}
+
+		return e.complexity.TypeGroup.CategoryID(childComplexity), true
+
+	case "TypeGroup.id":
+		if e.complexity.TypeGroup.ID == nil {
+			break
+		}
+
+		return e.complexity.TypeGroup.ID(childComplexity), true
+
+	case "TypeGroup.name":
+		if e.complexity.TypeGroup.Name == nil {
+			break
+		}
+
+		return e.complexity.TypeGroup.Name(childComplexity), true
+
+	case "TypeGroup.published":
+		if e.complexity.TypeGroup.Published == nil {
+			break
+		}
+
+		return e.complexity.TypeGroup.Published(childComplexity), true
 
 	}
 	return 0, false
@@ -1023,12 +1145,36 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     basePrice: Float
     published: Boolean!
     marketGroupID: Int
+
+    group: TypeGroup!
+    attributes: [TypeAttribute]!
+}
+
+type TypeAttribute @goModel(model: "github.com/eveisesi/neo.TypeAttribute") {
+    typeID: Int!
+    attributeID: Int!
+    value: Int!
+}
+
+type TypeCategory @goModel(model: "github.com/eveisesi/neo.TypeCategory") {
+    id: Int!
+    name: String!
+    published: Boolean!
 }
 
 type TypeFlag @goModel(model: "github.com/eveisesi/neo.TypeFlag") {
     id: Int!
     name: String!
     text: String!
+}
+
+type TypeGroup @goModel(model: "github.com/eveisesi/neo.TypeGroup") {
+    id: Int!
+    categoryID: Int!
+    name: String!
+    published: Boolean!
+
+    category: TypeCategory!
 }
 `},
 )
@@ -4144,6 +4290,302 @@ func (ec *executionContext) _Type_marketGroupID(ctx context.Context, field graph
 	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Type_group(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Type().Group(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.TypeGroup)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTypeGroup2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeGroup(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Type_attributes(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Type",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Type().Attributes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.TypeAttribute)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTypeAttribute2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeAttribute_typeID(ctx context.Context, field graphql.CollectedField, obj *neo.TypeAttribute) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TypeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeAttribute_attributeID(ctx context.Context, field graphql.CollectedField, obj *neo.TypeAttribute) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AttributeID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeAttribute_value(ctx context.Context, field graphql.CollectedField, obj *neo.TypeAttribute) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeAttribute",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeCategory_id(ctx context.Context, field graphql.CollectedField, obj *neo.TypeCategory) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeCategory",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeCategory_name(ctx context.Context, field graphql.CollectedField, obj *neo.TypeCategory) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeCategory",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeCategory_published(ctx context.Context, field graphql.CollectedField, obj *neo.TypeCategory) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeCategory",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Published, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(null.Bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TypeFlag_id(ctx context.Context, field graphql.CollectedField, obj *neo.TypeFlag) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4253,6 +4695,191 @@ func (ec *executionContext) _TypeFlag_text(ctx context.Context, field graphql.Co
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeGroup_id(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeGroup_categoryID(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CategoryID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeGroup_name(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeGroup_published(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Published, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _TypeGroup_category(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "TypeGroup",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.TypeGroup().Category(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.TypeCategory)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTypeCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeCategory(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -6134,27 +6761,27 @@ func (ec *executionContext) _Type(ctx context.Context, sel ast.SelectionSet, obj
 		case "id":
 			out.Values[i] = ec._Type_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "groupID":
 			out.Values[i] = ec._Type_groupID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Type_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			out.Values[i] = ec._Type_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "volume":
 			out.Values[i] = ec._Type_volume(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "raceID":
 			out.Values[i] = ec._Type_raceID(ctx, field, obj)
@@ -6163,10 +6790,112 @@ func (ec *executionContext) _Type(ctx context.Context, sel ast.SelectionSet, obj
 		case "published":
 			out.Values[i] = ec._Type_published(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "marketGroupID":
 			out.Values[i] = ec._Type_marketGroupID(ctx, field, obj)
+		case "group":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Type_group(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "attributes":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Type_attributes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var typeAttributeImplementors = []string{"TypeAttribute"}
+
+func (ec *executionContext) _TypeAttribute(ctx context.Context, sel ast.SelectionSet, obj *neo.TypeAttribute) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, typeAttributeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeAttribute")
+		case "typeID":
+			out.Values[i] = ec._TypeAttribute_typeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "attributeID":
+			out.Values[i] = ec._TypeAttribute_attributeID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._TypeAttribute_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var typeCategoryImplementors = []string{"TypeCategory"}
+
+func (ec *executionContext) _TypeCategory(ctx context.Context, sel ast.SelectionSet, obj *neo.TypeCategory) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, typeCategoryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeCategory")
+		case "id":
+			out.Values[i] = ec._TypeCategory_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._TypeCategory_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "published":
+			out.Values[i] = ec._TypeCategory_published(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6204,6 +6933,62 @@ func (ec *executionContext) _TypeFlag(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var typeGroupImplementors = []string{"TypeGroup"}
+
+func (ec *executionContext) _TypeGroup(ctx context.Context, sel ast.SelectionSet, obj *neo.TypeGroup) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, typeGroupImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypeGroup")
+		case "id":
+			out.Values[i] = ec._TypeGroup_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "categoryID":
+			out.Values[i] = ec._TypeGroup_categoryID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._TypeGroup_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "published":
+			out.Values[i] = ec._TypeGroup_published(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "category":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._TypeGroup_category(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6474,6 +7259,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx context.Context, v interface{}) (null.Bool, error) {
+	return null1.UnmarshalBool(v)
+}
+
+func (ec *executionContext) marshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx context.Context, sel ast.SelectionSet, v null.Bool) graphql.Marshaler {
+	res := null1.MarshalBool(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -6494,6 +7293,20 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
+	return scalar.UnmarshalInt64(v)
+}
+
+func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
+	res := scalar.MarshalInt64(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -6695,6 +7508,71 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTypeAttribute2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx context.Context, sel ast.SelectionSet, v []*neo.TypeAttribute) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTypeAttribute2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNTypeCategory2githubᚗcomᚋeveisesiᚋneoᚐTypeCategory(ctx context.Context, sel ast.SelectionSet, v neo.TypeCategory) graphql.Marshaler {
+	return ec._TypeCategory(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTypeCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeCategory(ctx context.Context, sel ast.SelectionSet, v *neo.TypeCategory) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TypeCategory(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNTypeGroup2githubᚗcomᚋeveisesiᚋneoᚐTypeGroup(ctx context.Context, sel ast.SelectionSet, v neo.TypeGroup) graphql.Marshaler {
+	return ec._TypeGroup(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTypeGroup2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeGroup(ctx context.Context, sel ast.SelectionSet, v *neo.TypeGroup) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TypeGroup(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -7102,6 +7980,17 @@ func (ec *executionContext) marshalOType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType
 		return graphql.Null
 	}
 	return ec._Type(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOTypeAttribute2githubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx context.Context, sel ast.SelectionSet, v neo.TypeAttribute) graphql.Marshaler {
+	return ec._TypeAttribute(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOTypeAttribute2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx context.Context, sel ast.SelectionSet, v *neo.TypeAttribute) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._TypeAttribute(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOTypeFlag2githubᚗcomᚋeveisesiᚋneoᚐTypeFlag(ctx context.Context, sel ast.SelectionSet, v neo.TypeFlag) graphql.Marshaler {

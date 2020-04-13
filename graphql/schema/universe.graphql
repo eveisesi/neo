@@ -18,10 +18,34 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     basePrice: Float
     published: Boolean!
     marketGroupID: Int
+
+    group: TypeGroup!
+    attributes: [TypeAttribute]!
+}
+
+type TypeAttribute @goModel(model: "github.com/eveisesi/neo.TypeAttribute") {
+    typeID: Int!
+    attributeID: Int!
+    value: Int!
+}
+
+type TypeCategory @goModel(model: "github.com/eveisesi/neo.TypeCategory") {
+    id: Int!
+    name: String!
+    published: Boolean!
 }
 
 type TypeFlag @goModel(model: "github.com/eveisesi/neo.TypeFlag") {
     id: Int!
     name: String!
     text: String!
+}
+
+type TypeGroup @goModel(model: "github.com/eveisesi/neo.TypeGroup") {
+    id: Int!
+    categoryID: Int!
+    name: String!
+    published: Boolean!
+
+    category: TypeCategory!
 }

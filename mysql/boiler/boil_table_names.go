@@ -16,7 +16,10 @@ var TableNames = struct {
 	Regions           string
 	SolarSystems      string
 	Tokens            string
+	TypeAttributes    string
+	TypeCategories    string
 	TypeFlags         string
+	TypeGroups        string
 	Types             string
 }{
 	Alliances:         "alliances",
@@ -31,6 +34,9 @@ var TableNames = struct {
 	Regions:           "regions",
 	SolarSystems:      "solar_systems",
 	Tokens:            "tokens",
+	TypeAttributes:    "type_attributes",
+	TypeCategories:    "type_categories",
 	TypeFlags:         "type_flags",
+	TypeGroups:        "type_groups",
 	Types:             "types",
 }

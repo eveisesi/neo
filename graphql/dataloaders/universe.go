@@ -64,6 +64,62 @@ func TypeLoader(ctx context.Context, universe universe.Service) *generated.TypeL
 	})
 }
 
+func TypeAttributeLoader(ctx context.Context, universe universe.Service) *generated.TypeAttributeLoader {
+	return generated.NewTypeAttributeLoader(generated.TypeAttributeLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([][]*neo.TypeAttribute, []error) {
+			invTypeAttributes := make([][]*neo.TypeAttribute, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.TypeAttributesByTypeIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			invTypeAttributesByTypeAttributeID := map[uint64][]*neo.TypeAttribute{}
+			for _, row := range rows {
+				invTypeAttributesByTypeAttributeID[row.TypeID] = append(invTypeAttributesByTypeAttributeID[row.TypeID], row)
+			}
+
+			for i, v := range ids {
+				invTypeAttributes[i] = invTypeAttributesByTypeAttributeID[v]
+			}
+
+			return invTypeAttributes, nil
+		},
+	})
+}
+
+func TypeCategoryLoader(ctx context.Context, universe universe.Service) *generated.TypeCategoryLoader {
+	return generated.NewTypeCategoryLoader(generated.TypeCategoryLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([]*neo.TypeCategory, []error) {
+			invTypeCategories := make([]*neo.TypeCategory, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.TypeCategoriesByCategoryIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			invTypeCategoriesByCategoryID := map[uint64]*neo.TypeCategory{}
+			for _, row := range rows {
+				invTypeCategoriesByCategoryID[row.ID] = row
+			}
+
+			for i, v := range ids {
+				invTypeCategories[i] = invTypeCategoriesByCategoryID[v]
+			}
+
+			return invTypeCategories, nil
+		},
+	})
+}
+
 func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.TypeFlagLoader {
 	return generated.NewTypeFlagLoader(generated.TypeFlagLoaderConfig{
 		Wait:     defaultWait,
@@ -88,6 +144,34 @@ func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.T
 			}
 
 			return invTypeFlags, nil
+		},
+	})
+}
+
+func TypeGroupLoader(ctx context.Context, universe universe.Service) *generated.TypeGroupLoader {
+	return generated.NewTypeGroupLoader(generated.TypeGroupLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([]*neo.TypeGroup, []error) {
+			invTypeGroups := make([]*neo.TypeGroup, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.TypeGroupsByGroupIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			invTypeGroupsByGroupID := map[uint64]*neo.TypeGroup{}
+			for _, row := range rows {
+				invTypeGroupsByGroupID[row.ID] = row
+			}
+
+			for i, v := range ids {
+				invTypeGroups[i] = invTypeGroupsByGroupID[v]
+			}
+
+			return invTypeGroups, nil
 		},
 	})
 }
