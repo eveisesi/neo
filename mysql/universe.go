@@ -20,14 +20,66 @@ func NewUniverseRepository(db *sqlx.DB) neo.UniverseRepository {
 	}
 }
 
+func (r *universeRepository) Constellation(ctx context.Context, id uint64) (*neo.Constellation, error) {
+
+	constellation := new(neo.Constellation)
+	err := boiler.Constellations(
+		boiler.ConstellationWhere.ID.EQ(id),
+	).Bind(ctx, r.db, constellation)
+
+	return constellation, err
+}
+
+func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*neo.Constellation, error) {
+
+	constellations := make([]*neo.Constellation, 0)
+	err := boiler.Constellations(
+		qm.WhereIn(
+			fmt.Sprintf(
+				"%s = ?",
+				boiler.ConstellationColumns.ID,
+			),
+			convertSliceUint64ToSliceInterface(ids)...,
+		),
+	).Bind(ctx, r.db, &constellations)
+
+	return constellations, err
+
+}
+
+func (r *universeRepository) Region(ctx context.Context, id uint64) (*neo.Region, error) {
+	region := new(neo.Region)
+	err := boiler.Regions(
+		boiler.RegionWhere.ID.EQ(id),
+	).Bind(ctx, r.db, region)
+
+	return region, err
+}
+
+func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.Region, error) {
+
+	regions := make([]*neo.Region, 0)
+	err := boiler.Regions(
+		qm.WhereIn(
+			fmt.Sprintf(
+				"%s = ?",
+				boiler.RegionColumns.ID,
+			),
+			convertSliceUint64ToSliceInterface(ids)...,
+		),
+	).Bind(ctx, r.db, &regions)
+
+	return regions, err
+}
+
 func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
 
-	var solarSystem = neo.SolarSystem{}
+	system := neo.SolarSystem{}
 	err := boiler.SolarSystems(
 		boiler.SolarSystemWhere.ID.EQ(id),
-	).Bind(ctx, r.db, &solarSystem)
+	).Bind(ctx, r.db, &system)
 
-	return &solarSystem, err
+	return &system, err
 
 }
 

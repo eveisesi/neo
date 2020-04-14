@@ -19,10 +19,12 @@ func (s *Server) Dataloaders(next http.Handler) http.Handler {
 		loaders := dataloaders.Loaders{
 			AllianceLoader:          dataloaders.AllianceLoader(ctx, s.alliance),
 			CharacterLoader:         dataloaders.CharacterLoader(ctx, s.character),
+			ConstellationLoader:     dataloaders.ConstellationLoader(ctx, s.universe),
 			CorporationLoader:       dataloaders.CorporationLoader(ctx, s.corporation),
 			KillmailAttackersLoader: dataloaders.KillmailAttackersLoader(ctx, s.killmail),
 			KillmailItemsLoader:     dataloaders.KillmailItemsLoader(ctx, s.killmail),
 			KillmailVictimLoader:    dataloaders.KillmailVictimLoader(ctx, s.killmail),
+			RegionLoader:            dataloaders.RegionLoader(ctx, s.universe),
 			SolarSystemLoader:       dataloaders.SolarSystemLoader(ctx, s.universe),
 			TypeLoader:              dataloaders.TypeLoader(ctx, s.universe),
 			TypeAttributeLoader:     dataloaders.TypeAttributeLoader(ctx, s.universe),

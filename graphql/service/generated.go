@@ -39,12 +39,14 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Constellation() ConstellationResolver
 	Killmail() KillmailResolver
 	KillmailAttacker() KillmailAttackerResolver
 	KillmailItem() KillmailItemResolver
 	KillmailVictim() KillmailVictimResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	SolarSystem() SolarSystemResolver
 	Type() TypeResolver
 	TypeGroup() TypeGroupResolver
 }
@@ -62,6 +64,14 @@ type ComplexityRoot struct {
 	Character struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	Constellation struct {
+		FactionID func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Region    func(childComplexity int) int
+		RegionID  func(childComplexity int) int
 	}
 
 	Corporation struct {
@@ -149,11 +159,18 @@ type ComplexityRoot struct {
 		QueryPlaceholder func(childComplexity int) int
 	}
 
+	Region struct {
+		ID   func(childComplexity int) int
+		Name func(childComplexity int) int
+	}
+
 	SolarSystem struct {
+		Constellation   func(childComplexity int) int
 		ConstellationID func(childComplexity int) int
 		FactionID       func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Name            func(childComplexity int) int
+		Region          func(childComplexity int) int
 		RegionID        func(childComplexity int) int
 		Security        func(childComplexity int) int
 		SunTypeID       func(childComplexity int) int
@@ -200,6 +217,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type ConstellationResolver interface {
+	Region(ctx context.Context, obj *neo.Constellation) (*neo.Region, error)
+}
 type KillmailResolver interface {
 	System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error)
 	Attackers(ctx context.Context, obj *neo.Killmail) ([]*neo.KillmailAttacker, error)
@@ -232,6 +252,10 @@ type QueryResolver interface {
 	QueryPlaceholder(ctx context.Context) (bool, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
+}
+type SolarSystemResolver interface {
+	Region(ctx context.Context, obj *neo.SolarSystem) (*neo.Region, error)
+	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
 }
 type TypeResolver interface {
 	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
@@ -291,6 +315,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Character.Name(childComplexity), true
 
+	case "Constellation.factionID":
+		if e.complexity.Constellation.FactionID == nil {
+			break
+		}
+
+		return e.complexity.Constellation.FactionID(childComplexity), true
+
+	case "Constellation.id":
+		if e.complexity.Constellation.ID == nil {
+			break
+		}
+
+		return e.complexity.Constellation.ID(childComplexity), true
+
+	case "Constellation.name":
+		if e.complexity.Constellation.Name == nil {
+			break
+		}
+
+		return e.complexity.Constellation.Name(childComplexity), true
+
+	case "Constellation.region":
+		if e.complexity.Constellation.Region == nil {
+			break
+		}
+
+		return e.complexity.Constellation.Region(childComplexity), true
+
+	case "Constellation.regionID":
+		if e.complexity.Constellation.RegionID == nil {
+			break
+		}
+
+		return e.complexity.Constellation.RegionID(childComplexity), true
+
 	case "Corporation.id":
 		if e.complexity.Corporation.ID == nil {
 			break
@@ -333,21 +392,21 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Killmail.ID(childComplexity), true
 
-	case "Killmail.killmail_time":
+	case "Killmail.killmailTime":
 		if e.complexity.Killmail.KillmailTime == nil {
 			break
 		}
 
 		return e.complexity.Killmail.KillmailTime(childComplexity), true
 
-	case "Killmail.moon_id":
+	case "Killmail.moonID":
 		if e.complexity.Killmail.MoonID == nil {
 			break
 		}
 
 		return e.complexity.Killmail.MoonID(childComplexity), true
 
-	case "Killmail.solar_system_id":
+	case "Killmail.solarSystemID":
 		if e.complexity.Killmail.SolarSystemID == nil {
 			break
 		}
@@ -368,7 +427,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Killmail.Victim(childComplexity), true
 
-	case "Killmail.war_id":
+	case "Killmail.warID":
 		if e.complexity.Killmail.WarID == nil {
 			break
 		}
@@ -728,6 +787,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.QueryPlaceholder(childComplexity), true
 
+	case "Region.id":
+		if e.complexity.Region.ID == nil {
+			break
+		}
+
+		return e.complexity.Region.ID(childComplexity), true
+
+	case "Region.name":
+		if e.complexity.Region.Name == nil {
+			break
+		}
+
+		return e.complexity.Region.Name(childComplexity), true
+
+	case "SolarSystem.constellation":
+		if e.complexity.SolarSystem.Constellation == nil {
+			break
+		}
+
+		return e.complexity.SolarSystem.Constellation(childComplexity), true
+
 	case "SolarSystem.constellationID":
 		if e.complexity.SolarSystem.ConstellationID == nil {
 			break
@@ -755,6 +835,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SolarSystem.Name(childComplexity), true
+
+	case "SolarSystem.region":
+		if e.complexity.SolarSystem.Region == nil {
+			break
+		}
+
+		return e.complexity.SolarSystem.Region(childComplexity), true
 
 	case "SolarSystem.regionID":
 		if e.complexity.SolarSystem.RegionID == nil {
@@ -1039,10 +1126,10 @@ var parsedSchema = gqlparser.MustLoadSchema(
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     id: Int!
     hash: String!
-    moon_id: Int
-    solar_system_id: Int!
-    war_id: Int
-    killmail_time: Time!
+    moonID: Int
+    solarSystemID: Int!
+    warID: Int
+    killmailTime: Time!
 
     system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)
@@ -1125,7 +1212,21 @@ type Mutation {
 
 scalar Time
 `},
-	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
+	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
+    id: Int!
+    name: String!
+    regionID: Int!
+    factionID: Int
+
+    region: Region!
+}
+
+type Region @goModel(model: "github.com/eveisesi/neo.Region") {
+    id: Int!
+    name: String!
+}
+
+type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     id: Int!
     name: String!
     regionID: Int!
@@ -1133,6 +1234,9 @@ scalar Time
     factionID: Int
     sunTypeID: Int
     security: Float!
+
+    region: Region!
+    constellation: Constellation!
 }
 
 type Type @goModel(model: "github.com/eveisesi/neo.Type") {
@@ -1454,6 +1558,188 @@ func (ec *executionContext) _Character_name(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Constellation_id(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Constellation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Constellation_name(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Constellation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Constellation_regionID(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Constellation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RegionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Constellation_factionID(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Constellation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FactionID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(null.Int64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Constellation_region(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Constellation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Constellation().Region(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Region)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRegion(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Corporation_id(ctx context.Context, field graphql.CollectedField, obj *neo.Corporation) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -1639,7 +1925,7 @@ func (ec *executionContext) _Killmail_hash(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Killmail_moon_id(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _Killmail_moonID(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1673,7 +1959,7 @@ func (ec *executionContext) _Killmail_moon_id(ctx context.Context, field graphql
 	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Killmail_solar_system_id(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _Killmail_solarSystemID(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1710,7 +1996,7 @@ func (ec *executionContext) _Killmail_solar_system_id(ctx context.Context, field
 	return ec.marshalNInt2uint64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Killmail_war_id(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _Killmail_warID(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1744,7 +2030,7 @@ func (ec *executionContext) _Killmail_war_id(ctx context.Context, field graphql.
 	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Killmail_killmail_time(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+func (ec *executionContext) _Killmail_killmailTime(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -3713,6 +3999,80 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Region_id(ctx context.Context, field graphql.CollectedField, obj *neo.Region) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Region",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Region_name(ctx context.Context, field graphql.CollectedField, obj *neo.Region) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Region",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _SolarSystem_id(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -3964,6 +4324,80 @@ func (ec *executionContext) _SolarSystem_security(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SolarSystem_region(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SolarSystem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SolarSystem().Region(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Region)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRegion(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SolarSystem_constellation(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SolarSystem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.SolarSystem().Constellation(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Constellation)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNConstellation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Type_id(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
@@ -4765,10 +5199,10 @@ func (ec *executionContext) _TypeGroup_categoryID(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(uint64)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TypeGroup_name(ctx context.Context, field graphql.CollectedField, obj *neo.TypeGroup) (ret graphql.Marshaler) {
@@ -6110,6 +6544,59 @@ func (ec *executionContext) _Character(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
+var constellationImplementors = []string{"Constellation"}
+
+func (ec *executionContext) _Constellation(ctx context.Context, sel ast.SelectionSet, obj *neo.Constellation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, constellationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Constellation")
+		case "id":
+			out.Values[i] = ec._Constellation_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "name":
+			out.Values[i] = ec._Constellation_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "regionID":
+			out.Values[i] = ec._Constellation_regionID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "factionID":
+			out.Values[i] = ec._Constellation_factionID(ctx, field, obj)
+		case "region":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Constellation_region(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var corporationImplementors = []string{"Corporation"}
 
 func (ec *executionContext) _Corporation(ctx context.Context, sel ast.SelectionSet, obj *neo.Corporation) graphql.Marshaler {
@@ -6168,17 +6655,17 @@ func (ec *executionContext) _Killmail(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "moon_id":
-			out.Values[i] = ec._Killmail_moon_id(ctx, field, obj)
-		case "solar_system_id":
-			out.Values[i] = ec._Killmail_solar_system_id(ctx, field, obj)
+		case "moonID":
+			out.Values[i] = ec._Killmail_moonID(ctx, field, obj)
+		case "solarSystemID":
+			out.Values[i] = ec._Killmail_solarSystemID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "war_id":
-			out.Values[i] = ec._Killmail_war_id(ctx, field, obj)
-		case "killmail_time":
-			out.Values[i] = ec._Killmail_killmail_time(ctx, field, obj)
+		case "warID":
+			out.Values[i] = ec._Killmail_warID(ctx, field, obj)
+		case "killmailTime":
+			out.Values[i] = ec._Killmail_killmailTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -6696,6 +7183,38 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var regionImplementors = []string{"Region"}
+
+func (ec *executionContext) _Region(ctx context.Context, sel ast.SelectionSet, obj *neo.Region) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, regionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Region")
+		case "id":
+			out.Values[i] = ec._Region_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Region_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var solarSystemImplementors = []string{"SolarSystem"}
 
 func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionSet, obj *neo.SolarSystem) graphql.Marshaler {
@@ -6710,22 +7229,22 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 		case "id":
 			out.Values[i] = ec._SolarSystem_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._SolarSystem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "regionID":
 			out.Values[i] = ec._SolarSystem_regionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "constellationID":
 			out.Values[i] = ec._SolarSystem_constellationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "factionID":
 			out.Values[i] = ec._SolarSystem_factionID(ctx, field, obj)
@@ -6734,8 +7253,36 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 		case "security":
 			out.Values[i] = ec._SolarSystem_security(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "region":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SolarSystem_region(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "constellation":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SolarSystem_constellation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7273,6 +7820,20 @@ func (ec *executionContext) marshalNBoolean2githubᚗcomᚋvolatiletechᚋnull�
 	return res
 }
 
+func (ec *executionContext) marshalNConstellation2githubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx context.Context, sel ast.SelectionSet, v neo.Constellation) graphql.Marshaler {
+	return ec._Constellation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNConstellation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx context.Context, sel ast.SelectionSet, v *neo.Constellation) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Constellation(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
 	return graphql.UnmarshalFloat(v)
 }
@@ -7466,6 +8027,20 @@ func (ec *executionContext) marshalNKillmailVictim2ᚖgithubᚗcomᚋeveisesiᚋ
 		return graphql.Null
 	}
 	return ec._KillmailVictim(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRegion2githubᚗcomᚋeveisesiᚋneoᚐRegion(ctx context.Context, sel ast.SelectionSet, v neo.Region) graphql.Marshaler {
+	return ec._Region(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRegion(ctx context.Context, sel ast.SelectionSet, v *neo.Region) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Region(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNSolarSystem2githubᚗcomᚋeveisesiᚋneoᚐSolarSystem(ctx context.Context, sel ast.SelectionSet, v neo.SolarSystem) graphql.Marshaler {

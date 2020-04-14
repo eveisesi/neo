@@ -1,3 +1,17 @@
+type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
+    id: Int!
+    name: String!
+    regionID: Int!
+    factionID: Int
+
+    region: Region!
+}
+
+type Region @goModel(model: "github.com/eveisesi/neo.Region") {
+    id: Int!
+    name: String!
+}
+
 type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     id: Int!
     name: String!
@@ -6,6 +20,9 @@ type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     factionID: Int
     sunTypeID: Int
     security: Float!
+
+    region: Region!
+    constellation: Constellation!
 }
 
 type Type @goModel(model: "github.com/eveisesi/neo.Type") {

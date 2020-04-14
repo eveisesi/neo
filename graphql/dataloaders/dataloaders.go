@@ -12,10 +12,12 @@ const defaultMaxBatch = 100
 type Loaders struct {
 	AllianceLoader          *generated.AllianceLoader
 	CharacterLoader         *generated.CharacterLoader
+	ConstellationLoader     *generated.ConstellationLoader
 	CorporationLoader       *generated.CorporationLoader
 	KillmailAttackersLoader *generated.KillmailAttackersLoader
 	KillmailItemsLoader     *generated.KillmailItemsLoader
 	KillmailVictimLoader    *generated.KillmailVictimLoader
+	RegionLoader            *generated.RegionLoader
 	SolarSystemLoader       *generated.SolarSystemLoader
 	TypeLoader              *generated.TypeLoader
 	TypeAttributeLoader     *generated.TypeAttributeLoader

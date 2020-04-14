@@ -6,10 +6,10 @@ extend type Query {
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     id: Int!
     hash: String!
-    moon_id: Int
-    solar_system_id: Int!
-    war_id: Int
-    killmail_time: Time!
+    moonID: Int
+    solarSystemID: Int!
+    warID: Int
+    killmailTime: Time!
 
     system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)

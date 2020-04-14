@@ -10,5 +10,7 @@
 //go:generate go run github.com/vektah/dataloaden TypeFlagLoader uint64 *github.com/eveisesi/neo.TypeFlag
 //go:generate go run github.com/vektah/dataloaden TypeGroupLoader uint64 *github.com/eveisesi/neo.TypeGroup
 //go:generate go run github.com/vektah/dataloaden TypeCategoryLoader uint64 *github.com/eveisesi/neo.TypeCategory
+//go:generate go run github.com/vektah/dataloaden ConstellationLoader uint64 *github.com/eveisesi/neo.Constellation
+//go:generate go run github.com/vektah/dataloaden RegionLoader uint64 *github.com/eveisesi/neo.Region
 
 package generated

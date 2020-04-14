@@ -24,15 +24,15 @@ import (
 
 // Constellation is an object representing the database table.
 type Constellation struct {
-	ID        int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name      string     `boil:"name" json:"name" toml:"name" yaml:"name"`
-	RegionID  int64      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
-	PosX      float64    `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
-	PosY      float64    `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
-	PosZ      float64    `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
-	FactionID null.Int64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
-	CreatedAt time.Time  `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt time.Time  `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID        uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name      string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	RegionID  uint64      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
+	PosX      float64     `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
+	PosY      float64     `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
+	PosZ      float64     `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
+	FactionID null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	CreatedAt time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *constellationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L constellationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -62,22 +62,6 @@ var ConstellationColumns = struct {
 
 // Generated where
 
-type whereHelperint64 struct{ field string }
-
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-
 type whereHelperfloat64 struct{ field string }
 
 func (w whereHelperfloat64) EQ(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.EQ, x) }
@@ -93,47 +77,24 @@ func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_Int64 struct{ field string }
-
-func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var ConstellationWhere = struct {
-	ID        whereHelperint64
+	ID        whereHelperuint64
 	Name      whereHelperstring
-	RegionID  whereHelperint64
+	RegionID  whereHelperuint64
 	PosX      whereHelperfloat64
 	PosY      whereHelperfloat64
 	PosZ      whereHelperfloat64
-	FactionID whereHelpernull_Int64
+	FactionID whereHelpernull_Uint64
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint64{field: "`constellations`.`id`"},
+	ID:        whereHelperuint64{field: "`constellations`.`id`"},
 	Name:      whereHelperstring{field: "`constellations`.`name`"},
-	RegionID:  whereHelperint64{field: "`constellations`.`region_id`"},
+	RegionID:  whereHelperuint64{field: "`constellations`.`region_id`"},
 	PosX:      whereHelperfloat64{field: "`constellations`.`pos_x`"},
 	PosY:      whereHelperfloat64{field: "`constellations`.`pos_y`"},
 	PosZ:      whereHelperfloat64{field: "`constellations`.`pos_z`"},
-	FactionID: whereHelpernull_Int64{field: "`constellations`.`faction_id`"},
+	FactionID: whereHelpernull_Uint64{field: "`constellations`.`faction_id`"},
 	CreatedAt: whereHelpertime_Time{field: "`constellations`.`created_at`"},
 	UpdatedAt: whereHelpertime_Time{field: "`constellations`.`updated_at`"},
 }
@@ -260,7 +221,7 @@ func Constellations(mods ...qm.QueryMod) constellationQuery {
 
 // FindConstellation retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindConstellation(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*Constellation, error) {
+func FindConstellation(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Constellation, error) {
 	constellationObj := &Constellation{}
 
 	sel := "*"
@@ -781,7 +742,7 @@ func (o *ConstellationSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // ConstellationExists checks if the Constellation row exists.
-func ConstellationExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
+func ConstellationExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `constellations` where `id`=? limit 1)"
 

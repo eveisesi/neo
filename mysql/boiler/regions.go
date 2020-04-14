@@ -24,12 +24,12 @@ import (
 
 // Region is an object representing the database table.
 type Region struct {
-	ID        int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	PosX      float64   `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
 	PosY      float64   `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
 	PosZ      float64   `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
-	FactionID null.Int  `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	FactionID null.Uint `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
@@ -59,45 +59,45 @@ var RegionColumns = struct {
 
 // Generated where
 
-type whereHelpernull_Int struct{ field string }
+type whereHelpernull_Uint struct{ field string }
 
-func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, false, x)
 }
-func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) NEQ(x null.Uint) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, true, x)
 }
-func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint) LT(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) LTE(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) GT(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
 var RegionWhere = struct {
-	ID        whereHelperint64
+	ID        whereHelperuint64
 	Name      whereHelperstring
 	PosX      whereHelperfloat64
 	PosY      whereHelperfloat64
 	PosZ      whereHelperfloat64
-	FactionID whereHelpernull_Int
+	FactionID whereHelpernull_Uint
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ID:        whereHelperint64{field: "`regions`.`id`"},
+	ID:        whereHelperuint64{field: "`regions`.`id`"},
 	Name:      whereHelperstring{field: "`regions`.`name`"},
 	PosX:      whereHelperfloat64{field: "`regions`.`pos_x`"},
 	PosY:      whereHelperfloat64{field: "`regions`.`pos_y`"},
 	PosZ:      whereHelperfloat64{field: "`regions`.`pos_z`"},
-	FactionID: whereHelpernull_Int{field: "`regions`.`faction_id`"},
+	FactionID: whereHelpernull_Uint{field: "`regions`.`faction_id`"},
 	CreatedAt: whereHelpertime_Time{field: "`regions`.`created_at`"},
 	UpdatedAt: whereHelpertime_Time{field: "`regions`.`updated_at`"},
 }
@@ -224,7 +224,7 @@ func Regions(mods ...qm.QueryMod) regionQuery {
 
 // FindRegion retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindRegion(ctx context.Context, exec boil.ContextExecutor, iD int64, selectCols ...string) (*Region, error) {
+func FindRegion(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Region, error) {
 	regionObj := &Region{}
 
 	sel := "*"
@@ -745,7 +745,7 @@ func (o *RegionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) 
 }
 
 // RegionExists checks if the Region row exists.
-func RegionExists(ctx context.Context, exec boil.ContextExecutor, iD int64) (bool, error) {
+func RegionExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `regions` where `id`=? limit 1)"
 

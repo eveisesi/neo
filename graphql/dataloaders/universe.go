@@ -8,6 +8,62 @@ import (
 	"github.com/eveisesi/neo/services/universe"
 )
 
+func ConstellationLoader(ctx context.Context, universe universe.Service) *generated.ConstellationLoader {
+	return generated.NewConstellationLoader(generated.ConstellationLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([]*neo.Constellation, []error) {
+			constellations := make([]*neo.Constellation, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.ConstellationsByConstellationIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			constellationsByConstellationIDs := make(map[uint64]*neo.Constellation, 0)
+			for _, row := range rows {
+				constellationsByConstellationIDs[row.ID] = row
+			}
+
+			for i, v := range ids {
+				constellations[i] = constellationsByConstellationIDs[v]
+			}
+
+			return constellations, errors
+		},
+	})
+}
+
+func RegionLoader(ctx context.Context, universe universe.Service) *generated.RegionLoader {
+	return generated.NewRegionLoader(generated.RegionLoaderConfig{
+		Wait:     defaultWait,
+		MaxBatch: defaultMaxBatch,
+		Fetch: func(ids []uint64) ([]*neo.Region, []error) {
+			regions := make([]*neo.Region, len(ids))
+			errors := make([]error, len(ids))
+
+			rows, err := universe.RegionsByRegionIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
+			}
+
+			regionsByRegionIDs := make(map[uint64]*neo.Region, 0)
+			for _, row := range rows {
+				regionsByRegionIDs[row.ID] = row
+			}
+
+			for i, v := range ids {
+				regions[i] = regionsByRegionIDs[v]
+			}
+
+			return regions, errors
+		},
+	})
+}
+
 func SolarSystemLoader(ctx context.Context, universe universe.Service) *generated.SolarSystemLoader {
 	return generated.NewSolarSystemLoader(generated.SolarSystemLoaderConfig{
 		Wait:     defaultWait,
