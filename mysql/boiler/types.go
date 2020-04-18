@@ -24,17 +24,14 @@ import (
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GroupID       uint64       `boil:"group_id" json:"groupID" toml:"groupID" yaml:"groupID"`
-	Name          string       `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description   string       `boil:"description" json:"description" toml:"description" yaml:"description"`
-	Volume        float64      `boil:"volume" json:"volume" toml:"volume" yaml:"volume"`
-	RaceID        null.Uint64  `boil:"race_id" json:"raceID,omitempty" toml:"raceID" yaml:"raceID,omitempty"`
-	BasePrice     null.Float64 `boil:"base_price" json:"basePrice,omitempty" toml:"basePrice" yaml:"basePrice,omitempty"`
-	Published     bool         `boil:"published" json:"published" toml:"published" yaml:"published"`
-	MarketGroupID null.Uint64  `boil:"market_group_id" json:"marketGroupID,omitempty" toml:"marketGroupID" yaml:"marketGroupID,omitempty"`
-	CreatedAt     null.Time    `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
-	UpdatedAt     null.Time    `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
+	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GroupID       uint64      `boil:"group_id" json:"groupID" toml:"groupID" yaml:"groupID"`
+	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description   string      `boil:"description" json:"description" toml:"description" yaml:"description"`
+	Published     bool        `boil:"published" json:"published" toml:"published" yaml:"published"`
+	MarketGroupID null.Uint64 `boil:"market_group_id" json:"marketGroupID,omitempty" toml:"marketGroupID" yaml:"marketGroupID,omitempty"`
+	CreatedAt     null.Time   `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt     null.Time   `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
 
 	R *typeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L typeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -45,9 +42,6 @@ var TypeColumns = struct {
 	GroupID       string
 	Name          string
 	Description   string
-	Volume        string
-	RaceID        string
-	BasePrice     string
 	Published     string
 	MarketGroupID string
 	CreatedAt     string
@@ -57,9 +51,6 @@ var TypeColumns = struct {
 	GroupID:       "group_id",
 	Name:          "name",
 	Description:   "description",
-	Volume:        "volume",
-	RaceID:        "race_id",
-	BasePrice:     "base_price",
 	Published:     "published",
 	MarketGroupID: "market_group_id",
 	CreatedAt:     "created_at",
@@ -73,9 +64,6 @@ var TypeWhere = struct {
 	GroupID       whereHelperuint64
 	Name          whereHelperstring
 	Description   whereHelperstring
-	Volume        whereHelperfloat64
-	RaceID        whereHelpernull_Uint64
-	BasePrice     whereHelpernull_Float64
 	Published     whereHelperbool
 	MarketGroupID whereHelpernull_Uint64
 	CreatedAt     whereHelpernull_Time
@@ -85,9 +73,6 @@ var TypeWhere = struct {
 	GroupID:       whereHelperuint64{field: "`types`.`group_id`"},
 	Name:          whereHelperstring{field: "`types`.`name`"},
 	Description:   whereHelperstring{field: "`types`.`description`"},
-	Volume:        whereHelperfloat64{field: "`types`.`volume`"},
-	RaceID:        whereHelpernull_Uint64{field: "`types`.`race_id`"},
-	BasePrice:     whereHelpernull_Float64{field: "`types`.`base_price`"},
 	Published:     whereHelperbool{field: "`types`.`published`"},
 	MarketGroupID: whereHelpernull_Uint64{field: "`types`.`market_group_id`"},
 	CreatedAt:     whereHelpernull_Time{field: "`types`.`created_at`"},
@@ -111,8 +96,8 @@ func (*typeR) NewStruct() *typeR {
 type typeL struct{}
 
 var (
-	typeAllColumns            = []string{"id", "group_id", "name", "description", "volume", "race_id", "base_price", "published", "market_group_id", "created_at", "updated_at"}
-	typeColumnsWithoutDefault = []string{"id", "group_id", "name", "description", "volume", "race_id", "base_price", "published", "market_group_id"}
+	typeAllColumns            = []string{"id", "group_id", "name", "description", "published", "market_group_id", "created_at", "updated_at"}
+	typeColumnsWithoutDefault = []string{"id", "group_id", "name", "description", "published", "market_group_id"}
 	typeColumnsWithDefault    = []string{"created_at", "updated_at"}
 	typePrimaryKeyColumns     = []string{"id"}
 )

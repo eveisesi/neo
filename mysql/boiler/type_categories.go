@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -26,7 +25,7 @@ import (
 type TypeCategory struct {
 	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Published null.Bool `boil:"published" json:"published,omitempty" toml:"published" yaml:"published,omitempty"`
+	Published bool      `boil:"published" json:"published" toml:"published" yaml:"published"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
@@ -50,39 +49,16 @@ var TypeCategoryColumns = struct {
 
 // Generated where
 
-type whereHelpernull_Bool struct{ field string }
-
-func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var TypeCategoryWhere = struct {
 	ID        whereHelperuint64
 	Name      whereHelperstring
-	Published whereHelpernull_Bool
+	Published whereHelperbool
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
 	ID:        whereHelperuint64{field: "`type_categories`.`id`"},
 	Name:      whereHelperstring{field: "`type_categories`.`name`"},
-	Published: whereHelpernull_Bool{field: "`type_categories`.`published`"},
+	Published: whereHelperbool{field: "`type_categories`.`published`"},
 	CreatedAt: whereHelpertime_Time{field: "`type_categories`.`created_at`"},
 	UpdatedAt: whereHelpertime_Time{field: "`type_categories`.`updated_at`"},
 }

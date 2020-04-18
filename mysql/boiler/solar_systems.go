@@ -26,7 +26,6 @@ import (
 type SolarSystem struct {
 	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	RegionID        uint64      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
 	ConstellationID uint64      `boil:"constellation_id" json:"constellationID" toml:"constellationID" yaml:"constellationID"`
 	FactionID       null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	SunTypeID       null.Uint64 `boil:"sun_type_id" json:"sunTypeID,omitempty" toml:"sunTypeID" yaml:"sunTypeID,omitempty"`
@@ -44,7 +43,6 @@ type SolarSystem struct {
 var SolarSystemColumns = struct {
 	ID              string
 	Name            string
-	RegionID        string
 	ConstellationID string
 	FactionID       string
 	SunTypeID       string
@@ -57,7 +55,6 @@ var SolarSystemColumns = struct {
 }{
 	ID:              "id",
 	Name:            "name",
-	RegionID:        "region_id",
 	ConstellationID: "constellation_id",
 	FactionID:       "faction_id",
 	SunTypeID:       "sun_type_id",
@@ -74,7 +71,6 @@ var SolarSystemColumns = struct {
 var SolarSystemWhere = struct {
 	ID              whereHelperuint64
 	Name            whereHelperstring
-	RegionID        whereHelperuint64
 	ConstellationID whereHelperuint64
 	FactionID       whereHelpernull_Uint64
 	SunTypeID       whereHelpernull_Uint64
@@ -87,7 +83,6 @@ var SolarSystemWhere = struct {
 }{
 	ID:              whereHelperuint64{field: "`solar_systems`.`id`"},
 	Name:            whereHelperstring{field: "`solar_systems`.`name`"},
-	RegionID:        whereHelperuint64{field: "`solar_systems`.`region_id`"},
 	ConstellationID: whereHelperuint64{field: "`solar_systems`.`constellation_id`"},
 	FactionID:       whereHelpernull_Uint64{field: "`solar_systems`.`faction_id`"},
 	SunTypeID:       whereHelpernull_Uint64{field: "`solar_systems`.`sun_type_id`"},
@@ -116,8 +111,8 @@ func (*solarSystemR) NewStruct() *solarSystemR {
 type solarSystemL struct{}
 
 var (
-	solarSystemAllColumns            = []string{"id", "name", "region_id", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
-	solarSystemColumnsWithoutDefault = []string{"id", "name", "region_id", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
+	solarSystemAllColumns            = []string{"id", "name", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
+	solarSystemColumnsWithoutDefault = []string{"id", "name", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
 	solarSystemColumnsWithDefault    = []string{}
 	solarSystemPrimaryKeyColumns     = []string{"id"}
 )
