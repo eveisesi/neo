@@ -21,7 +21,6 @@ type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     sunTypeID: Int
     security: Float!
 
-    region: Region!
     constellation: Constellation!
 }
 
