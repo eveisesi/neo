@@ -47,7 +47,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 			rows, err := universe.RegionsByRegionIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
-				return nil, errors
+				return regions, errors
 			}
 
 			regionsByRegionIDs := make(map[uint64]*neo.Region, 0)

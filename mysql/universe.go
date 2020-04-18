@@ -6,7 +6,10 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
+	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -28,6 +31,7 @@ func (r *universeRepository) Constellation(ctx context.Context, id uint64) (*neo
 	).Bind(ctx, r.db, constellation)
 
 	return constellation, err
+
 }
 
 func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*neo.Constellation, error) {
@@ -36,7 +40,7 @@ func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Contex
 	err := boiler.Constellations(
 		qm.WhereIn(
 			fmt.Sprintf(
-				"%s = ?",
+				"%s IN ?",
 				boiler.ConstellationColumns.ID,
 			),
 			convertSliceUint64ToSliceInterface(ids)...,
@@ -48,12 +52,14 @@ func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Contex
 }
 
 func (r *universeRepository) Region(ctx context.Context, id uint64) (*neo.Region, error) {
+
 	region := new(neo.Region)
 	err := boiler.Regions(
 		boiler.RegionWhere.ID.EQ(id),
 	).Bind(ctx, r.db, region)
 
 	return region, err
+
 }
 
 func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.Region, error) {
@@ -62,7 +68,7 @@ func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint6
 	err := boiler.Regions(
 		qm.WhereIn(
 			fmt.Sprintf(
-				"%s = ?",
+				"%s IN ?",
 				boiler.RegionColumns.ID,
 			),
 			convertSliceUint64ToSliceInterface(ids)...,
@@ -70,6 +76,7 @@ func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint6
 	).Bind(ctx, r.db, &regions)
 
 	return regions, err
+
 }
 
 func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
@@ -80,6 +87,25 @@ func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*neo.S
 	).Bind(ctx, r.db, &system)
 
 	return &system, err
+
+}
+
+func (r *universeRepository) CreateSolarSystem(ctx context.Context, system *neo.SolarSystem) error {
+
+	bSolar := new(boiler.SolarSystem)
+	err := copier.Copy(bSolar, system)
+	if err != nil {
+		return errors.Wrap(err, "unable to copy solar system to orm")
+	}
+
+	err = bSolar.Insert(ctx, r.db, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "failed to insert solar system into db")
+	}
+
+	err = copier.Copy(system, bSolar)
+
+	return errors.Wrap(err, "unable to copy orm to solar system")
 
 }
 
@@ -97,6 +123,7 @@ func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, i
 	).Bind(ctx, r.db, &systems)
 
 	return systems, err
+
 }
 
 func (r *universeRepository) Type(ctx context.Context, id uint64) (*neo.Type, error) {
@@ -107,6 +134,25 @@ func (r *universeRepository) Type(ctx context.Context, id uint64) (*neo.Type, er
 	).Bind(ctx, r.db, &invType)
 
 	return &invType, err
+
+}
+
+func (r *universeRepository) CreateType(ctx context.Context, invType *neo.Type) error {
+
+	bType := new(boiler.Type)
+	err := copier.Copy(bType, invType)
+	if err != nil {
+		return errors.Wrap(err, "unable to copy invType to orm")
+	}
+
+	err = bType.Insert(ctx, r.db, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "failed to insert invType into db")
+	}
+
+	err = copier.Copy(invType, bType)
+
+	return errors.Wrap(err, "unable to copy orm to invType")
 
 }
 
@@ -124,6 +170,7 @@ func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) (
 	).Bind(ctx, r.db, &invTypes)
 
 	return invTypes, err
+
 }
 
 func (r *universeRepository) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAttribute, error) {
@@ -134,6 +181,46 @@ func (r *universeRepository) TypeAttributes(ctx context.Context, id uint64) ([]*
 	).Bind(ctx, r.db, &attributes)
 
 	return attributes, err
+
+}
+
+func (r *universeRepository) CreateTypeAttributes(ctx context.Context, attributes []*neo.TypeAttribute) error {
+
+	txn, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return errors.Wrap(err, "unable to start txn to insert attributes")
+	}
+
+	for _, attribute := range attributes {
+
+		var bAttribute = new(boiler.TypeAttribute)
+		err := copier.Copy(bAttribute, attribute)
+		if err != nil {
+			return errors.Wrap(err, "unable to copy attribute to orm")
+		}
+
+		err = bAttribute.Insert(ctx, txn, boil.Infer())
+		if err != nil {
+			txnErr := txn.Rollback()
+			if txnErr != nil {
+				err = errors.Wrap(err, "failed to rollback txn")
+			}
+			return errors.Wrap(err, "failed to insert type attribute into db")
+		}
+
+		err = copier.Copy(attribute, bAttribute)
+		if err != nil {
+			txnErr := txn.Rollback()
+			if txnErr != nil {
+				err = errors.Wrap(err, "failed to rollback txn")
+			}
+			return errors.Wrap(err, "failed to copy orm back to attribute")
+		}
+
+	}
+
+	return errors.Wrap(txn.Commit(), "txn failed to commit")
+
 }
 
 func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.TypeAttribute, error) {
@@ -150,6 +237,7 @@ func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []
 	).Bind(ctx, r.db, &attributes)
 
 	return attributes, err
+
 }
 
 func (r *universeRepository) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategory, error) {
@@ -233,4 +321,5 @@ func (r *universeRepository) TypeGroupsByGroupIDs(ctx context.Context, ids []uin
 	).Bind(ctx, r.db, &groups)
 
 	return groups, err
+
 }

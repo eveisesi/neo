@@ -13,6 +13,7 @@ import (
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/go-redis/redis"
+	"github.com/gorilla/websocket"
 	gorilla "github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 
@@ -57,17 +58,17 @@ func Action(c *cli.Context) error {
 		done := make(chan bool, 1)
 		stream := make(chan []byte)
 
+		interrupt := make(chan os.Signal, 1)
+		signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+
 		defer wg.Done()
 
 		wg.Add(1)
-		go listener.Listen(stream, connected, disconnected, done)
+		go listener.Listen(stream, interrupt, connected, disconnected, done)
 		for {
 			select {
-			case msg := <-stream:
-				wg.Add(1)
-				go listener.processMessage(msg)
 			case <-done:
-				listener.Logger.Info("Done in Supervisor")
+				listener.Logger.Info("Done in Action")
 				listener.Logger.Infof("Number of Go Routines Remaining: %d", runtime.NumGoroutine())
 				return
 			case <-disconnected:
@@ -79,8 +80,7 @@ func Action(c *cli.Context) error {
 				// }(msg)
 				time.Sleep(2 * time.Second)
 				wg.Add(1)
-				go listener.Listen(stream, connected, disconnected, done)
-				return
+				go listener.Listen(stream, interrupt, connected, disconnected, done)
 			case <-connected:
 				listener.Logger.Info("Supervisor: Connected to Websocket")
 			}
@@ -88,20 +88,73 @@ func Action(c *cli.Context) error {
 
 	}()
 
-	listener.Logger.Info("Waiting for supervisor to die")
-
+	listener.Logger.Info("Supervisor Routine Launched Successfully")
 	wg.Wait()
 	listener.Logger.Info("Bye")
 	return nil
 
 }
 
-func (r *Listener) Listen(stream chan []byte, connected, disconnected, done chan bool) {
+func (r *Listener) Listen(stream chan []byte, interrupt chan os.Signal, connected, disconnected, done chan bool) {
 	defer wg.Done()
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM)
+	c, err := r.connect()
+	if err != nil {
+		disconnected <- true
+		r.Logger.WithError(err).Error("failed to establish connection to websocket")
+		return
+	}
 
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		for {
+			_, message, err := c.ReadMessage()
+			if err != nil {
+				if err, ok := err.(*gorilla.CloseError); ok {
+					// Error Code 1000 is the response to a close message.
+					if err.Code == 1000 {
+						done <- true
+						return
+					}
+
+					r.Logger.WithError(err).Error("error enconnected. Attempting to disconnect and reconnect")
+					eerr := c.Close()
+					if eerr != nil {
+						r.Logger.WithError(eerr).Error("unable to close connection after error")
+					}
+
+					disconnected <- true
+					return
+				}
+				r.Logger.WithError(err).Fatal("unknown error encountered. Crashing container")
+			}
+
+			stream <- message
+		}
+	}()
+
+	connected <- true
+
+	for {
+		select {
+		case msg := <-stream:
+			wg.Add(1)
+			go r.processMessage(msg)
+		case <-interrupt:
+			r.Logger.Info("Interrupted")
+			err := c.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, ""))
+			if err != nil {
+				r.Logger.WithError(err).Fatal("Failed to write close message")
+			}
+			done <- true
+			return
+		}
+	}
+}
+
+func (r *Listener) connect() (*websocket.Conn, error) {
 	address := url.URL{
 		Scheme: "wss",
 		Host:   "zkillboard.com:2096",
@@ -117,8 +170,8 @@ func (r *Listener) Listen(stream chan []byte, connected, disconnected, done chan
 
 	msg, err := json.Marshal(body)
 	if err != nil {
-		r.Logger.WithField("request", body).Error("Encoutered Error Attempting marshal sub message")
-		return
+		r.Logger.WithError(err).WithField("request", body).Error("Encoutered Error Attempting marshal sub message")
+		return nil, err
 	}
 
 	r.Logger.WithField("address", address.String()).Info("attempting to connect to websocket")
@@ -135,44 +188,7 @@ func (r *Listener) Listen(stream chan []byte, connected, disconnected, done chan
 		r.Logger.WithError(err).Fatal("failed to send initial message")
 	}
 
-	connected <- true
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-
-		for {
-			_, message, err := c.ReadMessage()
-			if err != nil {
-				if err, ok := err.(*gorilla.CloseError); ok {
-					// Error Code 1000 is the response to a close message.
-					if err.Code == 1000 {
-						done <- true
-						return
-					}
-
-					disconnected <- true
-					return
-				}
-				r.Logger.WithError(err).Fatal("unknown error encountered. Crashing container")
-			}
-
-			stream <- message
-		}
-	}()
-
-	for {
-		select {
-		case <-interrupt:
-			r.Logger.Info("Interrupted")
-			err := c.WriteMessage(gorilla.CloseMessage, gorilla.FormatCloseMessage(gorilla.CloseNormalClosure, ""))
-			if err != nil {
-				r.Logger.WithError(err).Fatal("Failed to write close message")
-			}
-			done <- true
-			return
-		}
-	}
+	return c, err
 }
 
 func (r *Listener) processMessage(msg []byte) {

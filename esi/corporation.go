@@ -8,6 +8,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 )
 
 // GetCorporationsCorporationID makes a HTTP GET Request to the /corporations/{corporation_id} endpoint
@@ -16,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Corporation/get_corporations_corporation_id
 // Version: v4
 // Cache: 3600 sec (1 Hour)
-func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response, error) {
+func (e *Client) GetCorporationsCorporationID(id uint64, etag null.String) (Response, error) {
 	var response Response
 	path := fmt.Sprintf("/v4/corporations/%d/", id)
 
@@ -28,8 +29,8 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag string) (Response,
 
 	headers := make(map[string]string)
 
-	if etag != "" {
-		headers["If-None-Match"] = etag
+	if etag.Valid {
+		headers["If-None-Match"] = etag.String
 	}
 
 	request := Request{

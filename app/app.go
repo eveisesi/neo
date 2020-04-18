@@ -9,9 +9,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/killmail"
+	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/universe"
 	"golang.org/x/oauth2"
@@ -19,7 +22,6 @@ import (
 
 	"github.com/eveisesi/neo/esi"
 	"github.com/eveisesi/neo/mysql"
-	"github.com/eveisesi/neo/services/killmail"
 	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
@@ -36,44 +38,15 @@ type App struct {
 	Redis  *redis.Client
 	Client *http.Client
 	ESI    *esi.Client
-	Config *config
+	Config *neo.Config
 
 	Alliance    alliance.Service
 	Character   character.Service
 	Corporation corporation.Service
 	Killmail    killmail.Service
+	Market      market.Service
 	Token       token.Service
 	Universe    universe.Service
-}
-
-type config struct {
-	// db configuration
-	DBUser string `required:"true"`
-	DBPass string `required:"true"`
-	DBHost string `required:"true"`
-	DBName string `required:"true"`
-
-	// logger configuration
-	LogLevel string `required:"true"`
-
-	// ESI configuration
-	ESIHost   string `required:"true"`
-	ESIUAgent string `required:"true"`
-
-	// redis configuration
-	RedisAddr string `required:"true"`
-
-	// zkillboard params
-	ZUAgent string `required:"true"`
-
-	ServerPort uint `envconfig:"SERVER_PORT" required:"true"`
-
-	SSOClientID         string `envconfig:"SSO_CLIENT_ID" required:"true"`
-	SSOClientSecret     string `envconfig:"SSO_CLIENT_SECRET" required:"true"`
-	SSOCallback         string `envconfig:"SSO_CALLBACK" required:"true"`
-	SSOAuthorizationURL string `envconfig:"SSO_AUTHORIZATION_URL" required:"true"`
-	SSOTokenURL         string `envconfig:"SSO_TOKEN_URL" required:"true"`
-	SSOJWKSURL          string `envconfig:"SSO_JWKS_URL" required:"true"`
 }
 
 func New() *App {
@@ -134,25 +107,64 @@ func New() *App {
 		},
 	}
 
+	txn := mysql.NewTransactioner(db)
+
+	alliance := alliance.NewService(
+		redisClient,
+		esiClient,
+		mysql.NewAllianceRepository(db),
+	)
+	character := character.NewService(
+		redisClient,
+		esiClient,
+		mysql.NewCharacterRepository(db),
+	)
+	corporation := corporation.NewService(
+		redisClient,
+		esiClient,
+		mysql.NewCorporationRepository(db),
+	)
+	market := market.NewService(mysql.NewMarketRepository(db))
+	token := token.NewService(client, oauthConf, logger, redisClient, cfg.SSOJWKSURL, mysql.NewTokenRepository(db))
+	universe := universe.NewService(
+		redisClient,
+		esiClient,
+		mysql.NewUniverseRepository(db),
+	)
+	killmail := killmail.NewService(
+		client,
+		redisClient,
+		esiClient,
+		logger,
+		cfg,
+		character,
+		corporation,
+		alliance,
+		universe,
+		txn,
+		mysql.NewKillmailRepository(db),
+	)
+
 	return &App{
 		Logger: logger,
 		DB:     db,
 		Redis:  redisClient,
 		Client: client,
 		ESI:    esiClient,
-		Config: &cfg,
+		Config: cfg,
 
-		Alliance:    alliance.NewService(mysql.NewAllianceRepository(db)),
-		Character:   character.NewService(mysql.NewCharacterRepository(db)),
-		Corporation: corporation.NewService(mysql.NewCorporationRepository(db)),
-		Killmail:    killmail.NewService(mysql.NewKillmailRepository(db)),
-		Token:       token.NewService(client, oauthConf, logger, redisClient, cfg.SSOJWKSURL, mysql.NewTokenRepository(db)),
-		Universe:    universe.NewService(mysql.NewUniverseRepository(db)),
+		Alliance:    alliance,
+		Character:   character,
+		Corporation: corporation,
+		Killmail:    killmail,
+		Market:      market,
+		Token:       token,
+		Universe:    universe,
 	}
 
 }
 
-func makeDB(cfg config) (*sqlx.DB, error) {
+func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 	return mysql.Connect(&sqlDriver.Config{
 		User:         cfg.DBUser,
 		Passwd:       cfg.DBPass,
@@ -172,9 +184,10 @@ func makeDB(cfg config) (*sqlx.DB, error) {
 	})
 }
 
-func loadEnv() (config config, err error) {
-	err = envconfig.Process("", &config)
-	return
+func loadEnv() (*neo.Config, error) {
+	config := neo.Config{}
+	err := envconfig.Process("", &config)
+	return &config, err
 }
 
 func makeLogger(logLevel string) (*logrus.Logger, error) {

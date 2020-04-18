@@ -1,4 +1,4 @@
-package egress
+package killmail
 
 import (
 	"encoding/json"
@@ -7,51 +7,36 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
-
 	"github.com/urfave/cli"
-
-	"github.com/eveisesi/neo"
-	core "github.com/eveisesi/neo/app"
 )
 
-type Message struct {
-	ID   string `json:"id"`
-	Hash string `json:"hash"`
-}
+func (s *service) HistoryExporter(channel, date string) error {
 
-type Egressor struct {
-	*core.App
-}
-
-func Action(c *cli.Context) error {
-
-	e := &Egressor{
-		core.New(),
-	}
 	redisKey := "neo:egress:date"
 
-	result, err := e.Redis.Get(redisKey).Result()
+	result, err := s.redis.Get(redisKey).Result()
 	if err != nil && err.Error() != "redis: nil" {
-		e.Logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+		s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
 	}
 
 	if result == "" {
-		result = c.String("date")
-		if result == "" {
+		if date == "" {
 			return nil
 		}
+		result = date
 	}
 
-	date, err := time.Parse("20060102", result)
+	parsed, err := time.Parse("20060102", result)
 	if err != nil {
-		e.Logger.WithError(err).Fatal("unable to parse provided date")
+		s.logger.WithError(err).Fatal("unable to parse provided date")
 	}
 
-	_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
+	_, err = s.redis.Set(redisKey, parsed.Format("20060102"), -1).Result()
 	if err != nil {
-		e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
+		s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 	}
 
 	attempts := 1
@@ -61,20 +46,20 @@ func Action(c *cli.Context) error {
 			return cli.NewExitError("maximum allowed attempts reeached", 1)
 		}
 
-		entry := e.Logger.WithField("date", date.Format("20060102"))
+		entry := s.logger.WithField("date", parsed.Format("20060102"))
 
-		uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, date.Format("20060102"))
+		uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, parsed.Format("20060102"))
 
 		request, err := http.NewRequest(http.MethodGet, uri, nil)
 		if err != nil {
-			e.Logger.WithError(err).Fatal("unable to generate request for zkillboard history api")
+			s.logger.WithError(err).Fatal("unable to generate request for zkillboard history api")
 		}
 
-		request.Header.Set("User-Agent", e.Config.ZUAgent)
+		request.Header.Set("User-Agent", s.config.ZUAgent)
 
-		response, err := e.Client.Do(request)
+		response, err := s.client.Do(request)
 		if err != nil {
-			e.Logger.WithError(err).Warn("unable to execute request to zkillboard history api")
+			s.logger.WithError(err).Warn("unable to execute request to zkillboard history api")
 		}
 		entry = entry.WithField("code", response.StatusCode)
 
@@ -97,7 +82,7 @@ func Action(c *cli.Context) error {
 		if len(data) == 0 {
 			entry.WithField("uri", uri).Warn("no data received from zkillboard api")
 			// This maybe a bad date. Let decrement the date and try again. If attempts reaches 3, then this process will terminate
-			date = date.AddDate(0, 0, -1)
+			parsed = parsed.AddDate(0, 0, -1)
 			time.Sleep(time.Second * 10)
 			attempts++
 			continue
@@ -117,14 +102,14 @@ func Action(c *cli.Context) error {
 			continue
 		}
 
-		date = date.AddDate(0, 0, -1)
-		_, err = e.Redis.Set(redisKey, date.Format("20060102"), -1).Result()
+		parsed = parsed.AddDate(0, 0, -1)
+		_, err = s.redis.Set(redisKey, parsed.Format("20060102"), -1).Result()
 		if err != nil {
-			e.Logger.WithError(err).Error("redis returned invalid response while setting egress date")
+			s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 		}
 
 		entry.Info("handling hashes")
-		e.HandleHashes(c, hashes)
+		s.handleHashes(channel, hashes)
 		entry.Info("finished with hashes")
 
 		attempts = 1
@@ -132,29 +117,27 @@ func Action(c *cli.Context) error {
 
 }
 
-func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
+func (s *service) handleHashes(channel string, hashes map[string]string) {
 
 	// Make Sure the Redis Server is still alive and nothing has happened to it
-	pong, err := e.Redis.Ping().Result()
+	pong, err := s.redis.Ping().Result()
 	if err != nil {
-		e.Logger.WithError(err).Fatal("unable to ping redis server")
+		s.logger.WithError(err).Fatal("unable to ping redis server")
 	}
 	// Make sure that redis returned pong to ping
 	if pong != "PONG" {
-		e.Logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
+		s.logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
 	}
-	// Lets retrieve the channel from the cli
-	channel := c.String("channel")
 
 	// Lets get the most recent record from the end of the set to determine the score to use
-	results, err := e.Redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
+	results, err := s.redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
 	if err != nil {
-		e.Logger.WithError(err).Fatal("unable to get max score of redis z range")
+		s.logger.WithError(err).Fatal("unable to get max score of redis z range")
 	}
 
 	// If we received more than one result, something is wrong and we need to bail
 	if len(results) > 1 {
-		e.Logger.WithError(err).Fatal("unable to determine score")
+		s.logger.WithError(err).Fatal("unable to determine score")
 	}
 	// Default the score to 0 incase the set is empty
 	score := float64(0)
@@ -175,26 +158,26 @@ func (e *Egressor) HandleHashes(c *cli.Context, hashes map[string]string) {
 			Hash: hash,
 		})
 		if err != nil {
-			e.Logger.WithFields(logrus.Fields{
+			s.logger.WithFields(logrus.Fields{
 				"id":   id,
 				"hash": hash,
 			}).Error("unable to marshal id and hash for pubsub")
 			continue
 		}
 
-		e.Redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
+		s.redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
 		dispatched++
 
 	}
 
 	for {
 
-		count, err := e.Redis.ZCount(channel, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
 		if err != nil {
-			e.Logger.WithError(err).Fatal("unable to get count of redis zset")
+			s.logger.WithError(err).Fatal("unable to get count of redis zset")
 		}
 
-		e.Logger.WithFields(logrus.Fields{
+		s.logger.WithFields(logrus.Fields{
 			"total":         len(hashes),
 			"dispatched":    dispatched,
 			"remaining":     len(hashes) - dispatched,

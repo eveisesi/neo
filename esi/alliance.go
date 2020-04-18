@@ -8,6 +8,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 )
 
 // GetAlliancesAllianceID makes a HTTP GET Request to the /alliances/{alliance_id} endpoint
@@ -16,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Alliance/get_alliances_alliance_id
 // Version: v3
 // Cache: 3600 sec (1 Hour)
-func (e *Client) GetAlliancesAllianceID(id uint64, etag string) (Response, error) {
+func (e *Client) GetAlliancesAllianceID(id uint64, etag null.String) (Response, error) {
 
 	var response Response
 	path := fmt.Sprintf("/v3/alliances/%d/", id)
@@ -29,8 +30,8 @@ func (e *Client) GetAlliancesAllianceID(id uint64, etag string) (Response, error
 
 	headers := make(map[string]string)
 
-	if etag != "" {
-		headers["If-None-Match"] = etag
+	if etag.Valid {
+		headers["If-None-Match"] = etag.String
 	}
 
 	request := Request{

@@ -7,6 +7,8 @@ import (
 
 type AllianceRespository interface {
 	Alliance(ctx context.Context, id uint64) (*Alliance, error)
+	CreateAlliance(ctx context.Context, alliance *Alliance) (*Alliance, error)
+	UpdateAlliance(ctx context.Context, id uint64, alliance *Alliance) (*Alliance, error)
 	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*Alliance, error)
 }
 

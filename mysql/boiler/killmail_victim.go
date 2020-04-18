@@ -28,7 +28,7 @@ type KillmailVictim struct {
 	KillmailID    uint64       `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
 	AllianceID    null.Uint64  `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
 	CharacterID   null.Uint64  `boil:"character_id" json:"characterID,omitempty" toml:"characterID" yaml:"characterID,omitempty"`
-	CorporationID uint64       `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
+	CorporationID null.Uint64  `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
 	FactionID     null.Uint64  `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	DamageTaken   uint64       `boil:"damage_taken" json:"damageTaken" toml:"damageTaken" yaml:"damageTaken"`
 	ShipTypeID    uint64       `boil:"ship_type_id" json:"shipTypeID" toml:"shipTypeID" yaml:"shipTypeID"`
@@ -102,7 +102,7 @@ var KillmailVictimWhere = struct {
 	KillmailID    whereHelperuint64
 	AllianceID    whereHelpernull_Uint64
 	CharacterID   whereHelpernull_Uint64
-	CorporationID whereHelperuint64
+	CorporationID whereHelpernull_Uint64
 	FactionID     whereHelpernull_Uint64
 	DamageTaken   whereHelperuint64
 	ShipTypeID    whereHelperuint64
@@ -116,7 +116,7 @@ var KillmailVictimWhere = struct {
 	KillmailID:    whereHelperuint64{field: "`killmail_victim`.`killmail_id`"},
 	AllianceID:    whereHelpernull_Uint64{field: "`killmail_victim`.`alliance_id`"},
 	CharacterID:   whereHelpernull_Uint64{field: "`killmail_victim`.`character_id`"},
-	CorporationID: whereHelperuint64{field: "`killmail_victim`.`corporation_id`"},
+	CorporationID: whereHelpernull_Uint64{field: "`killmail_victim`.`corporation_id`"},
 	FactionID:     whereHelpernull_Uint64{field: "`killmail_victim`.`faction_id`"},
 	DamageTaken:   whereHelperuint64{field: "`killmail_victim`.`damage_taken`"},
 	ShipTypeID:    whereHelperuint64{field: "`killmail_victim`.`ship_type_id`"},

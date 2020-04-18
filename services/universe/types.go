@@ -19,7 +19,7 @@ func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 	var key = fmt.Sprintf(rtype, id)
 
 	result, err := s.redis.Get(key).Bytes()
-	if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
 
@@ -78,12 +78,12 @@ func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 		return invType, errors.Wrap(err, "unable to insert type into db")
 	}
 
-	bType, err := json.Marshal(invType)
+	byteSlice, err := json.Marshal(invType)
 	if err != nil {
 		return invType, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, bType, time.Minute*60).Result()
+	_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
 
 	return invType, errors.Wrap(err, "failed to cache solar type in redis")
 }
@@ -94,7 +94,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 	for _, id := range ids {
 		key := fmt.Sprintf(rtype, id)
 		result, err := s.redis.Get(key).Bytes()
-		if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
 
@@ -141,12 +141,12 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 	for _, invType := range dbTypes {
 		key := fmt.Sprintf(rtype, invType.ID)
 
-		bType, err := json.Marshal(invType)
+		byteSlice, err := json.Marshal(invType)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to marshal invType to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, bType, time.Minute*60).Result()
+		_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache invType in redis")
 		}
@@ -166,7 +166,7 @@ func (s *service) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAtt
 	var key = fmt.Sprintf(rattributes, id)
 
 	result, err := s.redis.Get(key).Bytes()
-	if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
 
@@ -183,12 +183,12 @@ func (s *service) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAtt
 		return nil, errors.Wrap(err, "unable to query database for type attributes")
 	}
 
-	byteSlc, err := json.Marshal(attributes)
+	byteSlice, err := json.Marshal(attributes)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlc, time.Minute*60).Result()
+	_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
 
 	return attributes, errors.Wrap(err, "failed to cache type in redis")
 }
@@ -201,7 +201,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 	for _, id := range ids {
 		key := fmt.Sprintf(rattributes, id)
 		result, err := s.redis.Get(key).Bytes()
-		if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
 
@@ -254,12 +254,12 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 	for typeID, typeAttributes := range attributes {
 		key := fmt.Sprintf(rattributes, typeID)
 
-		bAttributes, err := json.Marshal(typeAttributes)
+		byteSlice, err := json.Marshal(typeAttributes)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to marshal typeAttributes to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, bAttributes, time.Minute*60).Result()
+		_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache invType in redis")
 		}
@@ -281,7 +281,7 @@ func (s *service) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategor
 	var key = fmt.Sprintf(rcategory, id)
 
 	result, err := s.redis.Get(key).Bytes()
-	if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
 
@@ -299,12 +299,12 @@ func (s *service) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategor
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
-	byteSlc, err := json.Marshal(invCategory)
+	byteSlice, err := json.Marshal(invCategory)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlc, time.Hour*24).Result()
+	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 
 	return invCategory, errors.Wrap(err, "failed to cache category in redis")
 
@@ -316,7 +316,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 	for _, id := range ids {
 		key := fmt.Sprintf(rcategory, id)
 		result, err := s.redis.Get(key).Bytes()
-		if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
 
@@ -363,12 +363,12 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 	for _, invCategory := range dbCategory {
 		key := fmt.Sprintf(rcategory, invCategory.ID)
 
-		bType, err := json.Marshal(invCategory)
+		byteSlice, err := json.Marshal(invCategory)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to marshal invCategory to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, bType, time.Hour*24).Result()
+		_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache invCategory in redis")
 		}
@@ -388,7 +388,7 @@ func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error
 	var key = fmt.Sprintf(rflag, id)
 
 	result, err := s.redis.Get(key).Bytes()
-	if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
 
@@ -406,12 +406,12 @@ func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
-	byteSlc, err := json.Marshal(invFlag)
+	byteSlice, err := json.Marshal(invFlag)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlc, time.Hour*24).Result()
+	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 
 	return invFlag, errors.Wrap(err, "failed to cache category in redis")
 
@@ -423,7 +423,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 	for _, id := range ids {
 		key := fmt.Sprintf(rflag, id)
 		result, err := s.redis.Get(key).Bytes()
-		if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
 
@@ -470,12 +470,12 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 	for _, invFlag := range dbFlags {
 		key := fmt.Sprintf(rflag, invFlag.ID)
 
-		bType, err := json.Marshal(invFlag)
+		byteSlice, err := json.Marshal(invFlag)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to marshal invFlag to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, bType, time.Hour*24).Result()
+		_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache invFlag in redis")
 		}
@@ -495,7 +495,7 @@ func (s *service) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, err
 	var key = fmt.Sprintf(rgroup, id)
 
 	result, err := s.redis.Get(key).Bytes()
-	if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
 
@@ -513,12 +513,12 @@ func (s *service) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, err
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
-	byteSlc, err := json.Marshal(invGroup)
+	byteSlice, err := json.Marshal(invGroup)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlc, time.Hour*24).Result()
+	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 
 	return invGroup, errors.Wrap(err, "failed to cache category in redis")
 
@@ -530,7 +530,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*ne
 	for _, id := range ids {
 		key := fmt.Sprintf(rgroup, id)
 		result, err := s.redis.Get(key).Bytes()
-		if err != nil && !errors.Is(err, neo.ErrRedisNil) {
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
 
@@ -577,12 +577,12 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*ne
 	for _, invGroup := range dbGroups {
 		key := fmt.Sprintf(rgroup, invGroup.ID)
 
-		bType, err := json.Marshal(invGroup)
+		byteSlice, err := json.Marshal(invGroup)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to marshal invGroup to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, bType, time.Hour*24).Result()
+		_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache invGroup in redis")
 		}

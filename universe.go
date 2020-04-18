@@ -10,18 +10,28 @@ import (
 type UniverseRepository interface {
 	Constellation(ctx context.Context, id uint64) (*Constellation, error)
 	ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*Constellation, error)
+
 	Region(ctx context.Context, id uint64) (*Region, error)
 	RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*Region, error)
+
 	SolarSystem(ctx context.Context, id uint64) (*SolarSystem, error)
+	CreateSolarSystem(ctx context.Context, system *SolarSystem) error
 	SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*SolarSystem, error)
+
 	Type(ctx context.Context, id uint64) (*Type, error)
+	CreateType(ctx context.Context, invType *Type) error
 	TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*Type, error)
+
 	TypeAttributes(ctx context.Context, id uint64) ([]*TypeAttribute, error)
+	CreateTypeAttributes(ctx context.Context, attributes []*TypeAttribute) error
 	TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]*TypeAttribute, error)
+
 	TypeCategory(ctx context.Context, id uint64) (*TypeCategory, error)
 	TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64) ([]*TypeCategory, error)
+
 	TypeFlag(ctx context.Context, id uint64) (*TypeFlag, error)
 	TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*TypeFlag, error)
+
 	TypeGroup(ctx context.Context, id uint64) (*TypeGroup, error)
 	TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*TypeGroup, error)
 }
@@ -34,7 +44,7 @@ type Constellation struct {
 	PosX      float64    `json:"posX"`
 	PosY      float64    `json:"posY"`
 	PosZ      float64    `json:"posZ"`
-	FactionID null.Int64 `json:"factionID,omitempty"`
+	FactionID null.Int64 `json:"factionID"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
 }
@@ -46,7 +56,7 @@ type Region struct {
 	PosX      float64   `json:"posX"`
 	PosY      float64   `json:"posY"`
 	PosZ      float64   `json:"posZ"`
-	FactionID null.Uint `json:"factionID,omitempty"`
+	FactionID null.Uint `json:"factionID"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -68,17 +78,14 @@ type SolarSystem struct {
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint64       `json:"id"`
-	GroupID       uint64       `json:"groupID"`
-	Name          string       `json:"name"`
-	Description   string       `json:"description"`
-	Volume        float64      `json:"volume"`
-	RaceID        null.Uint64  `json:"raceID"`
-	BasePrice     null.Float64 `json:"base_price"`
-	Published     bool         `json:"published"`
-	MarketGroupID null.Uint64  `json:"marketGroupID"`
-	CreatedAt     null.Time    `json:"created_at"`
-	UpdatedAt     null.Time    `json:"updated_at"`
+	ID            uint64      `json:"id"`
+	GroupID       uint64      `json:"groupID"`
+	Name          string      `json:"name"`
+	Description   string      `json:"description"`
+	Published     bool        `json:"published"`
+	MarketGroupID null.Uint64 `json:"marketGroupID"`
+	CreatedAt     null.Time   `json:"created_at"`
+	UpdatedAt     null.Time   `json:"updated_at"`
 }
 
 // TypeAttribute is an object representing the database table.
@@ -94,7 +101,7 @@ type TypeAttribute struct {
 type TypeCategory struct {
 	ID        uint64    `json:"id"`
 	Name      string    `json:"name"`
-	Published null.Bool `json:"published,omitempty"`
+	Published null.Bool `json:"published"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

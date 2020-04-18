@@ -6,7 +6,10 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
+	"github.com/jinzhu/copier"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
+	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
@@ -28,6 +31,46 @@ func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*neo.Alli
 	).Bind(ctx, r.db, &alliance)
 
 	return &alliance, err
+
+}
+
+func (r *allianceRepository) CreateAlliance(ctx context.Context, alliance *neo.Alliance) (*neo.Alliance, error) {
+
+	var bAlliance = new(boiler.Alliance)
+	err := copier.Copy(bAlliance, alliance)
+	if err != nil {
+		return alliance, errors.Wrap(err, "unable to copy alliance to orm")
+	}
+
+	err = bAlliance.Insert(ctx, r.db, boil.Infer())
+	if err != nil {
+		return alliance, errors.Wrap(err, "unable to insert alliance into db")
+	}
+
+	err = copier.Copy(alliance, bAlliance)
+
+	return alliance, errors.Wrap(err, "unable to copy orm to alliance")
+
+}
+
+func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint64, alliance *neo.Alliance) (*neo.Alliance, error) {
+
+	var bAlliance = new(boiler.Alliance)
+	err := copier.Copy(bAlliance, alliance)
+	if err != nil {
+		return alliance, errors.Wrap(err, "unable to copy alliance to orm")
+	}
+
+	bAlliance.ID = id
+
+	_, err = bAlliance.Update(ctx, r.db, boil.Infer())
+	if err != nil {
+		return alliance, errors.Wrap(err, "unable to insert alliance in db")
+	}
+
+	err = copier.Copy(alliance, bAlliance)
+
+	return alliance, errors.Wrap(err, "unable to copy orm to alliance")
 
 }
 

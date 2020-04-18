@@ -170,7 +170,6 @@ type ComplexityRoot struct {
 		FactionID       func(childComplexity int) int
 		ID              func(childComplexity int) int
 		Name            func(childComplexity int) int
-		Region          func(childComplexity int) int
 		RegionID        func(childComplexity int) int
 		Security        func(childComplexity int) int
 		SunTypeID       func(childComplexity int) int
@@ -254,10 +253,13 @@ type QueryResolver interface {
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
 }
 type SolarSystemResolver interface {
-	Region(ctx context.Context, obj *neo.SolarSystem) (*neo.Region, error)
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
 }
 type TypeResolver interface {
+	Volume(ctx context.Context, obj *neo.Type) (float64, error)
+	RaceID(ctx context.Context, obj *neo.Type) (*int, error)
+	BasePrice(ctx context.Context, obj *neo.Type) (*float64, error)
+
 	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
 	Attributes(ctx context.Context, obj *neo.Type) ([]*neo.TypeAttribute, error)
 }
@@ -836,13 +838,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SolarSystem.Name(childComplexity), true
 
-	case "SolarSystem.region":
-		if e.complexity.SolarSystem.Region == nil {
-			break
-		}
-
-		return e.complexity.SolarSystem.Region(childComplexity), true
-
 	case "SolarSystem.regionID":
 		if e.complexity.SolarSystem.RegionID == nil {
 			break
@@ -1235,7 +1230,6 @@ type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     sunTypeID: Int
     security: Float!
 
-    region: Region!
     constellation: Constellation!
 }
 
@@ -4326,43 +4320,6 @@ func (ec *executionContext) _SolarSystem_security(ctx context.Context, field gra
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _SolarSystem_region(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "SolarSystem",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.SolarSystem().Region(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*neo.Region)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRegion(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _SolarSystem_constellation(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4561,13 +4518,13 @@ func (ec *executionContext) _Type_volume(ctx context.Context, field graphql.Coll
 		Object:   "Type",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Volume, nil
+		return ec.resolvers.Type().Volume(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4598,13 +4555,13 @@ func (ec *executionContext) _Type_raceID(ctx context.Context, field graphql.Coll
 		Object:   "Type",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RaceID, nil
+		return ec.resolvers.Type().RaceID(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4613,10 +4570,10 @@ func (ec *executionContext) _Type_raceID(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint64)
+	res := resTmp.(*int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Type_basePrice(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
@@ -4632,13 +4589,13 @@ func (ec *executionContext) _Type_basePrice(ctx context.Context, field graphql.C
 		Object:   "Type",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.BasePrice, nil
+		return ec.resolvers.Type().BasePrice(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4647,10 +4604,10 @@ func (ec *executionContext) _Type_basePrice(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Float64)
+	res := resTmp.(*float64)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Type_published(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
@@ -7255,20 +7212,6 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "region":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._SolarSystem_region(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "constellation":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7326,14 +7269,41 @@ func (ec *executionContext) _Type(ctx context.Context, sel ast.SelectionSet, obj
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "volume":
-			out.Values[i] = ec._Type_volume(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Type_volume(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "raceID":
-			out.Values[i] = ec._Type_raceID(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Type_raceID(ctx, field, obj)
+				return res
+			})
 		case "basePrice":
-			out.Values[i] = ec._Type_basePrice(ctx, field, obj)
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Type_basePrice(ctx, field, obj)
+				return res
+			})
 		case "published":
 			out.Values[i] = ec._Type_published(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8432,12 +8402,35 @@ func (ec *executionContext) marshalOCorporation2ᚖgithubᚗcomᚋeveisesiᚋneo
 	return ec._Corporation(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
+}
+
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
+}
+
 func (ec *executionContext) unmarshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, v interface{}) (null.Float64, error) {
 	return null1.UnmarshalFloat64(v)
 }
 
 func (ec *executionContext) marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, sel ast.SelectionSet, v null.Float64) graphql.Marshaler {
 	return null1.MarshalFloat64(v)
+}
+
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFloat2float64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx context.Context, v interface{}) (null.Int64, error) {

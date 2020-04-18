@@ -8,6 +8,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"github.com/volatiletech/null"
 )
 
 // GetCharactersCharacterID makes a HTTP GET Request to the /characters/{character_id} endpoint
@@ -16,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Character/get_characters_character_id
 // Version: v4
 // Cache: 86400 sec (24 Hour)
-func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, error) {
+func (e *Client) GetCharactersCharacterID(id uint64, etag null.String) (Response, error) {
 	var response Response
 	path := fmt.Sprintf("/v4/characters/%d/", id)
 
@@ -28,8 +29,8 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 
 	headers := make(map[string]string)
 
-	if etag != "" {
-		headers["If-None-Match"] = etag
+	if etag.Valid {
+		headers["If-None-Match"] = etag.String
 	}
 
 	request := Request{
@@ -48,6 +49,7 @@ func (e *Client) GetCharactersCharacterID(id uint64, etag string) (Response, err
 		if err != nil {
 			return response, err
 		}
+
 		if response.Code < 400 {
 			break
 		}

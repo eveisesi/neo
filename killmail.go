@@ -9,15 +9,31 @@ import (
 
 type KillmailRespository interface {
 	Killmail(ctx context.Context, id uint64, hash string) (*Killmail, error)
-	KillmailRecent(ctx context.Context, page *int) ([]*Killmail, error)
+	CreateKillmail(ctx context.Context, killmail *Killmail) (*Killmail, error)
+	CreateKillmailTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
+
+	KillmailExists(ctx context.Context, id uint64, hash string) (bool, error)
+	KillmailRecent(ctx context.Context, page null.Uint) ([]*Killmail, error)
 	KillmailsByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByFactionID(ctx context.Context, id uint64) ([]*Killmail, error)
+
 	KillmailAttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailAttacker, error)
+	CreateKillmailAttacker(ctx context.Context, attacker *KillmailAttacker) (*KillmailAttacker, error)
+	CreateKillmailAttackerTxn(ctx context.Context, txn Transactioner, attacker *KillmailAttacker) (*KillmailAttacker, error)
+	CreateKillmailAttackers(ctx context.Context, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
+	CreateKillmailAttackersTxn(ctx context.Context, txn Transactioner, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
+
 	KillmailItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
-	KillmailItemsByParentIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
+	CreateKillmailItem(ctx context.Context, item *KillmailItem) (*KillmailItem, error)
+	CreateKillmailItemTxn(ctx context.Context, txn Transactioner, item *KillmailItem) (*KillmailItem, error)
+	CreateKillmailItems(ctx context.Context, items []*KillmailItem) ([]*KillmailItem, error)
+	CreateKillmailItemsTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) ([]*KillmailItem, error)
+
 	KillmailVictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailVictim, error)
+	CreateKillmailVictim(ctx context.Context, attacker *KillmailVictim) (*KillmailVictim, error)
+	CreateKillmailVictimTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) (*KillmailVictim, error)
 }
 
 type KillmailItemLoaderType string
@@ -94,7 +110,7 @@ type KillmailVictim struct {
 	KillmailID    uint64            `json:"killmail_id"`
 	AllianceID    null.Uint64       `json:"alliance_id"`
 	CharacterID   null.Uint64       `json:"character_id"`
-	CorporationID uint64            `json:"corporation_id"`
+	CorporationID null.Uint64       `json:"corporation_id"`
 	FactionID     null.Uint64       `json:"faction_id"`
 	DamageTaken   uint64            `json:"damage_taken"`
 	ShipTypeID    uint64            `json:"ship_type_id"`

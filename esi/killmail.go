@@ -63,7 +63,7 @@ func (e *Client) GetKillmailsKillmailIDKillmailHash(id, hash string) (Response, 
 
 	killmail.ID = uint64(u)
 
-	response.Data = killmail
+	response.Data = &killmail
 
 	return response, err
 }

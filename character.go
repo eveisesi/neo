@@ -9,6 +9,8 @@ import (
 
 type CharacterRespository interface {
 	Character(ctx context.Context, id uint64) (*Character, error)
+	CreateCharacter(ctx context.Context, character *Character) (*Character, error)
+	UpdateCharacter(ctx context.Context, id uint64, character *Character) (*Character, error)
 	CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*Character, error)
 }
 

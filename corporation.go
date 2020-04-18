@@ -9,6 +9,8 @@ import (
 
 type CorporationRespository interface {
 	Corporation(ctx context.Context, id uint64) (*Corporation, error)
+	CreateCorporation(ctx context.Context, corporation *Corporation) (*Corporation, error)
+	UpdateCharacter(ctx context.Context, id uint64, corporation *Corporation) (*Corporation, error)
 	CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*Corporation, error)
 }
 
