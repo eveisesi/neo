@@ -29,6 +29,10 @@ type Killmail struct {
 	MoonID        null.Int64 `boil:"moon_id" json:"moonID,omitempty" toml:"moonID" yaml:"moonID,omitempty"`
 	SolarSystemID uint64     `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
 	WarID         null.Int64 `boil:"war_id" json:"warID,omitempty" toml:"warID" yaml:"warID,omitempty"`
+	IsNPC         int8       `boil:"is_npc" json:"isNPC" toml:"isNPC" yaml:"isNPC"`
+	IsAwox        int8       `boil:"is_awox" json:"isAwox" toml:"isAwox" yaml:"isAwox"`
+	IsSolo        int8       `boil:"is_solo" json:"isSolo" toml:"isSolo" yaml:"isSolo"`
+	TotalValue    float64    `boil:"total_value" json:"totalValue" toml:"totalValue" yaml:"totalValue"`
 	KillmailTime  time.Time  `boil:"killmail_time" json:"killmailTime" toml:"killmailTime" yaml:"killmailTime"`
 	CreatedAt     time.Time  `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt     time.Time  `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
@@ -43,6 +47,10 @@ var KillmailColumns = struct {
 	MoonID        string
 	SolarSystemID string
 	WarID         string
+	IsNPC         string
+	IsAwox        string
+	IsSolo        string
+	TotalValue    string
 	KillmailTime  string
 	CreatedAt     string
 	UpdatedAt     string
@@ -52,6 +60,10 @@ var KillmailColumns = struct {
 	MoonID:        "moon_id",
 	SolarSystemID: "solar_system_id",
 	WarID:         "war_id",
+	IsNPC:         "is_npc",
+	IsAwox:        "is_awox",
+	IsSolo:        "is_solo",
+	TotalValue:    "total_value",
 	KillmailTime:  "killmail_time",
 	CreatedAt:     "created_at",
 	UpdatedAt:     "updated_at",
@@ -82,12 +94,25 @@ func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperint8 struct{ field string }
+
+func (w whereHelperint8) EQ(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint8) NEQ(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint8) LT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint8) LTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint8) GT(x int8) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint8) GTE(x int8) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var KillmailWhere = struct {
 	ID            whereHelperuint64
 	Hash          whereHelperstring
 	MoonID        whereHelpernull_Int64
 	SolarSystemID whereHelperuint64
 	WarID         whereHelpernull_Int64
+	IsNPC         whereHelperint8
+	IsAwox        whereHelperint8
+	IsSolo        whereHelperint8
+	TotalValue    whereHelperfloat64
 	KillmailTime  whereHelpertime_Time
 	CreatedAt     whereHelpertime_Time
 	UpdatedAt     whereHelpertime_Time
@@ -97,6 +122,10 @@ var KillmailWhere = struct {
 	MoonID:        whereHelpernull_Int64{field: "`killmails`.`moon_id`"},
 	SolarSystemID: whereHelperuint64{field: "`killmails`.`solar_system_id`"},
 	WarID:         whereHelpernull_Int64{field: "`killmails`.`war_id`"},
+	IsNPC:         whereHelperint8{field: "`killmails`.`is_npc`"},
+	IsAwox:        whereHelperint8{field: "`killmails`.`is_awox`"},
+	IsSolo:        whereHelperint8{field: "`killmails`.`is_solo`"},
+	TotalValue:    whereHelperfloat64{field: "`killmails`.`total_value`"},
 	KillmailTime:  whereHelpertime_Time{field: "`killmails`.`killmail_time`"},
 	CreatedAt:     whereHelpertime_Time{field: "`killmails`.`created_at`"},
 	UpdatedAt:     whereHelpertime_Time{field: "`killmails`.`updated_at`"},
@@ -129,9 +158,9 @@ func (*killmailR) NewStruct() *killmailR {
 type killmailL struct{}
 
 var (
-	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "killmail_time", "created_at", "updated_at"}
+	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "is_npc", "is_awox", "is_solo", "total_value", "killmail_time", "created_at", "updated_at"}
 	killmailColumnsWithoutDefault = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "killmail_time", "created_at", "updated_at"}
-	killmailColumnsWithDefault    = []string{}
+	killmailColumnsWithDefault    = []string{"is_npc", "is_awox", "is_solo", "total_value"}
 	killmailPrimaryKeyColumns     = []string{"id", "hash"}
 )
 

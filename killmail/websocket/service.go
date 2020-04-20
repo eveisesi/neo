@@ -216,6 +216,7 @@ func (r *Listener) processMessage(msg []byte) {
 		// Get the score
 		score = results[0].Score
 	}
+	score += 1
 
 	payload, _ := json.Marshal(struct {
 		ID   string `json:"id"`

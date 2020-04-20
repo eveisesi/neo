@@ -92,20 +92,10 @@ func New() *App {
 	logger.WithField("pong", pong).Info("successfully pinged redis server")
 
 	client := &http.Client{
-		Timeout: time.Second * 5,
+		Timeout: time.Second * 10,
 	}
 
 	esiClient := esi.New(client, cfg.ESIHost, cfg.ESIUAgent)
-
-	oauthConf := &oauth2.Config{
-		ClientID:     cfg.SSOClientID,
-		ClientSecret: cfg.SSOClientSecret,
-		RedirectURL:  cfg.SSOCallback,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  cfg.SSOAuthorizationURL,
-			TokenURL: cfg.SSOTokenURL,
-		},
-	}
 
 	txn := mysql.NewTransactioner(db)
 
@@ -124,12 +114,35 @@ func New() *App {
 		esiClient,
 		mysql.NewCorporationRepository(db),
 	)
-	market := market.NewService(mysql.NewMarketRepository(db))
-	token := token.NewService(client, oauthConf, logger, redisClient, cfg.SSOJWKSURL, mysql.NewTokenRepository(db))
 	universe := universe.NewService(
 		redisClient,
 		esiClient,
+		mysql.NewBlueprintRepository(db),
 		mysql.NewUniverseRepository(db),
+	)
+	market := market.NewService(
+		redisClient,
+		esiClient,
+		logger,
+		universe,
+		txn,
+		mysql.NewMarketRepository(db),
+	)
+	token := token.NewService(
+		client,
+		&oauth2.Config{
+			ClientID:     cfg.SSOClientID,
+			ClientSecret: cfg.SSOClientSecret,
+			RedirectURL:  cfg.SSOCallback,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  cfg.SSOAuthorizationURL,
+				TokenURL: cfg.SSOTokenURL,
+			},
+		},
+		logger,
+		redisClient,
+		cfg.SSOJWKSURL,
+		mysql.NewTokenRepository(db),
 	)
 	killmail := killmail.NewService(
 		client,
@@ -141,6 +154,7 @@ func New() *App {
 		corporation,
 		alliance,
 		universe,
+		market,
 		txn,
 		mysql.NewKillmailRepository(db),
 	)

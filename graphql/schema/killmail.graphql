@@ -68,7 +68,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
 
     type: Type
     typeflag: TypeFlag
-    items: [KillmailItem]! @goField(forceResolver: true)
+    items: [KillmailItem]!
 }
 
 type KillmailPosition

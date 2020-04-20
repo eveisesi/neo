@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
@@ -32,6 +33,20 @@ func (r *marketRepository) Orders(ctx context.Context, id uint64) ([]*neo.Order,
 
 }
 
+func (r *marketRepository) OrderByTime(ctx context.Context, id uint64, minDate, maxDate time.Time) (*neo.Order, error) {
+
+	order := new(neo.Order)
+	err := boiler.Orders(
+		boiler.OrderWhere.TypeID.EQ(id),
+		qm.Where("date BETWEEN ? AND ?", minDate, maxDate),
+		qm.OrderBy(boiler.OrderColumns.Date+" DESC"),
+		qm.Limit(1),
+	).Bind(context.Background(), r.db, order)
+
+	return order, err
+
+}
+
 func (r *marketRepository) OrdersByIDs(ctx context.Context, ids []uint64) ([]*neo.Order, error) {
 
 	var orders = make([]*neo.Order, 0)
@@ -48,17 +63,13 @@ func (r *marketRepository) OrdersByIDs(ctx context.Context, ids []uint64) ([]*ne
 	return orders, err
 }
 
-func (r *marketRepository) CreateOrdersBulk(ctx context.Context, orders []*neo.Order) ([]*neo.Order, error) {
+func (r *marketRepository) CreateOrdersBulk(ctx context.Context, txn neo.Transactioner, orders []*neo.Order) ([]*neo.Order, error) {
 
-	txn, err := r.db.BeginTxx(ctx, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to start txn")
-	}
-
+	var t = txn.(*transaction)
 	for _, v := range orders {
 		var order = new(boiler.Order)
 
-		err = copier.Copy(order, v)
+		err := copier.Copy(order, v)
 		if err != nil {
 			txnErr := txn.Rollback()
 			if txnErr != nil {
@@ -67,7 +78,7 @@ func (r *marketRepository) CreateOrdersBulk(ctx context.Context, orders []*neo.O
 			return nil, errors.Wrap(err, "failed to copy order to boiler")
 		}
 
-		err = order.Insert(ctx, txn, boil.Infer())
+		err = order.Insert(ctx, t, boil.Infer())
 		if err != nil {
 			txnErr := txn.Rollback()
 			if txnErr != nil {
@@ -87,11 +98,6 @@ func (r *marketRepository) CreateOrdersBulk(ctx context.Context, orders []*neo.O
 
 	}
 
-	err = txn.Commit()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to commit txn")
-	}
-
-	return orders, err
+	return orders, nil
 
 }

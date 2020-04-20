@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
@@ -76,24 +77,48 @@ func (r *killmailRepository) CreateKillmailTxn(ctx context.Context, txn neo.Tran
 
 }
 
+func (r *killmailRepository) UpdateKillmail(ctx context.Context, id uint64, hash string, killmail *neo.Killmail) error {
+
+	var bKillmail = new(boiler.Killmail)
+	err := copier.Copy(bKillmail, killmail)
+	if err != nil {
+		return errors.Wrap(err, "unable to copy killmail to orm")
+	}
+
+	spew.Dump(killmail, bKillmail)
+
+	bKillmail.ID = id
+	bKillmail.Hash = hash
+
+	_, err = bKillmail.Update(ctx, r.db, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "failed to update killmail in db")
+	}
+
+	err = copier.Copy(killmail, bKillmail)
+
+	return errors.Wrap(err, "unable to copy orm to killmail")
+
+}
+
 func (r *killmailRepository) KillmailExists(ctx context.Context, id uint64, hash string) (bool, error) {
 	return boiler.KillmailExists(ctx, r.db, id, hash)
 }
 
-func (r *killmailRepository) KillmailRecent(ctx context.Context, page null.Uint) ([]*neo.Killmail, error) {
+func (r *killmailRepository) KillmailRecent(ctx context.Context, page null.Int) ([]*neo.Killmail, error) {
 
-	limit := uint(50)
-	offset := uint(0)
+	limit := 50
+	offset := 0
 
-	if page.Valid {
-		limit = page.Uint * uint(50)
+	if page.Valid && page.Int >= 0 {
+		limit = page.Int * limit
 		offset = limit - 50
 	}
 
 	var killmails = make([]*neo.Killmail, 0)
 	err := boiler.Killmails(
-		qm.Limit(int(limit)),
-		qm.Offset(int(offset)),
+		qm.Limit(limit),
+		qm.Offset(offset),
 		qm.OrderBy(
 			fmt.Sprintf(
 				"%s DESC",

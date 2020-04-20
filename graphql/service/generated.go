@@ -177,7 +177,6 @@ type ComplexityRoot struct {
 
 	Type struct {
 		Attributes    func(childComplexity int) int
-		BasePrice     func(childComplexity int) int
 		Description   func(childComplexity int) int
 		Group         func(childComplexity int) int
 		GroupID       func(childComplexity int) int
@@ -185,8 +184,6 @@ type ComplexityRoot struct {
 		MarketGroupID func(childComplexity int) int
 		Name          func(childComplexity int) int
 		Published     func(childComplexity int) int
-		RaceID        func(childComplexity int) int
-		Volume        func(childComplexity int) int
 	}
 
 	TypeAttribute struct {
@@ -234,7 +231,6 @@ type KillmailAttackerResolver interface {
 type KillmailItemResolver interface {
 	Type(ctx context.Context, obj *neo.KillmailItem) (*neo.Type, error)
 	Typeflag(ctx context.Context, obj *neo.KillmailItem) (*neo.TypeFlag, error)
-	Items(ctx context.Context, obj *neo.KillmailItem) ([]*neo.KillmailItem, error)
 }
 type KillmailVictimResolver interface {
 	Alliance(ctx context.Context, obj *neo.KillmailVictim) (*neo.Alliance, error)
@@ -256,10 +252,6 @@ type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
 }
 type TypeResolver interface {
-	Volume(ctx context.Context, obj *neo.Type) (float64, error)
-	RaceID(ctx context.Context, obj *neo.Type) (*int, error)
-	BasePrice(ctx context.Context, obj *neo.Type) (*float64, error)
-
 	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
 	Attributes(ctx context.Context, obj *neo.Type) ([]*neo.TypeAttribute, error)
 }
@@ -866,13 +858,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Type.Attributes(childComplexity), true
 
-	case "Type.basePrice":
-		if e.complexity.Type.BasePrice == nil {
-			break
-		}
-
-		return e.complexity.Type.BasePrice(childComplexity), true
-
 	case "Type.description":
 		if e.complexity.Type.Description == nil {
 			break
@@ -921,20 +906,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Type.Published(childComplexity), true
-
-	case "Type.raceID":
-		if e.complexity.Type.RaceID == nil {
-			break
-		}
-
-		return e.complexity.Type.RaceID(childComplexity), true
-
-	case "Type.volume":
-		if e.complexity.Type.Volume == nil {
-			break
-		}
-
-		return e.complexity.Type.Volume(childComplexity), true
 
 	case "TypeAttribute.attributeID":
 		if e.complexity.TypeAttribute.AttributeID == nil {
@@ -1183,7 +1154,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
 
     type: Type
     typeflag: TypeFlag
-    items: [KillmailItem]! @goField(forceResolver: true)
+    items: [KillmailItem]!
 }
 
 type KillmailPosition
@@ -1238,9 +1209,6 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     groupID: Int!
     name: String!
     description: String!
-    volume: Float!
-    raceID: Int
-    basePrice: Float
     published: Boolean!
     marketGroupID: Int
 
@@ -3136,13 +3104,13 @@ func (ec *executionContext) _KillmailItem_items(ctx context.Context, field graph
 		Object:   "KillmailItem",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KillmailItem().Items(rctx, obj)
+		return obj.Items, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3435,10 +3403,10 @@ func (ec *executionContext) _KillmailVictim_corporationID(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(uint64)
+	res := resTmp.(null.Uint64)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+	return ec.marshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_factionID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4503,111 +4471,6 @@ func (ec *executionContext) _Type_description(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Type_volume(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Type().Volume(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Type_raceID(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Type().RaceID(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Type_basePrice(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Type",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Type().BasePrice(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*float64)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Type_published(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
@@ -6863,19 +6726,10 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 				return res
 			})
 		case "items":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._KillmailItem_items(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._KillmailItem_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7268,42 +7122,6 @@ func (ec *executionContext) _Type(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "volume":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Type_volume(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "raceID":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Type_raceID(ctx, field, obj)
-				return res
-			})
-		case "basePrice":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Type_basePrice(ctx, field, obj)
-				return res
-			})
 		case "published":
 			out.Values[i] = ec._Type_published(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -7810,6 +7628,20 @@ func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
 	res := graphql.MarshalFloat(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx context.Context, v interface{}) (null.Uint64, error) {
+	return null1.UnmarshalUint64(v)
+}
+
+func (ec *executionContext) marshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx context.Context, sel ast.SelectionSet, v null.Uint64) graphql.Marshaler {
+	res := null1.MarshalUint64(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -8402,35 +8234,12 @@ func (ec *executionContext) marshalOCorporation2ᚖgithubᚗcomᚋeveisesiᚋneo
 	return ec._Corporation(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
-	return graphql.UnmarshalFloat(v)
-}
-
-func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
-	return graphql.MarshalFloat(v)
-}
-
 func (ec *executionContext) unmarshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, v interface{}) (null.Float64, error) {
 	return null1.UnmarshalFloat64(v)
 }
 
 func (ec *executionContext) marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, sel ast.SelectionSet, v null.Float64) graphql.Marshaler {
 	return null1.MarshalFloat64(v)
-}
-
-func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOFloat2float64(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx context.Context, v interface{}) (null.Int64, error) {

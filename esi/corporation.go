@@ -3,6 +3,7 @@ package esi
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -34,10 +35,10 @@ func (e *Client) GetCorporationsCorporationID(id uint64, etag null.String) (Resp
 	}
 
 	request := Request{
-		Method:  "GET",
+		Method:  http.MethodGet,
 		Path:    url,
 		Headers: headers,
-		Body:    []byte(""),
+		Body:    nil,
 	}
 
 	attempts := uint64(0)

@@ -11,25 +11,27 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	"github.com/volatiletech/null"
 )
 
-func (s *service) HistoryExporter(channel, date string) error {
+func (s *service) HistoryExporter(channel string, cDate null.String) error {
 
 	redisKey := "neo:egress:date"
 
-	result, err := s.redis.Get(redisKey).Result()
-	if err != nil && err.Error() != "redis: nil" {
-		s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
-	}
-
-	if result == "" {
-		if date == "" {
+	var date string
+	if cDate.Valid {
+		date = cDate.String
+	} else {
+		result, err := s.redis.Get(redisKey).Result()
+		if err != nil && err.Error() != "redis: nil" {
+			s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+		}
+		if result == "" {
 			return nil
 		}
-		result = date
 	}
 
-	parsed, err := time.Parse("20060102", result)
+	parsed, err := time.Parse("20060102", date)
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to parse provided date")
 	}

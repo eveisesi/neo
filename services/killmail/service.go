@@ -8,16 +8,19 @@ import (
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 )
 
 type (
 	Service interface {
 		// WebsocketExporter(channel string) error
-		HistoryExporter(channel, date string) error
+		HistoryExporter(channel string, cDate null.String) error
 		Importer(channel string, gLimit, gSleep int64) error
+		neo.KillmailRespository
 	}
 
 	Message struct {
@@ -35,6 +38,7 @@ type (
 		corporation corporation.Service
 		alliance    alliance.Service
 		universe    universe.Service
+		market      market.Service
 		txn         neo.Starter
 		neo.KillmailRespository
 	}
@@ -50,6 +54,7 @@ func NewService(
 	corporation corporation.Service,
 	alliance alliance.Service,
 	universe universe.Service,
+	market market.Service,
 	txn neo.Starter,
 	killmail neo.KillmailRespository,
 ) Service {
@@ -63,6 +68,7 @@ func NewService(
 		corporation,
 		alliance,
 		universe,
+		market,
 		txn,
 		killmail,
 	}

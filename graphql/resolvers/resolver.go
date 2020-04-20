@@ -11,14 +11,20 @@ import (
 // THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 type Resolver struct {
-	KillmailServ killmail.Service
-
+	Services   Services
 	Dataloader func(ctx context.Context) dataloaders.Loaders
+}
+
+type Killmail killmail.Service
+
+type Services struct {
+	Killmail
 }
 
 func (r *Resolver) Mutation() service.MutationResolver {
 	return &mutationResolver{r}
 }
+
 func (r *Resolver) Query() service.QueryResolver {
 	return &queryResolver{r}
 }

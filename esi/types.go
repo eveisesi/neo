@@ -3,6 +3,7 @@ package esi
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -40,7 +41,7 @@ func (e *Client) GetUniverseTypesTypeID(id uint64) (Response, error) {
 	}
 
 	request := Request{
-		Method:  "GET",
+		Method:  http.MethodGet,
 		Path:    url,
 		Headers: make(map[string]string),
 	}

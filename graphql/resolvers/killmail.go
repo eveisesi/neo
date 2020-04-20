@@ -3,16 +3,18 @@ package resolvers
 import (
 	"context"
 
+	"github.com/volatiletech/null"
+
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/service"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error) {
-	return r.KillmailServ.Killmail(ctx, uint64(id), hash)
+	return r.Services.Killmail.Killmail(ctx, uint64(id), hash)
 }
 
 func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
-	return r.KillmailServ.KillmailRecent(ctx, page)
+	return r.Services.Killmail.KillmailRecent(ctx, null.IntFromPtr(page))
 }
 
 func (r *Resolver) Killmail() service.KillmailResolver {
@@ -24,6 +26,7 @@ type killmailResolver struct{ *Resolver }
 func (r *killmailResolver) Attackers(ctx context.Context, obj *neo.Killmail) ([]*neo.KillmailAttacker, error) {
 	return r.Dataloader(ctx).KillmailAttackersLoader.Load(obj.ID)
 }
+
 func (r *killmailResolver) Victim(ctx context.Context, obj *neo.Killmail) (*neo.KillmailVictim, error) {
 	return r.Dataloader(ctx).KillmailVictimLoader.Load(obj.ID)
 }
@@ -75,13 +78,6 @@ func (r *killmailItemResolver) Typeflag(ctx context.Context, obj *neo.KillmailIt
 	return r.Dataloader(ctx).TypeFlagLoader.Load(obj.Flag)
 }
 
-func (r *killmailItemResolver) Items(ctx context.Context, obj *neo.KillmailItem) ([]*neo.KillmailItem, error) {
-	return r.Dataloader(ctx).KillmailItemsLoader.Load(&neo.KillmailItemLoader{
-		ID:   obj.ParentID.Uint64,
-		Type: neo.ChildKillmailItem,
-	})
-}
-
 func (r *Resolver) KillmailVictim() service.KillmailVictimResolver {
 	return &killmailVictimResolver{r}
 }
@@ -93,7 +89,7 @@ func (r *killmailVictimResolver) Alliance(ctx context.Context, obj *neo.Killmail
 }
 
 func (r *killmailVictimResolver) Corporation(ctx context.Context, obj *neo.KillmailVictim) (*neo.Corporation, error) {
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID)
+	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint64)
 }
 
 func (r *killmailVictimResolver) Character(ctx context.Context, obj *neo.KillmailVictim) (*neo.Character, error) {
@@ -117,8 +113,5 @@ func (r *killmailVictimResolver) Position(ctx context.Context, obj *neo.Killmail
 }
 
 func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error) {
-	return r.Dataloader(ctx).KillmailItemsLoader.Load(&neo.KillmailItemLoader{
-		ID:   obj.KillmailID,
-		Type: neo.ParentKillmailItem,
-	})
+	return r.Dataloader(ctx).KillmailItemsLoader.Load(obj.KillmailID)
 }

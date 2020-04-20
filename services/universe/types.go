@@ -396,24 +396,24 @@ func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error
 
 		err = json.Unmarshal(result, invFlag)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to unmarshal type from redis")
+			return nil, errors.Wrap(err, "unable to unmarshal flag from redis")
 		}
 		return invFlag, nil
 	}
 
 	invFlag, err = s.UniverseRepository.TypeFlag(ctx, id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, errors.Wrap(err, "unable to query database for type")
+		return nil, errors.Wrap(err, "unable to query database for flag")
 	}
 
 	byteSlice, err := json.Marshal(invFlag)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to marshal type for cache")
+		return nil, errors.Wrap(err, "unable to marshal flag for cache")
 	}
 
 	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
 
-	return invFlag, errors.Wrap(err, "failed to cache category in redis")
+	return invFlag, errors.Wrap(err, "failed to cache flag in redis")
 
 }
 

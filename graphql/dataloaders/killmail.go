@@ -42,51 +42,39 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 	return generated.NewKillmailItemsLoader(generated.KillmailItemsLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(objs []*neo.KillmailItemLoader) ([][]*neo.KillmailItem, []error) {
+		Fetch: func(ids []uint64) ([][]*neo.KillmailItem, []error) {
 
-			items := make([][]*neo.KillmailItem, len(objs))
-			errors := make([]error, len(objs))
+			items := make([][]*neo.KillmailItem, len(ids))
+			errors := make([]error, len(ids))
 
-			itemsByID := map[uint64][]*neo.KillmailItem{}
-
-			killmailIDs := make([]uint64, 0)
-			for _, v := range objs {
-				if v.Type.IsValid() && v.Type == neo.ParentKillmailItem {
-					killmailIDs = append(killmailIDs, v.ID)
-				}
-			}
-			if len(killmailIDs) > 0 {
-				parentRows, err := killmail.KillmailItemsByKillmailIDs(ctx, killmailIDs)
-				if err != nil {
-					errors = append(errors, err)
-					return nil, errors
-				}
-
-				for _, row := range parentRows {
-					itemsByID[row.KillmailID] = append(itemsByID[row.KillmailID], row)
-				}
+			rows, err := killmail.KillmailItemsByKillmailIDs(ctx, ids)
+			if err != nil {
+				errors = append(errors, err)
+				return nil, errors
 			}
 
-			parentIDs := make([]uint64, 0)
-			for _, v := range objs {
-				if v.Type.IsValid() && v.Type == neo.ChildKillmailItem {
-					parentIDs = append(parentIDs, v.ID)
+			var parentsWithChildren = make([]*neo.KillmailItem, 0)
+			for _, row := range rows {
+				if !row.ParentID.Valid {
+					parentsWithChildren = append(parentsWithChildren, row)
+				}
+				if row.ParentID.Valid {
+					for i, parent := range parentsWithChildren {
+						if parent.ID == row.ParentID.Uint64 {
+							parentsWithChildren[i].Items = append(parentsWithChildren[i].Items, row)
+							break
+						}
+					}
 				}
 			}
 
-			if len(parentIDs) > 0 {
-				childRows, err := killmail.KillmailItemsByParentIDs(ctx, parentIDs)
-				if err != nil {
-					errors = append(errors, err)
-					return nil, errors
-				}
-				for _, row := range childRows {
-					itemsByID[row.ParentID.Uint64] = append(itemsByID[row.ParentID.Uint64], row)
-				}
+			var itemsByKillmailID = make(map[uint64][]*neo.KillmailItem)
+			for _, row := range parentsWithChildren {
+				itemsByKillmailID[row.KillmailID] = append(itemsByKillmailID[row.KillmailID], row)
 			}
 
-			for i, v := range objs {
-				items[i] = itemsByID[v.ID]
+			for i, v := range ids {
+				items[i] = itemsByKillmailID[v]
 			}
 
 			return items, nil

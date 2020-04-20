@@ -7,7 +7,8 @@ import (
 
 type MarketRepository interface {
 	Orders(context.Context, uint64) ([]*Order, error)
-	CreateOrdersBulk(ctx context.Context, orders []*Order) ([]*Order, error)
+	OrderByTime(ctx context.Context, id uint64, minDate, maxDate time.Time) (*Order, error)
+	CreateOrdersBulk(ctx context.Context, txn Transactioner, orders []*Order) ([]*Order, error)
 }
 
 type Order struct {

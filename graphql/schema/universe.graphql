@@ -29,9 +29,6 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     groupID: Int!
     name: String!
     description: String!
-    volume: Float!
-    raceID: Int
-    basePrice: Float
     published: Boolean!
     marketGroupID: Int
 

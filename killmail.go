@@ -11,9 +11,10 @@ type KillmailRespository interface {
 	Killmail(ctx context.Context, id uint64, hash string) (*Killmail, error)
 	CreateKillmail(ctx context.Context, killmail *Killmail) (*Killmail, error)
 	CreateKillmailTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
+	UpdateKillmail(ctx context.Context, id uint64, hash string, killmail *Killmail) error
 
 	KillmailExists(ctx context.Context, id uint64, hash string) (bool, error)
-	KillmailRecent(ctx context.Context, page null.Uint) ([]*Killmail, error)
+	KillmailRecent(ctx context.Context, page null.Int) ([]*Killmail, error)
 	KillmailsByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
@@ -71,6 +72,10 @@ type Killmail struct {
 	MoonID        null.Int64 `json:"moon_id,omitempty"`
 	SolarSystemID uint64     `json:"solar_system_id"`
 	WarID         null.Int64 `json:"war_id,omitempty"`
+	IsNPC         int8       `json:"isNPC"`
+	IsAwox        int8       `json:"isAwox"`
+	IsSolo        int8       `json:"isSolo"`
+	TotalValue    float64    `json:"totalValue"`
 	KillmailTime  time.Time  `json:"killmail_time"`
 
 	Attackers []*KillmailAttacker `json:"attackers"`
@@ -99,6 +104,7 @@ type KillmailItem struct {
 	ItemTypeID        uint64      `json:"item_type_id"`
 	QuantityDropped   null.Uint64 `json:"quantity_dropped"`
 	QuantityDestroyed null.Uint64 `json:"quantity_destroyed"`
+	ItemValue         float64     `json:"itemValue"`
 	Singleton         uint64      `json:"singleton"`
 	IsParent          bool        `json:"is_parent"`
 

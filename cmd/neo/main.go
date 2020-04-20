@@ -3,10 +3,15 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
 	core "github.com/eveisesi/neo/app"
+	"github.com/eveisesi/neo/killmail/websocket"
+	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 	"github.com/urfave/cli"
+	"github.com/volatiletech/null"
 )
 
 var (
@@ -20,12 +25,12 @@ func init() {
 	}
 
 	app = cli.NewApp()
-	app.Name = "Killboard Core"
-	app.Usage = "Service that manages all services related to Killboard and its stable operation"
+	app.Name = "Neo Core"
+	app.Usage = "Service that manages all services related to Neo and its stable operation"
 	app.Version = "v0.0.1"
 	app.Commands = []cli.Command{
 		cli.Command{
-			Name:  "ingress",
+			Name:  "import",
 			Usage: "Listen to a Redis PubSub channel for killmail hashes. On Message receive, reach out to CCP for Killmail Data and process.",
 			Action: func(c *cli.Context) error {
 				app := core.New()
@@ -33,7 +38,7 @@ func init() {
 				limit := c.Int64("gLimit")
 				sleep := c.Int64("gSleep")
 
-				err := app.Killmail.Ingress(channel, limit, sleep)
+				err := app.Killmail.Importer(channel, limit, sleep)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
@@ -59,76 +64,91 @@ func init() {
 			},
 		},
 		cli.Command{
-			Name:  "egress",
+			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {
 				app := core.New()
 				channel := c.String("channel")
-				date := c.String("date")
+				date := null.NewString(c.String("date"), c.String("date") != "")
 
-				err := app.Killmail.Egress(channel, date)
+				err := app.Killmail.HistoryExporter(channel, date)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
 
 				return nil
 			},
-			// 	Flags: []cli.Flag{
-			// 		cli.StringFlag{
-			// 			Name:     "channel",
-			// 			Usage:    "channel is the key to use when  pulling killmail ids and hashes from redis to be resolved and inserted into the database",
-			// 			Required: true,
-			// 		},
-			// 		cli.StringFlag{
-			// 			Name:  "date",
-			// 			Usage: "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
-			// 			// Required: true,
-			// 		},
-			// 	},
-			// },
-			// cli.Command{
-			// 	Name: "burner",
-			// 	Action: func(c *cli.Context) error {
-			// 		type Dog struct {
-			// 			age  int
-			// 			name string
-			// 		}
-			// 		var roger = new(Dog)
-			// 		roger.age = 5
-			// 		roger.name = "Roger"
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:     "channel",
+					Usage:    "channel is the key to use when  pulling killmail ids and hashes from redis to be resolved and inserted into the database",
+					Required: true,
+				},
+				cli.StringFlag{
+					Name:  "date",
+					Usage: "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
+					// Required: true,
+				},
+			},
+		},
+		// cli.Command{
+		// 	Name: "burner",
+		// 	Action: func(c *cli.Context) error {
+		// 		a := []int{1, 2, 3, 4, 5}
+		// 		i := 2
+		// 		// a = append(a[:1], a[2:]...)
+		// 		spew.Dump(a)
 
-			// 		var sparky = new(Dog)
-			// 		*sparky = *roger
+		// 		copy(a[i:], a[i+1:])
+		// 		a = a[:len(a)-1]
+		// 		spew.Dump(a)
 
-			// 		sparky.age = 4
-			// 		sparky.name = "Sparky"
+		// 		return nil
+		// 	},
+		// },
+		cli.Command{
+			Name:   "serve",
+			Usage:  "Starts an HTTP Server to serve killmail data",
+			Action: server.Action,
+		},
+		cli.Command{
+			Name:  "market",
+			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+			Action: func(ctx *cli.Context) error {
+				app := core.New()
 
-			// 		spew.Dump(roger, sparky)
+				app.Market.FetchOrders()
+				c := cron.New(
+					cron.WithLocation(time.UTC),
+					cron.WithLogger(
+						cron.VerbosePrintfLogger(
+							log.New(
+								os.Stdout,
+								"cron: ", log.LstdFlags,
+							),
+						),
+					),
+				)
+				c.AddFunc("*/10 * * * *", func() {
+					app.Market.FetchOrders()
+				})
 
-			// 		return nil
-			// 	},
-			// },
-			// cli.Command{
-			// 	Name:   "serve",
-			// 	Usage:  "Starts an HTTP Server to serve killmail data",
-			// 	Action: server.Action,
-			// },
-			// cli.Command{
-			// 	Name:   "market",
-			// 	Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
-			// 	Action: market.Action,
-			// },
-			// cli.Command{
-			// 	Name:   "listen",
-			// 	Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
-			// 	Action: websocket.Action,
-			// 	Flags: []cli.Flag{
-			// 		cli.StringFlag{
-			// 			Name:     "channel",
-			// 			Usage:    "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
-			// 			Required: true,
-			// 		},
-			// 	},
+				c.Run()
+
+				return nil
+			},
+		},
+		cli.Command{
+			Name:   "listen",
+			Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+			Action: websocket.Action,
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:     "channel",
+					Usage:    "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
+					Required: true,
+				},
+			},
 		},
 	}
 }

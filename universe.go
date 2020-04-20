@@ -124,3 +124,10 @@ type TypeGroup struct {
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
 }
+
+// TypeMaterial is an object representing the database table.
+type TypeMaterial struct {
+	TypeID         uint64 `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
+	MaterialTypeID uint64 `boil:"material_type_id" json:"materialTypeID" toml:"materialTypeID" yaml:"materialTypeID"`
+	Quantity       uint64 `boil:"quantity" json:"quantity" toml:"quantity" yaml:"quantity"`
+}
