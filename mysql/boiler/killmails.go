@@ -32,8 +32,8 @@ type Killmail struct {
 	IsNPC          bool       `boil:"is_npc" json:"isNPC" toml:"isNPC" yaml:"isNPC"`
 	IsAwox         bool       `boil:"is_awox" json:"isAwox" toml:"isAwox" yaml:"isAwox"`
 	IsSolo         bool       `boil:"is_solo" json:"isSolo" toml:"isSolo" yaml:"isSolo"`
-	DroppedValue   float64    `boil:"droppedValue" json:"droppedValue" toml:"droppedValue" yaml:"droppedValue"`
-	DestroyedValue float64    `boil:"destroyedValue" json:"destroyedValue" toml:"destroyedValue" yaml:"destroyedValue"`
+	DroppedValue   float64    `boil:"dropped_value" json:"droppedValue" toml:"droppedValue" yaml:"droppedValue"`
+	DestroyedValue float64    `boil:"destroyed_value" json:"destroyedValue" toml:"destroyedValue" yaml:"destroyedValue"`
 	FittedValue    float64    `boil:"fitted_value" json:"fittedValue" toml:"fittedValue" yaml:"fittedValue"`
 	TotalValue     float64    `boil:"total_value" json:"totalValue" toml:"totalValue" yaml:"totalValue"`
 	KillmailTime   time.Time  `boil:"killmail_time" json:"killmailTime" toml:"killmailTime" yaml:"killmailTime"`
@@ -69,8 +69,8 @@ var KillmailColumns = struct {
 	IsNPC:          "is_npc",
 	IsAwox:         "is_awox",
 	IsSolo:         "is_solo",
-	DroppedValue:   "droppedValue",
-	DestroyedValue: "destroyedValue",
+	DroppedValue:   "dropped_value",
+	DestroyedValue: "destroyed_value",
 	FittedValue:    "fitted_value",
 	TotalValue:     "total_value",
 	KillmailTime:   "killmail_time",
@@ -128,8 +128,8 @@ var KillmailWhere = struct {
 	IsNPC:          whereHelperbool{field: "`killmails`.`is_npc`"},
 	IsAwox:         whereHelperbool{field: "`killmails`.`is_awox`"},
 	IsSolo:         whereHelperbool{field: "`killmails`.`is_solo`"},
-	DroppedValue:   whereHelperfloat64{field: "`killmails`.`droppedValue`"},
-	DestroyedValue: whereHelperfloat64{field: "`killmails`.`destroyedValue`"},
+	DroppedValue:   whereHelperfloat64{field: "`killmails`.`dropped_value`"},
+	DestroyedValue: whereHelperfloat64{field: "`killmails`.`destroyed_value`"},
 	FittedValue:    whereHelperfloat64{field: "`killmails`.`fitted_value`"},
 	TotalValue:     whereHelperfloat64{field: "`killmails`.`total_value`"},
 	KillmailTime:   whereHelpertime_Time{field: "`killmails`.`killmail_time`"},
@@ -164,9 +164,9 @@ func (*killmailR) NewStruct() *killmailR {
 type killmailL struct{}
 
 var (
-	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "is_npc", "is_awox", "is_solo", "droppedValue", "destroyedValue", "fitted_value", "total_value", "killmail_time", "created_at", "updated_at"}
+	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value", "killmail_time", "created_at", "updated_at"}
 	killmailColumnsWithoutDefault = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "killmail_time", "created_at", "updated_at"}
-	killmailColumnsWithDefault    = []string{"is_npc", "is_awox", "is_solo", "droppedValue", "destroyedValue", "fitted_value", "total_value"}
+	killmailColumnsWithDefault    = []string{"is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value"}
 	killmailPrimaryKeyColumns     = []string{"id", "hash"}
 )
 
