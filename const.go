@@ -21,3 +21,4 @@ const ESI_EXPIRES_HEADER_FORMAT = "Mon, 02 Jan 2006 15:04:05 MST"
 // REDIS KEY
 const REDIS_ESI_ERROR_COUNT = "esi:error:count"
 const REDIS_ESI_ERROR_RESET = "esi:error:reset"
+const REDIS_ESI_ALERT_STATUS = "esi:tracking:alert"

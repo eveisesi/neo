@@ -56,7 +56,7 @@ func Action(c *cli.Context) {
 		app.Universe,
 	)
 	app.Logger.WithField("port", app.Config.ServerPort).Info("attempting to start server...")
-
+	go cleanUpVisitors()
 	go func() {
 		if err := server.server.ListenAndServe(); err != nil {
 			app.Logger.WithError(err).Fatal("unable to start server")

@@ -22,7 +22,7 @@ func ConstellationLoader(ctx context.Context, universe universe.Service) *genera
 				return nil, errors
 			}
 
-			constellationsByConstellationIDs := make(map[uint64]*neo.Constellation, 0)
+			constellationsByConstellationIDs := make(map[uint64]*neo.Constellation)
 			for _, row := range rows {
 				constellationsByConstellationIDs[row.ID] = row
 			}
@@ -50,7 +50,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 				return regions, errors
 			}
 
-			regionsByRegionIDs := make(map[uint64]*neo.Region, 0)
+			regionsByRegionIDs := make(map[uint64]*neo.Region)
 			for _, row := range rows {
 				regionsByRegionIDs[row.ID] = row
 			}

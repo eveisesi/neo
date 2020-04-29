@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	core "github.com/eveisesi/neo/app"
@@ -175,8 +177,8 @@ func init() {
 			Action: server.Action,
 		},
 		cli.Command{
-			Name:  "market",
-			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+			Name:  "cron",
+			Usage: "Spins up the crons",
 			Action: func(ctx *cli.Context) error {
 
 				if ctx.Bool("now") {
@@ -204,6 +206,22 @@ func init() {
 					app := core.New()
 
 					app.Market.FetchHistory(0)
+
+				})
+
+				_, _ = c.AddFunc("* * * * *", func() {
+					app := core.New()
+
+					ts := time.Now().Add(time.Minute * -6).UnixNano()
+					count, err := app.Redis.ZRemRangeByScore("esi:tracking:success", "-inf", strconv.FormatInt(ts, 10)).Result()
+					if err != nil {
+						app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
+						return
+					}
+
+					app.Logger.WithField("removed", count).Info("successfully cleared keys from success queue")
+					app.Redis.Close()
+					app.DB.Close()
 				})
 
 				c.Run()
@@ -235,6 +253,25 @@ func init() {
 					Usage:    "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
 					Required: true,
 				},
+			},
+		},
+		cli.Command{
+			Name: "monitor",
+			Action: func(c *cli.Context) error {
+
+				app := core.New()
+				prevEsiPastFiveMinutes := int64(0)
+				for {
+					esiPastFiveMinutes, err := app.Redis.ZCount("esi:tracking:success", strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					if err != nil {
+						return cli.NewExitError(err, 1)
+					}
+
+					fmt.Printf("%d: Successful ESI Call in Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes)
+					time.Sleep(time.Second * 2)
+					prevEsiPastFiveMinutes = esiPastFiveMinutes
+
+				}
 			},
 		},
 	}

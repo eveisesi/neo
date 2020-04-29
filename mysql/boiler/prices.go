@@ -23,9 +23,9 @@ import (
 
 // Price is an object representing the database table.
 type Price struct {
-	Date      time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
 	TypeID    uint64    `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
-	Average   float64   `boil:"average" json:"average" toml:"average" yaml:"average"`
+	Date      time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
+	Price     float64   `boil:"price" json:"price" toml:"price" yaml:"price"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
@@ -34,15 +34,15 @@ type Price struct {
 }
 
 var PriceColumns = struct {
-	Date      string
 	TypeID    string
-	Average   string
+	Date      string
+	Price     string
 	CreatedAt string
 	UpdatedAt string
 }{
-	Date:      "date",
 	TypeID:    "type_id",
-	Average:   "average",
+	Date:      "date",
+	Price:     "price",
 	CreatedAt: "created_at",
 	UpdatedAt: "updated_at",
 }
@@ -50,15 +50,15 @@ var PriceColumns = struct {
 // Generated where
 
 var PriceWhere = struct {
-	Date      whereHelpertime_Time
 	TypeID    whereHelperuint64
-	Average   whereHelperfloat64
+	Date      whereHelpertime_Time
+	Price     whereHelperfloat64
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	Date:      whereHelpertime_Time{field: "`prices`.`date`"},
 	TypeID:    whereHelperuint64{field: "`prices`.`type_id`"},
-	Average:   whereHelperfloat64{field: "`prices`.`average`"},
+	Date:      whereHelpertime_Time{field: "`prices`.`date`"},
+	Price:     whereHelperfloat64{field: "`prices`.`price`"},
 	CreatedAt: whereHelpertime_Time{field: "`prices`.`created_at`"},
 	UpdatedAt: whereHelpertime_Time{field: "`prices`.`updated_at`"},
 }
@@ -80,8 +80,8 @@ func (*priceR) NewStruct() *priceR {
 type priceL struct{}
 
 var (
-	priceAllColumns            = []string{"date", "type_id", "average", "created_at", "updated_at"}
-	priceColumnsWithoutDefault = []string{"date", "type_id", "average", "created_at", "updated_at"}
+	priceAllColumns            = []string{"type_id", "date", "price", "created_at", "updated_at"}
+	priceColumnsWithoutDefault = []string{"type_id", "date", "price", "created_at", "updated_at"}
 	priceColumnsWithDefault    = []string{}
 	pricePrimaryKeyColumns     = []string{"type_id", "date"}
 )

@@ -12,7 +12,6 @@ import (
 
 type Service interface {
 	FetchHistory(from int)
-	CalculateRawMaterialCost(id uint64, days int, maxDate time.Time) float64
 	FetchTypePrice(id uint64, date time.Time) float64
 	neo.MarketRepository
 }

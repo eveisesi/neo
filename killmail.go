@@ -37,46 +37,20 @@ type KillmailRespository interface {
 	CreateKillmailVictimTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) (*KillmailVictim, error)
 }
 
-type KillmailItemLoaderType string
-
-const (
-	ParentKillmailItem KillmailItemLoaderType = "parent"
-	ChildKillmailItem  KillmailItemLoaderType = "child"
-)
-
-var AllKillmailItemLoaderTypes = []KillmailItemLoaderType{
-	ParentKillmailItem,
-	ChildKillmailItem,
-}
-
-func (e KillmailItemLoaderType) IsValid() bool {
-	switch e {
-	case ParentKillmailItem, ChildKillmailItem:
-		return true
-	}
-	return false
-}
-
-func (e KillmailItemLoaderType) String() string {
-	return string(e)
-}
-
-type KillmailItemLoader struct {
-	ID   uint64
-	Type KillmailItemLoaderType // Will be set to either parent or child. If parent, calls KillmailItemsByKillmailIDs, else calls KillmailItemsByParentIDs
-}
-
 type Killmail struct {
-	ID            uint64     `json:"id"`
-	Hash          string     `json:"hash"`
-	MoonID        null.Int64 `json:"moon_id,omitempty"`
-	SolarSystemID uint64     `json:"solar_system_id"`
-	WarID         null.Int64 `json:"war_id,omitempty"`
-	IsNPC         bool       `json:"isNPC"`
-	IsAwox        bool       `json:"isAwox"`
-	IsSolo        bool       `json:"isSolo"`
-	TotalValue    float64    `json:"totalValue"`
-	KillmailTime  time.Time  `json:"killmail_time"`
+	ID             uint64     `json:"id"`
+	Hash           string     `json:"hash"`
+	MoonID         null.Int64 `json:"moon_id,omitempty"`
+	SolarSystemID  uint64     `json:"solar_system_id"`
+	WarID          null.Int64 `json:"war_id,omitempty"`
+	IsNPC          bool       `json:"isNPC"`
+	IsAwox         bool       `json:"isAwox"`
+	IsSolo         bool       `json:"isSolo"`
+	DroppedValue   float64    `json:"droppedValue"`
+	DestroyedValue float64    `json:"destroyedValue"`
+	FittedValue    float64    `json:"fittedValue"`
+	TotalValue     float64    `json:"totalValue"`
+	KillmailTime   time.Time  `json:"killmail_time"`
 
 	Attackers []*KillmailAttacker `json:"attackers"`
 	Victim    *KillmailVictim     `json:"victim"`

@@ -11,7 +11,7 @@ import (
 
 func MarshalBool(b bool) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.FormatBool(b))
+		_, _ = io.WriteString(w, strconv.FormatBool(b))
 	})
 }
 
@@ -25,7 +25,7 @@ func UnmarshalBool(v interface{}) (bool, error) {
 
 func MarshalFloat64(f float64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.FormatFloat(f, 'f', -1, 64))
+		_, _ = io.WriteString(w, strconv.FormatFloat(f, 'f', -1, 64))
 	})
 }
 

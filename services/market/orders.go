@@ -17,65 +17,6 @@ import (
 
 var region = uint64(10000002)
 
-// CalculateRawMaterialCost attempts to look up a blueprint that produces the provided type id
-// If a blueprint is found, the materials for the blueprint are queried and this process repeats
-// itself in a recursive loop until a query for a blueprint fails. Then market price for that
-// item is returned.
-func (s *service) CalculateRawMaterialCost(id uint64, days int, maxDate time.Time) float64 {
-
-	// 	product, err := s.universe.BlueprintProductByProductTypeID(context.Background(), id)
-	// 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-	// 		s.logger.WithField("id", id).WithFields(logrus.Fields{
-	// 			"id":      id,
-	// 			"days":    days,
-	// 			"maxDate": maxDate.Format("2016-01-02"),
-	// 		}).WithError(err).Error("failed to lookup blueprint for item")
-	// 		return 0.00
-	// 	}
-
-	// 	// Product is not nil, so lets look up the inputs for this BP
-	// 	if err == nil {
-	// 		materials, err := s.universe.BlueprintMaterials(context.Background(), product.TypeID)
-	// 		if err != nil {
-	// 			s.logger.WithField("id", id).WithFields(logrus.Fields{
-	// 				"id":      id,
-	// 				"days":    days,
-	// 				"maxDate": maxDate.Format("2016-01-02"),
-	// 			}).WithError(err).Error("failed to lookup blueprint materials for item")
-	// 			return 0.00
-	// 		}
-
-	// 		if len(materials) > 0 {
-	// 			var prices []float64
-	// 			for _, material := range materials {
-	// 				price := s.CalculateRawMaterialCost(material.MaterialTypeID, days, maxDate)
-
-	// 				cost := price * float64(material.Quantity)
-	// 				prices = append(prices, cost)
-
-	// 			}
-	// 			sum := float64(0)
-	// 			for _, price := range prices {
-	// 				sum = sum + price
-	// 			}
-	// 			return sum
-	// 		}
-
-	// 	}
-
-	// 	price, err := s.AvgOfTypeLowPrice(context.Background(), id, days, maxDate)
-	// 	if err != nil {
-	// 		s.logger.WithField("id", id).WithFields(logrus.Fields{
-	// 			"id":      id,
-	// 			"days":    days,
-	// 			"maxDate": maxDate.Format("2016-01-02"),
-	// 		}).WithError(err).Error("failed to lookup order")
-	// 	}
-
-	return 0.00
-
-}
-
 func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 
 	var price float64
@@ -108,15 +49,11 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 	if price > 0.00 {
 		return price
 	}
+
 	history, err := s.MarketRepository.HistoricalRecord(context.Background(), id, date, null.NewInt(33, true))
 	if err != nil {
 		return 0.00
 	}
-	// fmt.Printf("\n\t\t\t---Start RawHistory---\n")
-	// for _, v := range history {
-	// 	fmt.Printf("%d || %s || %.4f\n", v.TypeID, v.Date.Format("2006-01-02"), v.Price)
-	// }
-	// fmt.Printf("\n\t\t\t---End RawHistory---\n\n")
 
 	neededData := 33
 	priceList := make([]*neo.HistoricalRecord, 0)
@@ -134,12 +71,6 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 		})
 	}
 
-	// fmt.Printf("\n\t\t\t---Start RawHistory---\n")
-	// for _, v := range history {
-	// 	fmt.Printf("%d,%s,%.4f\n", v.TypeID, v.Date.Format("2006-01-02"), v.Price)
-	// }
-	// fmt.Printf("\n\t\t\t---End RawHistory---\n\n")
-
 	if len(priceList) == neededData {
 		priceList = priceList[2:]
 		priceList = priceList[:len(priceList)-1]
@@ -149,13 +80,10 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 
 	total := float64(0)
 	for _, v := range priceList {
-		// fmt.Printf("%d,%s,%.4f\n", v.TypeID, v.Date.Format("2006-01-02"), v.Price)
 		total += v.Price
 	}
 
-	// fmt.Printf("Calculated Total: %.4f || Total Number of Records: %d\n", total, len(priceList))
 	avgPrice := total / float64(len(priceList))
-	// fmt.Printf("Calculated Average: %.4f\n", avgPrice)
 
 	if avgPrice <= 0.01 {
 		avgPrice = s.getBuildPrice(id, date)
@@ -216,15 +144,14 @@ func (s *service) getBuildPrice(id uint64, date time.Time) float64 {
 func (s *service) getFixedPrice(id uint64, date time.Time) float64 {
 	// TODO: Build out engine or something for looking up fixed prices. Maybe a query to the DB, possibly to redis.
 	// Not sure
+
+	switch id {
+	case 670:
+		return 10000.0000
+	}
+
 	return 0.00
 }
-
-// func printNSleep(frmt string, args ...interface{}) {
-// 	fmt.Printf(frmt, args...)
-// 	fmt.Println()
-// 	// time.Sleep(time.Millisecond * 2)
-// 	return
-// }
 
 func (s *service) FetchHistory(from int) {
 	s.logger.Info("fetching market groups")
@@ -243,7 +170,6 @@ func (s *service) FetchHistory(from int) {
 		}
 		limiter.Execute(func() {
 			s.processGroup(v)
-			return
 		})
 	}
 

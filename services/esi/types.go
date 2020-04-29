@@ -22,8 +22,8 @@ type Type struct {
 }
 
 type TypeAttribute struct {
-	AttributeID uint64 `json:"attribute_id"`
-	Value       int64  `json:"value"`
+	AttributeID uint64  `json:"attribute_id"`
+	Value       float64 `json:"value"`
 }
 
 func (s *service) GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta) {
@@ -53,7 +53,7 @@ func (s *service) GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttri
 		attributes = append(attributes, &neo.TypeAttribute{
 			TypeID:      id,
 			AttributeID: v.AttributeID,
-			Value:       v.Value,
+			Value:       int64(v.Value),
 		})
 	}
 

@@ -93,6 +93,30 @@ func New(redis *redis.Client, host, uagent string) Service {
 // and returns the response
 func (s *service) request(r request) ([]byte, *Meta) {
 
+	count, err := s.redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "unable to get error count from ESI"))
+	}
+
+	if count < 10 {
+		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "420 prone, backing off"))
+	}
+
+	status, err := s.redis.Get(neo.REDIS_ESI_ALERT_STATUS).Int64()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "unable to get 420 status from Redis"))
+	}
+
+	switch status {
+	case 2:
+		time.Sleep(time.Millisecond * 100)
+		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.New("currently red alert, unable to make request"))
+	case 1:
+		time.Sleep(time.Millisecond * 250)
+	default:
+		break
+	}
+
 	uri := url.URL{
 		Scheme:   "https",
 		Host:     "esi.evetech.net",
@@ -160,6 +184,10 @@ func (s *service) request(r request) ([]byte, *Meta) {
 	_ = s.retrieveErrorReset(headers)
 	_ = s.retrieveErrorCount(headers)
 
+	if m.Code < 400 {
+		_ = s.reportSuccessfullyESICall()
+	}
+
 	return data, m
 }
 
@@ -205,13 +233,7 @@ func (s *service) retrieveErrorCount(h map[string]string) error {
 	}
 
 	mx.Lock()
-	// _, err := s.redis.Get(neo.REDIS_ESI_ERROR_COUNT).Result()
-	// if err != nil && err != neo.ErrRedisNil {
-	// 	return err
-	// }
-
 	_, err = s.redis.Set(neo.REDIS_ESI_ERROR_COUNT, count, 0).Result()
-
 	mx.Unlock()
 
 	return err
@@ -231,8 +253,16 @@ func (s *service) retrieveErrorReset(h map[string]string) error {
 
 	mx.Lock()
 	_, err = s.redis.Set(neo.REDIS_ESI_ERROR_RESET, seconds, 0).Result()
-
 	mx.Unlock()
 
 	return err
+}
+
+func (s *service) reportSuccessfullyESICall() error {
+
+	value := time.Now().UnixNano()
+	s.redis.ZAdd("esi:tracking:success", redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
+
+	return err
+
 }

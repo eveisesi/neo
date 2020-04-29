@@ -13,11 +13,11 @@ import (
 func MarshalBool(nb null.Bool) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !nb.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, strconv.FormatBool(nb.Bool))
+		_, _ = io.WriteString(w, strconv.FormatBool(nb.Bool))
 	})
 }
 
@@ -46,11 +46,11 @@ func UnmarshalBool(i interface{}) (null.Bool, error) {
 func MarshalFloat64(nf null.Float64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !nf.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, strconv.FormatFloat(nf.Float64, 'f', -1, 64))
+		_, _ = io.WriteString(w, strconv.FormatFloat(nf.Float64, 'f', -1, 64))
 	})
 }
 
@@ -79,11 +79,11 @@ func UnmarshalFloat64(i interface{}) (null.Float64, error) {
 func MarshalInt64(ni null.Int64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !ni.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, strconv.FormatInt(ni.Int64, 10))
+		_, _ = io.WriteString(w, strconv.FormatInt(ni.Int64, 10))
 	})
 }
 
@@ -132,11 +132,11 @@ func UnmarshalInt64(i interface{}) (null.Int64, error) {
 func MarshalString(ns null.String) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !ns.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, ns.String)
+		_, _ = io.WriteString(w, ns.String)
 	})
 }
 
@@ -155,11 +155,11 @@ func UnmarshalString(i interface{}) (null.String, error) {
 func MarshalTime(nt null.Time) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !nt.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, nt.Time.Format("2006-01-02 15:03:04"))
+		_, _ = io.WriteString(w, nt.Time.Format("2006-01-02 15:03:04"))
 	})
 }
 
@@ -186,11 +186,11 @@ func UnmarshalTime(i interface{}) (null.Time, error) {
 func MarshalUint64(nu null.Uint64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !nu.Valid {
-			io.WriteString(w, `null`)
+			_, _ = io.WriteString(w, `null`)
 			return
 		}
 
-		io.WriteString(w, strconv.FormatUint(nu.Uint64, 10))
+		_, _ = io.WriteString(w, strconv.FormatUint(nu.Uint64, 10))
 	})
 }
 

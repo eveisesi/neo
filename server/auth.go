@@ -17,7 +17,7 @@ func (s *Server) handleGetState(w http.ResponseWriter, r *http.Request) {
 
 	_, err := s.redis.Set(fmt.Sprintf("neo:state:%s", random), true, time.Minute*2).Result()
 	if err != nil {
-		s.WriteError(w, http.StatusInternalServerError, errors.New("unable to handle request at this time"))
+		_ = s.WriteError(w, http.StatusInternalServerError, errors.New("unable to handle request at this time"))
 		return
 	}
 
@@ -28,7 +28,7 @@ func (s *Server) handleGetState(w http.ResponseWriter, r *http.Request) {
 
 	url := s.token.GetState(random, scopes)
 
-	s.WriteSuccess(w, http.StatusOK, struct {
+	_ = s.WriteSuccess(w, http.StatusOK, struct {
 		URL string `json:"url"`
 	}{
 		URL: url,
@@ -44,7 +44,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 	code := query.Get("code")
 	state := query.Get("state")
 	if code == "" || state == "" {
-		s.WriteError(w, http.StatusBadRequest, errors.New("code and state are required"))
+		_ = s.WriteError(w, http.StatusBadRequest, errors.New("code and state are required"))
 		return
 	}
 	key := fmt.Sprintf("neo:state:%s", state)
@@ -57,7 +57,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 			"code":  code,
 			"state": state,
 		}).Error("redis get error")
-		s.WriteError(w, http.StatusBadRequest, err)
+		_ = s.WriteError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg := "failed to trade code for token"
 		s.logger.WithError(err).Error(msg)
-		s.WriteError(w, http.StatusBadRequest, errors.New(msg))
+		_ = s.WriteError(w, http.StatusBadRequest, errors.New(msg))
 		return
 	}
 

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/go-redis/redis"
 	"github.com/korovkin/limiter"
 	"github.com/sirupsen/logrus"
 )
@@ -109,11 +110,13 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
 	if m.IsError() {
 		s.logger.WithError(m.Msg).Error("failed to fetch killmail from esi")
+		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
 		return
 	}
 
 	if m.Code != 200 {
 		s.logger.WithFields(killmailLoggerFields).WithField("code", m.Code).WithError(err).Error("unexpected response code from esi")
+		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
 		return
 	}
 
@@ -215,7 +218,6 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	var totalValue = make([]float64, 0)
 	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, date)
-	totalValue = append(totalValue, shipValue)
 	killmail.Victim.ShipValue = shipValue
 
 	_, err = s.KillmailRespository.CreateKillmailVictimTxn(ctx, txn, killmail.Victim)
@@ -252,6 +254,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		s.logger.WithError(err).Error("failed to insert items into db")
 	}
 
+	destroyedValue := float64(0)
+	droppedValue := float64(0)
+
 	for _, item := range killmail.Victim.Items {
 		if len(item.Items) > 0 {
 			for _, subItem := range item.Items {
@@ -263,15 +268,32 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 				} else {
 					subItemValue = s.market.FetchTypePrice(item.ItemTypeID, date)
 				}
-				totalValue = append(totalValue, subItemValue*float64(subItem.QuantityDestroyed.Uint64+subItem.QuantityDropped.Uint64))
+				itemTotal := subItemValue * float64(subItem.QuantityDestroyed.Uint64+subItem.QuantityDropped.Uint64)
+				totalValue = append(totalValue, itemTotal)
 				subItem.ItemValue = subItemValue
+
+				if subItem.QuantityDestroyed.Valid {
+					destroyedValue += itemTotal
+				} else if subItem.QuantityDropped.Valid {
+					droppedValue += itemTotal
+				}
 			}
+
 			_, err = s.KillmailRespository.CreateKillmailItemsTxn(ctx, txn, item.Items)
 			if err != nil {
 				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered insert sub items")
 			}
 		}
+		if item.QuantityDestroyed.Valid {
+			destroyedValue += item.ItemValue
+		} else if item.QuantityDropped.Valid {
+			droppedValue += item.ItemValue
+		}
 	}
+
+	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
+	shipValue += fittedValue
+	totalValue = append(totalValue, shipValue)
 
 	sum := float64(0)
 	for _, v := range totalValue {
@@ -284,7 +306,11 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		return
 	}
 
+	killmail.DestroyedValue = destroyedValue
+	killmail.DroppedValue = droppedValue
+	killmail.FittedValue = fittedValue
 	killmail.TotalValue = sum
+
 	err = s.KillmailRespository.UpdateKillmail(ctx, killmail.ID, killmail.Hash, killmail)
 	if err != nil {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail victim into db")
@@ -306,4 +332,20 @@ func (s *service) handleVictimItems(items []*neo.KillmailItem) {
 			s.handleVictimItems(item.Items)
 		}
 	}
+}
+
+var fittedFlags = map[uint64]bool{11: true, 12: true, 13: true, 87: true, 89: true, 93: true, 158: true, 159: true, 172: true, 2663: true, 3772: true}
+
+func (s *service) calculatedFittedValue(items []*neo.KillmailItem) float64 {
+
+	total := float64(0)
+	for _, item := range items {
+		if _, ok := fittedFlags[uint64(item.Flag)]; !ok {
+			continue
+		}
+
+		total += item.ItemValue
+	}
+
+	return total
 }
