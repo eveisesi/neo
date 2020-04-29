@@ -295,9 +295,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			}
 		}
 		if item.QuantityDestroyed.Valid {
-			destroyedValue += item.ItemValue * item.QuantityDestroyed.Uint64
+			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint64)
 		} else if item.QuantityDropped.Valid {
-			droppedValue += item.ItemValue * item.QuantityDropped.Uint64
+			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
 		}
 	}
 
