@@ -93,30 +93,6 @@ func New(redis *redis.Client, host, uagent string) Service {
 // and returns the response
 func (s *service) request(r request) ([]byte, *Meta) {
 
-	count, err := s.redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "unable to get error count from ESI"))
-	}
-
-	if count < 10 {
-		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "420 prone, backing off"))
-	}
-
-	status, err := s.redis.Get(neo.REDIS_ESI_ALERT_STATUS).Int64()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.Wrap(err, "unable to get 420 status from Redis"))
-	}
-
-	switch status {
-	case 2:
-		time.Sleep(time.Millisecond * 100)
-		return nil, newMeta(r.method, r.path, r.query, 500, map[string]string{}, errors.New("currently red alert, unable to make request"))
-	case 1:
-		time.Sleep(time.Millisecond * 250)
-	default:
-		break
-	}
-
 	uri := url.URL{
 		Scheme:   "https",
 		Host:     "esi.evetech.net",
@@ -181,11 +157,13 @@ func (s *service) request(r request) ([]byte, *Meta) {
 
 	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, nil)
 
-	_ = s.retrieveErrorReset(headers)
-	_ = s.retrieveErrorCount(headers)
+	s.retrieveErrorReset(headers)
+	s.retrieveErrorCount(headers)
 
 	if m.Code < 400 {
-		_ = s.reportSuccessfullyESICall()
+		s.reportSuccessfulESICall()
+	} else {
+		s.reportFailedESICall()
 	}
 
 	return data, m
@@ -220,7 +198,7 @@ func (s *service) retrieveEtagHeader(h map[string]string) string {
 
 // retrieveErrorCount is a helper method that retrieves the number of errors that this application
 // has triggered and how many more we can trigger before being 420'd
-func (s *service) retrieveErrorCount(h map[string]string) error {
+func (s *service) retrieveErrorCount(h map[string]string) {
 	// Default to a low count. This will cause the app to slow down
 	// if the header is not present to set the actual value from the header
 	var count int = 15
@@ -233,36 +211,35 @@ func (s *service) retrieveErrorCount(h map[string]string) error {
 	}
 
 	mx.Lock()
-	_, err = s.redis.Set(neo.REDIS_ESI_ERROR_COUNT, count, 0).Result()
+	s.redis.Set(neo.REDIS_ESI_ERROR_COUNT, count, 0)
 	mx.Unlock()
 
-	return err
 }
 
 // retrieveErrorReset is a helper method that retrieves the number of seconds until our Error Limit resets
-func (s *service) retrieveErrorReset(h map[string]string) error {
+func (s *service) retrieveErrorReset(h map[string]string) {
 	if _, ok := h["X-Esi-Error-Limit-Reset"]; !ok {
 		err = fmt.Errorf("X-Esi-Error-Limit-Reset Header is missing")
-		return err
+		return
 	}
 
 	seconds, err := strconv.ParseUint(h["X-Esi-Error-Limit-Reset"], 10, 32)
 	if err != nil {
-		return err
+		return
 	}
 
 	mx.Lock()
-	_, err = s.redis.Set(neo.REDIS_ESI_ERROR_RESET, seconds, 0).Result()
+	s.redis.Set(neo.REDIS_ESI_ERROR_RESET, time.Now().Add(time.Second*time.Duration(seconds)).Unix(), 0)
 	mx.Unlock()
 
-	return err
 }
 
-func (s *service) reportSuccessfullyESICall() error {
-
+func (s *service) reportSuccessfulESICall() {
 	value := time.Now().UnixNano()
-	s.redis.ZAdd("esi:tracking:success", redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
+	s.redis.ZAdd(neo.REDIS_ESI_TRACKING_SUCCESS, redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
+}
 
-	return err
-
+func (s *service) reportFailedESICall() {
+	value := time.Now().UnixNano()
+	s.redis.ZAdd(neo.REDIS_ESI_TRACKING_FAILED, redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
 }

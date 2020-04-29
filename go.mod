@@ -6,7 +6,6 @@ require (
 	github.com/99designs/gqlgen v0.10.2
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi v3.3.2+incompatible
@@ -15,6 +14,7 @@ require (
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
@@ -33,8 +33,6 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v1.0.0 // indirect
-	github.com/spf13/viper v1.6.3 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser v1.3.1

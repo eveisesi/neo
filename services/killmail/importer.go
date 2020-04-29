@@ -18,25 +18,29 @@ import (
 // // then := time.Until
 // return nil
 
-func (s *service) sleepDuringDowntime(now time.Time) {
+func (s *service) loopManager() {
 
-	location, _ := time.LoadLocation("UTC")
-	start := time.Date(now.Year(), now.Month(), now.Day(), 10, 58, 0, 0, location)
-	end := time.Date(now.Year(), now.Month(), now.Day(), 11, 25, 0, 0, location)
 	for {
 
-		now := time.Now()
-		if now.Unix() < start.Unix() || now.Unix() > end.Unix() {
+		status, err := s.redis.Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
+		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			break
 		}
 
-		duration := (end.Unix() - now.Unix()) + 1
-		s.logger.WithFields(logrus.Fields{
-			"duration": duration,
-			"end":      end.Unix(),
-		}).Info("downtime period detected, sleeping")
+		if status == neo.COUNT_STATUS_DOWNTIME ||
+			status == neo.COUNT_STATUS_RED {
 
-		time.Sleep(time.Second * time.Duration(duration))
+			s.logger.WithField("status", status).Info("loop manager blocking process")
+			time.Sleep(time.Second)
+			continue
+		} else if status == neo.COUNT_STATUS_YELLOW {
+			s.logger.WithField("status", status).Warning("slowing down due to status")
+			time.Sleep(time.Millisecond * 250)
+			break
+		} else if status == neo.COUNT_STATUS_GREEN {
+			break
+		}
+
 	}
 
 }
@@ -63,7 +67,7 @@ func (s *service) Importer(channel string, gLimit, gSleep int64) error {
 		}
 
 		for _, result := range results {
-			s.sleepDuringDowntime(time.Now())
+			s.loopManager()
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
 				s.processMessage([]byte(message), workerID, gSleep)
@@ -117,7 +121,11 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	}
 
 	if m.Code != 200 {
-		s.logger.WithFields(killmailLoggerFields).WithField("code", m.Code).WithError(err).Error("unexpected response code from esi")
+		s.logger.WithFields(killmailLoggerFields).WithFields(logrus.Fields{
+			"code":  m.Code,
+			"path":  m.Path,
+			"query": m.Query,
+		}).WithError(err).Error("unexpected response code from esi")
 		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
 		return
 	}

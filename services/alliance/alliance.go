@@ -47,7 +47,7 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 		return alliance, errors.Wrap(err, "failed to cache alliance in redis")
 	}
 
-	// System is not cached, the DB doesn't have this alliance, lets check ESI
+	// Alliance is not cached, the DB doesn't have this alliance, lets check ESI
 	alliance, m := s.esi.GetAlliancesAllianceID(id, null.NewString("", false))
 	if m.IsError() {
 		return nil, m.Msg

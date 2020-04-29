@@ -7,6 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/eveisesi/neo"
+	"github.com/sirupsen/logrus"
+
+	"github.com/inancgumus/screen"
+
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
@@ -181,17 +186,84 @@ func init() {
 			Action: func(c *cli.Context) error {
 
 				app := core.New()
+
+				screen.Clear()
+
 				prevEsiPastFiveMinutes := int64(0)
 				for {
-					esiPastFiveMinutes, err := app.Redis.ZCount("esi:tracking:success", strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+
+					screen.MoveTopLeft()
+
+					esiPastFiveMinutes, err := app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 					if err != nil {
 						return cli.NewExitError(err, 1)
 					}
 
-					fmt.Printf("%d: Successful ESI Call in Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes)
+					fmt.Printf("%d: Successful ESI Call in Past Five Minutes (%d)\t\t%d: Failed ESI Calls in the Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes, 0, 0)
 					time.Sleep(time.Second * 2)
 					prevEsiPastFiveMinutes = esiPastFiveMinutes
 
+				}
+			},
+		},
+		cli.Command{
+			Name: "tracking",
+			Action: func(c *cli.Context) error {
+
+				app := core.New()
+
+				for {
+
+					status, err := app.Redis.Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
+					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get tracking status from redis")
+					}
+
+					count, err := app.Redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
+					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get error count from redis")
+					}
+
+					// Status:
+					// Red: 2
+					// Yellow: 1
+					// Green: 0
+
+					fields := logrus.Fields{
+						"count":  count,
+						"status": status,
+					}
+					if status == neo.COUNT_STATUS_RED && count > 20 {
+						app.Logger.WithFields(fields).Error("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
+					} else if status == neo.COUNT_STATUS_RED && count >= 10 && count <= 20 {
+						app.Logger.WithFields(fields).Warning("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_YELLOW, 0)
+					} else if status == neo.COUNT_STATUS_YELLOW && count < 10 {
+						app.Logger.WithFields(fields).Warning("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_RED, 0)
+					} else if status == neo.COUNT_STATUS_YELLOW && count >= 20 {
+						app.Logger.WithFields(fields).Info("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
+					} else if status == neo.COUNT_STATUS_GREEN && count <= 20 {
+						app.Logger.WithFields(fields).Warning("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_YELLOW, 0)
+					} else if status == neo.COUNT_STATUS_GREEN && count <= 10 {
+						app.Logger.WithFields(fields).Warning("tracking status")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_RED, 0)
+					}
+
+					ts, err := app.Redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
+					if err != nil {
+						continue
+					}
+
+					if time.Now().Unix() > ts && status != neo.COUNT_STATUS_GREEN {
+						app.Logger.Info("set tracking green. error count has been reset")
+						app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
+					}
+
+					time.Sleep(time.Second)
 				}
 			},
 		},
