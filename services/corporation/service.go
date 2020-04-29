@@ -2,7 +2,7 @@ package corporation
 
 import (
 	"github.com/eveisesi/neo"
-	"github.com/eveisesi/neo/esi"
+	"github.com/eveisesi/neo/services/esi"
 	"github.com/go-redis/redis"
 )
 
@@ -12,11 +12,11 @@ type Service interface {
 
 type service struct {
 	redis *redis.Client
-	esi   *esi.Client
+	esi   esi.Service
 	neo.CorporationRespository
 }
 
-func NewService(redis *redis.Client, esi *esi.Client, corporation neo.CorporationRespository) Service {
+func NewService(redis *redis.Client, esi esi.Service, corporation neo.CorporationRespository) Service {
 	return &service{
 		redis,
 		esi,

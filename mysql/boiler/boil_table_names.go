@@ -15,7 +15,8 @@ var TableNames = struct {
 	KillmailItems      string
 	KillmailVictim     string
 	Killmails          string
-	Orders             string
+	Prices             string
+	PricesBuilt        string
 	Regions            string
 	SolarSystems       string
 	Tokens             string
@@ -36,7 +37,8 @@ var TableNames = struct {
 	KillmailItems:      "killmail_items",
 	KillmailVictim:     "killmail_victim",
 	Killmails:          "killmails",
-	Orders:             "orders",
+	Prices:             "prices",
+	PricesBuilt:        "prices_built",
 	Regions:            "regions",
 	SolarSystems:       "solar_systems",
 	Tokens:             "tokens",

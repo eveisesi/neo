@@ -72,9 +72,9 @@ type Killmail struct {
 	MoonID        null.Int64 `json:"moon_id,omitempty"`
 	SolarSystemID uint64     `json:"solar_system_id"`
 	WarID         null.Int64 `json:"war_id,omitempty"`
-	IsNPC         int8       `json:"isNPC"`
-	IsAwox        int8       `json:"isAwox"`
-	IsSolo        int8       `json:"isSolo"`
+	IsNPC         bool       `json:"isNPC"`
+	IsAwox        bool       `json:"isAwox"`
+	IsSolo        bool       `json:"isSolo"`
 	TotalValue    float64    `json:"totalValue"`
 	KillmailTime  time.Time  `json:"killmail_time"`
 
@@ -120,6 +120,7 @@ type KillmailVictim struct {
 	FactionID     null.Uint64       `json:"faction_id"`
 	DamageTaken   uint64            `json:"damage_taken"`
 	ShipTypeID    uint64            `json:"ship_type_id"`
+	ShipValue     float64           `json:"shipValue" `
 	Position      *KillmailPosition `json:"position"`
 	PosX          null.Float64      `json:"pos_x"`
 	PosY          null.Float64      `json:"pos_y"`

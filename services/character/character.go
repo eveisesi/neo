@@ -48,13 +48,11 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 		return character, errors.Wrap(err, "failed to cache character in redis")
 	}
 
-	// System is not cached, the DB doesn't have this character, lets check ESI
-	res, err := s.esi.GetCharactersCharacterID(id, null.NewString("", false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable retrieve character from ESI")
+	// Character is not cached, the DB doesn't have this character, lets check ESI
+	character, m := s.esi.GetCharactersCharacterID(id, null.NewString("", false))
+	if m.IsError() {
+		return nil, m.Msg
 	}
-
-	character = res.Data.(*neo.Character)
 
 	// ESI has the character. Lets insert it into the db, and cache it is redis
 	_, err = s.CharacterRespository.CreateCharacter(ctx, character)

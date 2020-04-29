@@ -129,7 +129,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 	schema := service.NewExecutableSchema(service.Config{
 		Resolvers: &resolvers.Resolver{
 			Services: resolvers.Services{
-				s.killmail,
+				Killmail: s.killmail,
 			},
 			Dataloader: CtxLoaders,
 		},

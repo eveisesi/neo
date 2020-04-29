@@ -1,11 +1,9 @@
 package token
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -52,7 +50,7 @@ func (s *service) GetTokenForCode(ctx context.Context, state, code string) (*neo
 		return nil, errors.Wrap(err, "unexpected error encountered")
 	}
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 
 		neoToken = &neo.Token{
 			ID:           characterID,
@@ -130,54 +128,4 @@ func (s *service) getSignatureKey(token *jwt.Token) (interface{}, error) {
 	}
 
 	return nil, fmt.Errorf("unable to find key with kid of %s", keyID)
-}
-
-func (s *service) request(request Request) (Response, error) {
-
-	var rBody io.Reader
-
-	if request.Body != nil {
-		rBody = bytes.NewBuffer(request.Body)
-	}
-
-	req, err := http.NewRequest(request.Method, request.Path.String(), rBody)
-	if err != nil {
-		err = errors.Wrap(err, "Unable build request")
-		return Response{}, err
-	}
-	for k, v := range request.Headers {
-		req.Header.Add(k, v)
-	}
-
-	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
-	// req.Header.Add("User-Agent", e.UserAgent)
-
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return Response{}, err
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		err = errors.Wrap(err, "error reading body")
-		return Response{}, err
-	}
-
-	resp.Body.Close()
-
-	var response Response
-	response.Method = request.Method
-	response.Path = request.Path.Path
-	response.Data = body
-	response.Code = resp.StatusCode
-	headers := make(map[string]string)
-	for k, sv := range resp.Header {
-		for _, v := range sv {
-			headers[k] = v
-		}
-	}
-
-	response.Headers = headers
-
-	return response, nil
 }

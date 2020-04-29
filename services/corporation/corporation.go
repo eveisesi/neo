@@ -48,13 +48,11 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 		return corporation, errors.Wrap(err, "failed to cache corporation in redis")
 	}
 
-	// System is not cached, the DB doesn't have this corporation, lets check ESI
-	res, err := s.esi.GetCorporationsCorporationID(id, null.NewString("", false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable retrieve corporation from ESI")
+	// Corporation is not cached, the DB doesn't have this corporation, lets check ESI
+	corporation, m := s.esi.GetCorporationsCorporationID(id, null.NewString("", false))
+	if m.IsError() {
+		return nil, m.Msg
 	}
-
-	corporation = res.Data.(*neo.Corporation)
 
 	// ESI has the corporation. Lets insert it into the db, and cache it is redis
 	_, err = s.CorporationRespository.CreateCorporation(ctx, corporation)

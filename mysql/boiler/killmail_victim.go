@@ -32,6 +32,7 @@ type KillmailVictim struct {
 	FactionID     null.Uint64  `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	DamageTaken   uint64       `boil:"damage_taken" json:"damageTaken" toml:"damageTaken" yaml:"damageTaken"`
 	ShipTypeID    uint64       `boil:"ship_type_id" json:"shipTypeID" toml:"shipTypeID" yaml:"shipTypeID"`
+	ShipValue     float64      `boil:"ship_value" json:"shipValue" toml:"shipValue" yaml:"shipValue"`
 	PosX          null.Float64 `boil:"pos_x" json:"posX,omitempty" toml:"posX" yaml:"posX,omitempty"`
 	PosY          null.Float64 `boil:"pos_y" json:"posY,omitempty" toml:"posY" yaml:"posY,omitempty"`
 	PosZ          null.Float64 `boil:"pos_z" json:"posZ,omitempty" toml:"posZ" yaml:"posZ,omitempty"`
@@ -51,6 +52,7 @@ var KillmailVictimColumns = struct {
 	FactionID     string
 	DamageTaken   string
 	ShipTypeID    string
+	ShipValue     string
 	PosX          string
 	PosY          string
 	PosZ          string
@@ -65,6 +67,7 @@ var KillmailVictimColumns = struct {
 	FactionID:     "faction_id",
 	DamageTaken:   "damage_taken",
 	ShipTypeID:    "ship_type_id",
+	ShipValue:     "ship_value",
 	PosX:          "pos_x",
 	PosY:          "pos_y",
 	PosZ:          "pos_z",
@@ -106,6 +109,7 @@ var KillmailVictimWhere = struct {
 	FactionID     whereHelpernull_Uint64
 	DamageTaken   whereHelperuint64
 	ShipTypeID    whereHelperuint64
+	ShipValue     whereHelperfloat64
 	PosX          whereHelpernull_Float64
 	PosY          whereHelpernull_Float64
 	PosZ          whereHelpernull_Float64
@@ -120,6 +124,7 @@ var KillmailVictimWhere = struct {
 	FactionID:     whereHelpernull_Uint64{field: "`killmail_victim`.`faction_id`"},
 	DamageTaken:   whereHelperuint64{field: "`killmail_victim`.`damage_taken`"},
 	ShipTypeID:    whereHelperuint64{field: "`killmail_victim`.`ship_type_id`"},
+	ShipValue:     whereHelperfloat64{field: "`killmail_victim`.`ship_value`"},
 	PosX:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_x`"},
 	PosY:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_y`"},
 	PosZ:          whereHelpernull_Float64{field: "`killmail_victim`.`pos_z`"},
@@ -148,9 +153,9 @@ func (*killmailVictimR) NewStruct() *killmailVictimR {
 type killmailVictimL struct{}
 
 var (
-	killmailVictimAllColumns            = []string{"id", "killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_taken", "ship_type_id", "pos_x", "pos_y", "pos_z", "created_at", "updated_at"}
+	killmailVictimAllColumns            = []string{"id", "killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_taken", "ship_type_id", "ship_value", "pos_x", "pos_y", "pos_z", "created_at", "updated_at"}
 	killmailVictimColumnsWithoutDefault = []string{"killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_taken", "ship_type_id", "pos_x", "pos_y", "pos_z", "created_at", "updated_at"}
-	killmailVictimColumnsWithDefault    = []string{"id"}
+	killmailVictimColumnsWithDefault    = []string{"id", "ship_value"}
 	killmailVictimPrimaryKeyColumns     = []string{"id"}
 )
 

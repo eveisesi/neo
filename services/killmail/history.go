@@ -22,12 +22,12 @@ func (s *service) HistoryExporter(channel string, cDate null.String) error {
 	if cDate.Valid {
 		date = cDate.String
 	} else {
-		result, err := s.redis.Get(redisKey).Result()
+		date, err = s.redis.Get(redisKey).Result()
 		if err != nil && err.Error() != "redis: nil" {
 			s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
 		}
-		if result == "" {
-			return nil
+		if date == "" {
+			return err
 		}
 	}
 

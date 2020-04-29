@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
@@ -84,8 +83,6 @@ func (r *killmailRepository) UpdateKillmail(ctx context.Context, id uint64, hash
 	if err != nil {
 		return errors.Wrap(err, "unable to copy killmail to orm")
 	}
-
-	spew.Dump(killmail, bKillmail)
 
 	bKillmail.ID = id
 	bKillmail.Hash = hash

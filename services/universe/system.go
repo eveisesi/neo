@@ -50,12 +50,10 @@ func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem,
 	}
 
 	// System is not cached, the DB doesn't have this system, lets check ESI
-	res, err := s.esi.GetUniverseSystemsSystemID(id)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable retrieve system from ESI")
+	system, m := s.esi.GetUniverseSystemsSystemID(id)
+	if m.IsError() {
+		return nil, m.Msg
 	}
-
-	system = res.Data.(*neo.SolarSystem)
 
 	// ESI has the system. Lets insert it into the db, and cache it is redis
 	err = s.UniverseRepository.CreateSolarSystem(ctx, system)

@@ -13,6 +13,7 @@ import (
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/token"
@@ -20,7 +21,6 @@ import (
 	"golang.org/x/oauth2"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/eveisesi/neo/esi"
 	"github.com/eveisesi/neo/mysql"
 	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
@@ -37,9 +37,9 @@ type App struct {
 	DB     *sqlx.DB
 	Redis  *redis.Client
 	Client *http.Client
-	ESI    *esi.Client
 	Config *neo.Config
 
+	ESI         esi.Service
 	Alliance    alliance.Service
 	Character   character.Service
 	Corporation corporation.Service
@@ -95,7 +95,7 @@ func New() *App {
 		Timeout: time.Second * 10,
 	}
 
-	esiClient := esi.New(client, cfg.ESIHost, cfg.ESIUAgent)
+	esiClient := esi.New(redisClient, cfg.ESIHost, cfg.ESIUAgent)
 
 	txn := mysql.NewTransactioner(db)
 
@@ -221,7 +221,7 @@ func makeLogger(logLevel string) (*logrus.Logger, error) {
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{
-			Filename: fmt.Sprintf("logs/%s/%s.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
+			Filename: fmt.Sprintf("logs/%s/%s-error.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
 			MaxSize:  50,
 			Compress: true,
 		},
@@ -230,6 +230,18 @@ func makeLogger(logLevel string) (*logrus.Logger, error) {
 			logrus.FatalLevel,
 			logrus.ErrorLevel,
 			logrus.WarnLevel,
+		},
+	})
+
+	logger.AddHook(&writerHook{
+		Writer: &lumberjack.Logger{
+			Filename:   fmt.Sprintf("logs/%s/%s-info.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
+			MaxBackups: 3,
+			MaxSize:    10,
+			Compress:   true,
+		},
+		LogLevels: []logrus.Level{
+			logrus.InfoLevel,
 		},
 	})
 

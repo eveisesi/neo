@@ -3,15 +3,18 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/eveisesi/neo"
-	"github.com/eveisesi/neo/mysql/boiler"
-	"github.com/jinzhu/copier"
-	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
+	"github.com/volatiletech/sqlboiler/queries"
+
 	"github.com/volatiletech/sqlboiler/queries/qm"
+
+	"github.com/eveisesi/neo/mysql/boiler"
+
+	"github.com/eveisesi/neo"
+	"github.com/jmoiron/sqlx"
+	"github.com/volatiletech/null"
 )
 
 type marketRepository struct {
@@ -22,82 +25,93 @@ func NewMarketRepository(db *sqlx.DB) neo.MarketRepository {
 	return &marketRepository{db}
 }
 
-func (r *marketRepository) Orders(ctx context.Context, id uint64) ([]*neo.Order, error) {
+func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint64, date time.Time, limit null.Int) ([]*neo.HistoricalRecord, error) {
 
-	var orders = make([]*neo.Order, 0)
-	err := boiler.Orders(
-		boiler.OrderWhere.TypeID.EQ(id),
-	).Bind(ctx, r.db, &orders)
-
-	return orders, err
-
-}
-
-func (r *marketRepository) OrderByTime(ctx context.Context, id uint64, minDate, maxDate time.Time) (*neo.Order, error) {
-
-	order := new(neo.Order)
-	err := boiler.Orders(
-		boiler.OrderWhere.TypeID.EQ(id),
-		qm.Where("date BETWEEN ? AND ?", minDate, maxDate),
-		qm.OrderBy(boiler.OrderColumns.Date+" DESC"),
-		qm.Limit(1),
-	).Bind(context.Background(), r.db, order)
-
-	return order, err
-
-}
-
-func (r *marketRepository) OrdersByIDs(ctx context.Context, ids []uint64) ([]*neo.Order, error) {
-
-	var orders = make([]*neo.Order, 0)
-	err := boiler.Orders(
-		qm.WhereIn(
-			fmt.Sprintf(
-				"%s IN ?",
-				boiler.OrderWhere.TypeID,
-			),
-			convertSliceUint64ToSliceInterface(ids)...,
-		),
-	).Bind(ctx, r.db, &orders)
-
-	return orders, err
-}
-
-func (r *marketRepository) CreateOrdersBulk(ctx context.Context, txn neo.Transactioner, orders []*neo.Order) ([]*neo.Order, error) {
-
-	var t = txn.(*transaction)
-	for _, v := range orders {
-		var order = new(boiler.Order)
-
-		err := copier.Copy(order, v)
-		if err != nil {
-			txnErr := txn.Rollback()
-			if txnErr != nil {
-				err = errors.Wrap(err, "failed to rollback txn")
-			}
-			return nil, errors.Wrap(err, "failed to copy order to boiler")
-		}
-
-		err = order.Insert(ctx, t, boil.Infer())
-		if err != nil {
-			txnErr := txn.Rollback()
-			if txnErr != nil {
-				err = errors.Wrap(err, "failed to rollback txn")
-			}
-			return nil, errors.Wrap(err, "failed to insert order")
-		}
-
-		err = copier.Copy(v, order)
-		if err != nil {
-			txnErr := txn.Rollback()
-			if txnErr != nil {
-				err = errors.Wrap(err, "failed to rollback txn")
-			}
-			return nil, errors.Wrap(err, "failed to copy inserted record back to neo")
-		}
-
+	mods := make([]qm.QueryMod, 0)
+	mods = append(mods,
+		qm.Select("type_id", "date", "price"),
+		boiler.PriceWhere.TypeID.EQ(id),
+		boiler.PriceWhere.Date.LTE(date),
+		qm.OrderBy(boiler.PriceColumns.Date+" DESC"),
+	)
+	if limit.Valid {
+		mods = append(mods, qm.Limit(limit.Int))
 	}
 
-	return orders, nil
+	query, args := queries.BuildQuery(boiler.Prices(mods...).Query)
+	records := make([]*neo.HistoricalRecord, 0)
+	err := r.db.SelectContext(ctx, &records, query, args...)
+
+	return records, err
+
+}
+
+func (r *marketRepository) BuiltPrice(ctx context.Context, id uint64, date time.Time) (*neo.PricesBuilt, error) {
+
+	query := `
+		SELECT
+			type_id,
+			date,
+			price
+		FROM
+			prices_built
+		WHERE 
+			type_id = ?
+			AND date = ?
+	`
+
+	build := new(neo.PricesBuilt)
+	err := r.db.GetContext(ctx, build, query, id, date.Format("2006-01-02"))
+
+	return build, err
+
+}
+
+func (r *marketRepository) CreateHistoricalRecord(ctx context.Context, records []*neo.HistoricalRecord) ([]*neo.HistoricalRecord, error) {
+
+	query := `
+		INSERT IGNORE INTO prices (
+			type_id,
+			date,
+			price,
+			created_at,
+			updated_at
+		) VALUES %s
+	`
+	args := make([]string, 0)
+	params := make([]interface{}, 0)
+	for _, record := range records {
+		args = append(args, "(?, ?, ?, NOW(), NOW())")
+		params = append(params, record.TypeID, record.Date, record.Price)
+	}
+
+	query = fmt.Sprintf(query, strings.Join(args, ","))
+
+	_, err := r.db.ExecContext(ctx, query, params...)
+
+	return records, err
+
+}
+
+func (r *marketRepository) AvgOfTypeLowPrice(ctx context.Context, id uint64, days int, date time.Time) (null.Float64, error) {
+
+	query := `
+		SELECT 
+			AVG(average) 
+		FROM 
+			prices 
+		WHERE 
+			type_id = ? 
+			AND date BETWEEN ? - INTERVAL %d DAY AND ?
+
+	`
+
+	query = fmt.Sprintf(query, days)
+
+	var avg null.Float64
+
+	err := r.db.GetContext(ctx, &avg, query, id, date, date)
+
+	return avg, err
 
 }

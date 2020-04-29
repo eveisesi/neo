@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/eveisesi/neo"
-	"github.com/eveisesi/neo/esi"
+	"github.com/eveisesi/neo/services/esi"
 	"github.com/go-redis/redis"
 )
 
@@ -40,12 +40,12 @@ type Service interface {
 
 type service struct {
 	redis *redis.Client
-	esi   *esi.Client
+	esi   esi.Service
 	neo.BlueprintRepository
 	neo.UniverseRepository
 }
 
-func NewService(redis *redis.Client, esi *esi.Client, blueprint neo.BlueprintRepository, universe neo.UniverseRepository) Service {
+func NewService(redis *redis.Client, esi esi.Service, blueprint neo.BlueprintRepository, universe neo.UniverseRepository) Service {
 	return &service{
 		redis,
 		esi,

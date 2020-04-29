@@ -3,13 +3,12 @@ package killmail
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"runtime"
 	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
+	"github.com/korovkin/limiter"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,8 +21,8 @@ import (
 func (s *service) sleepDuringDowntime(now time.Time) {
 
 	location, _ := time.LoadLocation("UTC")
-	start := time.Date(now.Year(), now.Month(), now.Day(), 21, 26, 0, 0, location)
-	end := time.Date(now.Year(), now.Month(), now.Day(), 21, 28, 0, 0, location)
+	start := time.Date(now.Year(), now.Month(), now.Day(), 10, 58, 0, 0, location)
+	end := time.Date(now.Year(), now.Month(), now.Day(), 11, 25, 0, 0, location)
 	for {
 
 		now := time.Now()
@@ -40,12 +39,11 @@ func (s *service) sleepDuringDowntime(now time.Time) {
 		time.Sleep(time.Second * time.Duration(duration))
 	}
 
-	return
 }
 
 func (s *service) Importer(channel string, gLimit, gSleep int64) error {
 
-	// limit := limiter.NewConcurrencyLimiter(int(gLimit))
+	limit := limiter.NewConcurrencyLimiter(int(gLimit))
 
 	for {
 		count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
@@ -67,15 +65,14 @@ func (s *service) Importer(channel string, gLimit, gSleep int64) error {
 		for _, result := range results {
 			s.sleepDuringDowntime(time.Now())
 			message := result.Member.(string)
-			// limit.ExecuteWithTicket(func(workerID int) {
-			s.processMessage([]byte(message), 1)
-			// })
-			// time.Sleep(time.Millisecond * time.Duration(gSleep))
+			limit.ExecuteWithTicket(func(workerID int) {
+				s.processMessage([]byte(message), workerID, gSleep)
+			})
 		}
 	}
 }
 
-func (s *service) processMessage(message []byte, workerID int) {
+func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	var ctx = context.Background()
 
@@ -109,23 +106,22 @@ func (s *service) processMessage(message []byte, workerID int) {
 		return
 	}
 
-	res, err := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
-	if err != nil {
-		s.logger.WithError(err).Error("failed to fetch killmail from esi")
+	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
+	if m.IsError() {
+		s.logger.WithError(m.Msg).Error("failed to fetch killmail from esi")
 		return
 	}
 
-	if res.Code != 200 {
-		s.logger.WithFields(killmailLoggerFields).WithField("code", res.Code).WithError(err).Error("unexpected response code from esi")
+	if m.Code != 200 {
+		s.logger.WithFields(killmailLoggerFields).WithField("code", m.Code).WithError(err).Error("unexpected response code from esi")
 		return
 	}
 
-	killmail := res.Data.(*neo.Killmail)
 	killmail.Hash = payload.Hash
 
 	_, err = s.universe.SolarSystem(ctx, killmail.SolarSystemID)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch solar system")
+		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime solar system")
 	}
 
 	victim := killmail.Victim
@@ -133,67 +129,74 @@ func (s *service) processMessage(message []byte, workerID int) {
 	if victim.AllianceID.Valid {
 		_, err := s.alliance.Alliance(ctx, victim.AllianceID.Uint64)
 		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch victim alliance")
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim alliance")
 		}
 	}
 
 	if victim.CorporationID.Valid {
 		_, err := s.corporation.Corporation(ctx, victim.CorporationID.Uint64)
 		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch victim character")
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
 		}
 	}
 
 	if victim.CharacterID.Valid {
 		_, err := s.character.Character(ctx, victim.CharacterID.Uint64)
 		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch victim character")
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
 		}
 	}
 
 	_, err = s.universe.Type(ctx, victim.ShipTypeID)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch victim ship type")
+		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim ship type")
 	}
 
 	for _, attacker := range killmail.Attackers {
 		if attacker.AllianceID.Valid {
 			_, err := s.alliance.Alliance(ctx, attacker.AllianceID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch attacker alliance")
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker alliance")
 			}
 		}
 
 		if attacker.CorporationID.Valid {
 			_, err := s.corporation.Corporation(ctx, attacker.CorporationID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch attacker character")
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
 			}
 		}
 
 		if attacker.CharacterID.Valid {
 			_, err := s.character.Character(ctx, attacker.CharacterID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch attacker character")
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
 			}
 		}
 
 		if attacker.ShipTypeID.Valid {
 			_, err = s.universe.Type(ctx, attacker.ShipTypeID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch attacker ship type")
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
 
 		if attacker.WeaponTypeID.Valid {
 			_, err = s.universe.Type(ctx, attacker.WeaponTypeID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to fetch attacker ship type")
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
 	}
 
+	s.handleVictimItems(killmail.Victim.Items)
+
 	txn, err := s.txn.Begin()
+	if err != nil {
+		s.logger.WithError(err).Error("failed to start transaction")
+		return
+	}
+
 	_, err = s.KillmailRespository.CreateKillmailTxn(ctx, txn, killmail)
 	if err != nil {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail into db")
@@ -207,6 +210,13 @@ func (s *service) processMessage(message []byte, workerID int) {
 		killmail.Victim.PosY.SetValid(killmail.Victim.Position.Y.Float64)
 		killmail.Victim.PosZ.SetValid(killmail.Victim.Position.Z.Float64)
 	}
+
+	date := killmail.KillmailTime
+
+	var totalValue = make([]float64, 0)
+	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, date)
+	totalValue = append(totalValue, shipValue)
+	killmail.Victim.ShipValue = shipValue
 
 	_, err = s.KillmailRespository.CreateKillmailVictimTxn(ctx, txn, killmail.Victim)
 	if err != nil {
@@ -222,38 +232,38 @@ func (s *service) processMessage(message []byte, workerID int) {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail attackers into db")
 	}
 
-	minDate := time.Date(killmail.KillmailTime.Year(), killmail.KillmailTime.Month(), killmail.KillmailTime.Day(), 0, 0, 0, 0, time.UTC)
-	maxDate := time.Date(killmail.KillmailTime.Year(), killmail.KillmailTime.Month(), killmail.KillmailTime.Day(), 23, 59, 59, 0, time.UTC)
-
-	var totalValue = make([]float64, 0)
-	fmt.Printf("Calculating Raw Material Cost for Ship %d\n", killmail.Victim.ShipTypeID)
-	shipValue := append(totalValue, s.market.CalculateRawMaterialCost(killmail.Victim.ShipTypeID, minDate, maxDate))
-	fmt.Printf("Done Calculating Ship. Item %d cost %.f to build\n", killmail.Victim.ShipTypeID, shipValue)
-	totalValue = shipValue
-
 	for _, item := range killmail.Victim.Items {
 		item.KillmailID = killmail.ID
-		fmt.Printf("Calculating Raw Material Cost for Item %d\n", item.ItemTypeID)
-		itemValue := s.market.CalculateRawMaterialCost(item.ItemTypeID, minDate, maxDate)
-		totalValue = append(totalValue, itemValue*float64(item.QuantityDestroyed.Uint64+item.QuantityDropped.Uint64))
-		fmt.Printf("Done Calculating Item. Item %d cost %.f to build\n", item.ItemTypeID, itemValue)
+		itemValue := float64(0)
+		if item.Singleton != 2 {
+			itemValue = s.market.FetchTypePrice(item.ItemTypeID, date)
+		} else {
+			itemValue = 0.01
+		}
+
+		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
+		totalValue = append(totalValue, itemValue*float64(quantity))
 
 		item.ItemValue = itemValue
 	}
 
 	_, err = s.KillmailRespository.CreateKillmailItemsTxn(ctx, txn, killmail.Victim.Items)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to insert items into db")
+	}
 
 	for _, item := range killmail.Victim.Items {
 		if len(item.Items) > 0 {
 			for _, subItem := range item.Items {
 				subItem.KillmailID = killmailID
 				subItem.ParentID.SetValid(item.ID)
-
-				fmt.Printf("Calculating Raw Material Cost for SubItem %d", subItem.ItemTypeID)
-				subItemValue := s.market.CalculateRawMaterialCost(subItem.ItemTypeID, minDate, maxDate)
+				subItemValue := float64(0)
+				if item.Singleton != 2 {
+					subItemValue = 0.01
+				} else {
+					subItemValue = s.market.FetchTypePrice(item.ItemTypeID, date)
+				}
 				totalValue = append(totalValue, subItemValue*float64(subItem.QuantityDestroyed.Uint64+subItem.QuantityDropped.Uint64))
-				fmt.Printf("Done Calculating SubItem. Item %d cost %.f to build", subItem.ItemTypeID, subItemValue)
-
 				subItem.ItemValue = subItemValue
 			}
 			_, err = s.KillmailRespository.CreateKillmailItemsTxn(ctx, txn, item.Items)
@@ -268,8 +278,6 @@ func (s *service) processMessage(message []byte, workerID int) {
 		sum += v
 	}
 
-	spew.Dump(sum)
-
 	err = txn.Commit()
 	if err != nil {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to commit transaction")
@@ -283,7 +291,7 @@ func (s *service) processMessage(message []byte, workerID int) {
 	}
 
 	s.logger.WithFields(killmailLoggerFields).Info("killmail successfully imported")
-
+	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 
 func (s *service) handleVictimItems(items []*neo.KillmailItem) {

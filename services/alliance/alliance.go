@@ -24,7 +24,6 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 	}
 
 	if len(result) > 0 {
-
 		err = json.Unmarshal(result, alliance)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to unmarshal alliance from redis")
@@ -49,12 +48,10 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 	}
 
 	// System is not cached, the DB doesn't have this alliance, lets check ESI
-	res, err := s.esi.GetAlliancesAllianceID(id, null.NewString("", false))
-	if err != nil {
-		return nil, errors.Wrap(err, "unable retrieve alliance from ESI")
+	alliance, m := s.esi.GetAlliancesAllianceID(id, null.NewString("", false))
+	if m.IsError() {
+		return nil, m.Msg
 	}
-
-	alliance = res.Data.(*neo.Alliance)
 
 	// ESI has the alliance. Lets insert it into the db, and cache it is redis
 	_, err = s.AllianceRespository.CreateAlliance(ctx, alliance)

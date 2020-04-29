@@ -6,7 +6,6 @@ import (
 	"time"
 
 	core "github.com/eveisesi/neo/app"
-	"github.com/eveisesi/neo/killmail/websocket"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
@@ -92,16 +91,80 @@ func init() {
 			},
 		},
 		// cli.Command{
-		// 	Name: "burner",
+		// 	Name: "fill-the-gap",
 		// 	Action: func(c *cli.Context) error {
-		// 		a := []int{1, 2, 3, 4, 5}
-		// 		i := 2
-		// 		// a = append(a[:1], a[2:]...)
-		// 		spew.Dump(a)
+		// 		app := core.New()
 
-		// 		copy(a[i:], a[i+1:])
-		// 		a = a[:len(a)-1]
-		// 		spew.Dump(a)
+		// 		unique := make([]int, 0)
+		// 		err = app.DB.Select(&unique, `
+		// 			SELECT DISTINCT(type_id) FROM prices ORDER BY type_id ASC
+		// 		`)
+
+		// 		limit := limiter.NewConcurrencyLimiter(10)
+
+		// 		start := time.Date(2018, 03, 05, 0, 0, 0, 0, time.UTC)
+		// 		end := time.Date(2019, 03, 01, 0, 0, 0, 0, time.UTC)
+
+		// 		for _, t := range unique {
+		// 			if t < 20929 {
+		// 				continue
+		// 			}
+		// 			limit.Execute(func() {
+		// 				x := t
+		// 				url := fmt.Sprintf("https://zkillboard.com/api/prices/%d/", x)
+		// 				res, err := http.Get(url)
+		// 				if err != nil {
+		// 					app.Logger.WithError(err).WithField("type_id", x).Error("failed to make request for prices")
+		// 					return
+		// 				}
+
+		// 				results := make(map[string]float64)
+		// 				_ = json.NewDecoder(res.Body).Decode(&results)
+		// 				delete(results, "currentPrice")
+		// 				delete(results, "typeID")
+		// 				args := make([]string, 0)
+		// 				params := make([]interface{}, 0)
+		// 				arg := "(?, ?, ?, NOW(), NOW())"
+		// 				for i, v := range results {
+
+		// 					date, err := time.ParseInLocation("2006-01-02", i, time.UTC)
+		// 					if err != nil {
+		// 						app.Logger.WithError(err).WithFields(logrus.Fields{
+		// 							"date": i,
+		// 							"type": x,
+		// 						}).Error("failed to parse timestamp for type")
+		// 						return
+		// 					}
+
+		// 					if date.Unix() >= start.Unix() && date.Unix() <= end.Unix() {
+
+		// 						args = append(args, arg)
+		// 						params = append(params, x, i, v)
+
+		// 					}
+
+		// 				}
+		// 				if len(params) > 0 {
+		// 					_, err = app.DB.Exec(fmt.Sprintf(`
+		// 						INSERT IGNORE INTO prices (
+		// 							type_id, date, price, created_at, updated_at
+		// 						) VALUES %s
+		// 					`, strings.Join(args, ",")), params...)
+		// 					if err != nil {
+		// 						app.Logger.WithError(err).WithFields(logrus.Fields{
+		// 							"type_id": x,
+		// 						}).Error("failed to insert record")
+		// 						return
+		// 					}
+		// 				}
+
+		// 				app.Logger.WithFields(logrus.Fields{
+		// 					"type_id": x,
+		// 				}).Info("successfully inserted historical record")
+		// 				time.Sleep(time.Millisecond * 750)
+		// 			})
+
+		// 		}
 
 		// 		return nil
 		// 	},
@@ -115,9 +178,17 @@ func init() {
 			Name:  "market",
 			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
 			Action: func(ctx *cli.Context) error {
-				app := core.New()
 
-				app.Market.FetchOrders()
+				if ctx.Bool("now") {
+					from := 0
+					if ctx.Int("from") > 0 {
+						from = ctx.Int("from")
+					}
+					app := core.New()
+
+					app.Market.FetchHistory(from)
+				}
+
 				c := cron.New(
 					cron.WithLocation(time.UTC),
 					cron.WithLogger(
@@ -129,19 +200,35 @@ func init() {
 						),
 					),
 				)
-				c.AddFunc("*/10 * * * *", func() {
-					app.Market.FetchOrders()
+				_, _ = c.AddFunc("10 11 * * *", func() {
+					app := core.New()
+
+					app.Market.FetchHistory(0)
 				})
 
 				c.Run()
 
 				return nil
 			},
+			Flags: []cli.Flag{
+				cli.BoolFlag{
+					Name:  "now",
+					Usage: "fetch orders immediately, then initiate the cron",
+				},
+				cli.IntFlag{
+					Name:  "from",
+					Usage: "Group ID to start fetch from",
+				},
+			},
 		},
 		cli.Command{
-			Name:   "listen",
-			Usage:  "Opens a WSS Connection to ZKillboard and lsitens to the stream",
-			Action: websocket.Action,
+			Name:  "listen",
+			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
+			Action: func(c *cli.Context) error {
+				_ = core.New().Killmail.Websocket(c.String("channel"))
+
+				return nil
+			},
 			Flags: []cli.Flag{
 				cli.StringFlag{
 					Name:     "channel",

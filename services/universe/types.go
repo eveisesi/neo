@@ -49,21 +49,9 @@ func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 	}
 
 	// Type is not cached, the DB doesn't have this type, lets check ESI
-	res, err := s.esi.GetUniverseTypesTypeID(id)
-	if err != nil {
-		return nil, errors.Wrap(err, "unable retrieve type from ESI")
-	}
-
-	// TODO: Check the res.Code. If not 200, do not proceed
-
-	var ok bool
-	if invType, ok = res.Data.(map[string]interface{})["type"].(*neo.Type); !ok {
-		return nil, errors.Wrap(err, "unexpected results receive from ESI package")
-	}
-
-	var attributes []*neo.TypeAttribute
-	if attributes, ok = res.Data.(map[string]interface{})["attributes"].([]*neo.TypeAttribute); !ok {
-		return nil, errors.Wrap(err, "unexpected results receive from ESI package")
+	invType, attributes, m := s.esi.GetUniverseTypesTypeID(id)
+	if m.IsError() {
+		return nil, m.Msg
 	}
 
 	// ESI has the type. Lets insert it into the db, and cache it is redis

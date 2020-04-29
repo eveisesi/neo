@@ -10,6 +10,10 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     solarSystemID: Int!
     warID: Int
     killmailTime: Time!
+    isNPC: Boolean!
+    isAwox: Boolean!
+    isSolo: Boolean!
+    totalValue: Float!
 
     system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)
@@ -46,6 +50,7 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     factionID: Int
     damageTaken: Int!
     shipTypeID: Int!
+    shipValue: Float!
 
     alliance: Alliance
     corporation: Corporation
@@ -65,6 +70,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     quantityDestroyed: Int
     singleton: Int!
     isParent: Boolean!
+    itemValue: Float!
 
     type: Type
     typeflag: TypeFlag
