@@ -3,7 +3,6 @@ package killmail
 import (
 	"context"
 	"encoding/json"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -84,10 +83,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	}
 
 	killmailLoggerFields := logrus.Fields{
-		"id":        payload.ID,
-		"hash":      payload.Hash,
-		"worker":    workerID,
-		"numGoRout": runtime.NumGoroutine(),
+		"id":     payload.ID,
+		"hash":   payload.Hash,
+		"worker": workerID,
 	}
 
 	killmailID, err := strconv.ParseUint(payload.ID, 10, 64)
@@ -109,7 +107,11 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
 	if m.IsError() {
-		s.logger.WithError(m.Msg).Error("failed to fetch killmail from esi")
+		s.logger.WithError(m.Msg).WithFields(logrus.Fields{
+			"code":  m.Code,
+			"path":  m.Path,
+			"query": m.Query,
+		}).Error("failed to fetch killmail from esi")
 		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
 		return
 	}
