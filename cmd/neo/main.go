@@ -187,19 +187,17 @@ func init() {
 
 				app := core.New()
 
-				screen.Clear()
-
 				prevEsiPastFiveMinutes := int64(0)
 				for {
 
-					screen.MoveTopLeft()
+					screen.Clear()
 
 					esiPastFiveMinutes, err := app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 					if err != nil {
 						return cli.NewExitError(err, 1)
 					}
 
-					fmt.Printf("%d: Successful ESI Call in Past Five Minutes (%d)\t\t%d: Failed ESI Calls in the Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes, 0, 0)
+					fmt.Printf("%d: Successful ESI Calls in Past Five Minutes (%d)\t\t%d: Failed ESI Calls in the Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes, 0, 0)
 					time.Sleep(time.Second * 2)
 					prevEsiPastFiveMinutes = esiPastFiveMinutes
 
