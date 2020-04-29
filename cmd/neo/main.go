@@ -191,6 +191,7 @@ func init() {
 				for {
 
 					screen.Clear()
+					screen.MoveTopLeft()
 
 					esiPastFiveMinutes, err := app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 					if err != nil {
