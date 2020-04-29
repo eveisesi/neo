@@ -295,9 +295,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			}
 		}
 		if item.QuantityDestroyed.Valid {
-			destroyedValue += item.ItemValue
+			destroyedValue += item.ItemValue * item.QuantityDestroyed.Uint64
 		} else if item.QuantityDropped.Valid {
-			droppedValue += item.ItemValue
+			droppedValue += item.ItemValue * item.QuantityDropped.Uint64
 		}
 	}
 
@@ -353,8 +353,8 @@ func (s *service) calculatedFittedValue(items []*neo.KillmailItem) float64 {
 		if _, ok := fittedFlags[uint64(item.Flag)]; !ok {
 			continue
 		}
-
-		total += item.ItemValue
+		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
+		total += item.ItemValue * float64(quantity)
 	}
 
 	return total
