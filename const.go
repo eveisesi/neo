@@ -21,12 +21,20 @@ const ESI_EXPIRES_HEADER_FORMAT = "Mon, 02 Jan 2006 15:04:05 MST"
 // REDIS KEY
 const REDIS_ESI_ERROR_COUNT = "esi:error:count"
 const REDIS_ESI_ERROR_RESET = "esi:error:reset"
+
 const REDIS_ESI_TRACKING_STATUS = "esi:tracking:status"
-const REDIS_ESI_TRACKING_SUCCESS = "esi:tracking:success"
 const REDIS_ESI_TRACKING_FAILED = "esi:tracking:failed"
+const REDIS_ESI_TRACKING_SUCCESS = "esi:tracking:success"
+
+// Locked is something that one of our crons can set to signal to all the other jobs that no matter what, the current status is locked and cannot be unlocked with out that same cron removing the lock
+const REDIS_ESI_TRACKING_STATUS_LOCKED = "esi:tracking:status:lock"
 
 // Status Const
 const COUNT_STATUS_DOWNTIME = 3
 const COUNT_STATUS_RED = 2
 const COUNT_STATUS_YELLOW = 1
 const COUNT_STATUS_GREEN = 0
+
+// TQ Const
+const TQ_PLAYER_COUNT = "esi:tq:player_count"
+const TQ_VIP_MODE = "esi:tq:vip"
