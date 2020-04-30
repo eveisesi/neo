@@ -1,0 +1,58 @@
+version: "3.7"
+
+services:
+    import:
+        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo import --channel=${REDIS_CHANNEL} --gLimit ${PROCESS_LIMIT} --gSleep ${PROCESS_SLEEP}
+        container_name: import
+        hostname: import
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
+    history:
+        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo history --channel=${REDIS_CHANNEL}
+        container_name: history
+        hostname: history
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
+    serve:
+        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo serve
+        container_name: serve
+        hostname: serve
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
+    cron:
+        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo cron
+        container_name: cron
+        hostname: cron
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
+    listen:
+        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo listen --channel=${REDIS_CHANNEL}
+        container_name: listen
+        hostname: listen
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
