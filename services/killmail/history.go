@@ -11,32 +11,42 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"github.com/volatiletech/null"
 )
 
-func (s *service) HistoryExporter(channel string, cDate null.String) error {
-
-	redisKey := "neo:egress:date"
-
-	var date string
-	if cDate.Valid {
-		date = cDate.String
-	} else {
-		date, err = s.redis.Get(redisKey).Result()
-		if err != nil && err.Error() != "redis: nil" {
-			s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
-		}
-		if date == "" {
-			return err
-		}
+func (s *service) HistoryExporter(channel string, min, max string) error {
+	// Attempt to fetch Current Date from Redis
+	current, err := s.redis.Get(neo.ZKB_HISTORY_DATE).Result()
+	if err != nil && err.Error() != "redis: nil" {
+		s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
+	}
+	// If Current is an empty string, set it to the passed in max string
+	if current == "" {
+		current = max
 	}
 
-	parsed, err := time.Parse("20060102", date)
+	// Date Parsing to get time.Time's to deal with
+	mindate, err := time.Parse("20060102", min)
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to parse provided date")
 	}
 
-	_, err = s.redis.Set(redisKey, parsed.Format("20060102"), -1).Result()
+	maxdate, err := time.Parse("20060102", max)
+	if err != nil {
+		s.logger.WithError(err).Fatal("unable to parse provided date")
+	}
+
+	currentdate, err := time.Parse("20060102", current)
+	if err != nil {
+		s.logger.WithError(err).Fatal("unable to parse provided date")
+	}
+
+	if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
+		s.redis.Del(neo.ZKB_HISTORY_DATE)
+		return nil
+	}
+
+	// Store the new currentdate in Redis in case we panic
+	_, err = s.redis.Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 	if err != nil {
 		s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 	}
@@ -48,9 +58,10 @@ func (s *service) HistoryExporter(channel string, cDate null.String) error {
 			return cli.NewExitError("maximum allowed attempts reeached", 1)
 		}
 
-		entry := s.logger.WithField("date", parsed.Format("20060102"))
+		entry := s.logger.WithField("date", currentdate.Format("20060102"))
+		entry.Info("pulling killmail history for date")
 
-		uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, parsed.Format("20060102"))
+		uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, currentdate.Format("20060102"))
 
 		request, err := http.NewRequest(http.MethodGet, uri, nil)
 		if err != nil {
@@ -84,7 +95,7 @@ func (s *service) HistoryExporter(channel string, cDate null.String) error {
 		if len(data) == 0 {
 			entry.WithField("uri", uri).Warn("no data received from zkillboard api")
 			// This maybe a bad date. Let decrement the date and try again. If attempts reaches 3, then this process will terminate
-			parsed = parsed.AddDate(0, 0, -1)
+			currentdate = currentdate.AddDate(0, 0, -1)
 			time.Sleep(time.Second * 10)
 			attempts++
 			continue
@@ -104,15 +115,22 @@ func (s *service) HistoryExporter(channel string, cDate null.String) error {
 			continue
 		}
 
-		parsed = parsed.AddDate(0, 0, -1)
-		_, err = s.redis.Set(redisKey, parsed.Format("20060102"), -1).Result()
+		currentdate = currentdate.AddDate(0, 0, -1)
+		_, err = s.redis.Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 		if err != nil {
 			s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 		}
 
 		entry.Info("handling hashes")
 		s.handleHashes(channel, hashes)
-		entry.Info("finished with hashes")
+		entry.Info("finished with hashes && done pulling killmail history for date")
+
+		if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
+			s.redis.Del(neo.ZKB_HISTORY_DATE)
+			return nil
+		}
+
+		time.Sleep(time.Millisecond * 500)
 
 		attempts = 1
 	}
@@ -131,30 +149,12 @@ func (s *service) handleHashes(channel string, hashes map[string]string) {
 		s.logger.WithField("pong", pong).Fatal("unexpected response to redis server ping received")
 	}
 
-	// Lets get the most recent record from the end of the set to determine the score to use
-	results, err := s.redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
-	if err != nil {
-		s.logger.WithError(err).Fatal("unable to get max score of redis z range")
-	}
-
-	// If we received more than one result, something is wrong and we need to bail
-	if len(results) > 1 {
-		s.logger.WithError(err).Fatal("unable to determine score")
-	}
-	// Default the score to 0 incase the set is empty
-	score := float64(0)
-	if len(results) == 1 {
-		// Get the score
-		score = results[0].Score
-	}
-
 	// Start the dispatch iterator
 	dispatched := 0
 
 	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
 
-		score++
 		msg, err := json.Marshal(Message{
 			ID:   id,
 			Hash: hash,
@@ -167,30 +167,19 @@ func (s *service) handleHashes(channel string, hashes map[string]string) {
 			continue
 		}
 
-		s.redis.ZAdd(channel, redis.Z{Score: score, Member: msg})
+		s.redis.ZAdd(channel, redis.Z{Score: 2, Member: msg})
 		dispatched++
 
 	}
 
-	for {
-
-		count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
-		if err != nil {
-			s.logger.WithError(err).Fatal("unable to get count of redis zset")
-		}
-
-		s.logger.WithFields(logrus.Fields{
-			"total":         len(hashes),
-			"dispatched":    dispatched,
-			"remaining":     len(hashes) - dispatched,
-			"current_queue": count,
-		}).Info("queue status")
-		if count < 200 {
-			return
-		}
-
-		time.Sleep(time.Second * 15)
-
+	count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
+	if err != nil {
+		s.logger.WithError(err).Fatal("unable to get count of redis zset")
 	}
+
+	s.logger.WithFields(logrus.Fields{
+		"dispatched":    dispatched,
+		"current_queue": count,
+	}).Info("queue status")
 
 }

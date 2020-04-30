@@ -13,13 +13,12 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
 )
 
 type (
 	Service interface {
 		// WebsocketExporter(channel string) error
-		HistoryExporter(channel string, cDate null.String) error
+		HistoryExporter(channel string, mindate, maxdate string) error
 		Importer(channel string, gLimit, gSleep int64) error
 		Websocket(channel string) error
 		neo.KillmailRespository

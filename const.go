@@ -38,3 +38,6 @@ const COUNT_STATUS_GREEN = 0
 // TQ Const
 const TQ_PLAYER_COUNT = "esi:tq:player_count"
 const TQ_VIP_MODE = "esi:tq:vip"
+
+// ZKB_HISTORY_DATE Const
+const ZKB_HISTORY_DATE = "zkb:history:date"

@@ -12,12 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// now := time.Now()
-// location, _ := time.LoadLocation("UTC")
-
-// // then := time.Until
-// return nil
-
 func (s *service) loopManager() {
 
 	for {
@@ -27,10 +21,13 @@ func (s *service) loopManager() {
 			break
 		}
 
-		if status == neo.COUNT_STATUS_DOWNTIME ||
-			status == neo.COUNT_STATUS_RED {
+		if status == neo.COUNT_STATUS_DOWNTIME {
+			s.logger.WithField("status", status).Info("loop manager blocking process due to downtime")
+			time.Sleep(time.Second)
+			continue
+		} else if status == neo.COUNT_STATUS_RED {
 
-			s.logger.WithField("status", status).Info("loop manager blocking process")
+			s.logger.WithField("status", status).Error("loop manager blocking process due to red alert")
 			time.Sleep(time.Second)
 			continue
 		} else if status == neo.COUNT_STATUS_YELLOW {

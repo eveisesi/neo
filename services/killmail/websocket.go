@@ -65,24 +65,6 @@ func (s *service) handleWSSPayload(msg []byte) {
 		s.logger.WithError(err).Fatal("failed to unmarhal message into message struct")
 	}
 
-	// Lets get the most recent record from the end of the set to determine the score to use
-	results, err := s.redis.ZRevRangeByScoreWithScores(channel, redis.ZRangeBy{Min: "-inf", Max: "+inf", Count: 1}).Result()
-	if err != nil {
-		s.logger.WithError(err).Fatal("unable to get max score of redis z range")
-	}
-
-	// If we received more than one result, something is wrong and we need to bail
-	if len(results) > 1 {
-		s.logger.WithError(err).Fatal("unable to determine score")
-	}
-	// Default the score to 0 incase the set is empty
-	score := float64(0)
-	if len(results) == 1 {
-		// Get the score
-		score = results[0].Score
-	}
-	score += 1
-
 	payload, _ := json.Marshal(struct {
 		ID   string `json:"id"`
 		Hash string `json:"hash"`
@@ -91,7 +73,7 @@ func (s *service) handleWSSPayload(msg []byte) {
 		Hash: message.Hash,
 	})
 
-	_, err = s.redis.ZAdd(channel, redis.Z{Score: score, Member: payload}).Result()
+	_, err = s.redis.ZAdd(channel, redis.Z{Score: 1, Member: payload}).Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("something is wrong")
 	}

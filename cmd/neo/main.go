@@ -17,7 +17,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"github.com/urfave/cli"
-	"github.com/volatiletech/null"
 )
 
 var (
@@ -75,14 +74,15 @@ func init() {
 			Action: func(c *cli.Context) error {
 				app := core.New()
 				channel := c.String("channel")
-				date := null.NewString(c.String("date"), c.String("date") != "")
+				maxdate := c.String("maxdate")
+				mindate := c.String("mindate")
 
-				err := app.Killmail.HistoryExporter(channel, date)
+				err := app.Killmail.HistoryExporter(channel, mindate, maxdate)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
 
-				return nil
+				return cli.NewExitError(nil, 0)
 			},
 			Flags: []cli.Flag{
 				cli.StringFlag{
@@ -91,9 +91,14 @@ func init() {
 					Required: true,
 				},
 				cli.StringFlag{
-					Name:  "date",
-					Usage: "Date to use when request killmail hashes from zkillboard. (Format: YYYYMMDD)",
-					// Required: true,
+					Name:     "maxdate",
+					Usage:    "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
+					Required: true,
+				},
+				cli.StringFlag{
+					Name:     "mindate",
+					Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
+					Required: true,
 				},
 			},
 		},
