@@ -24,15 +24,29 @@ var (
 
 type (
 	Service interface {
+		// Alliances
 		GetAlliancesAllianceID(id uint64, etag null.String) (*neo.Alliance, *Meta)
+
+		// Characters
 		GetCharactersCharacterID(id uint64, etag null.String) (*neo.Character, *Meta)
+
+		// Corporations
 		GetCorporationsCorporationID(id uint64, etag null.String) (*neo.Corporation, *Meta)
+
+		// Killmails
 		GetKillmailsKillmailIDKillmailHash(id, hash string) (*neo.Killmail, *Meta)
+
+		// Market
 		HeadMarketsRegionIDTypes(regionID uint64) *Meta
 		GetMarketGroups() ([]int, *Meta)
 		GetMarketGroupsMarketGroupID(id int) (*neo.MarketGroup, *Meta)
 		GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]int, *Meta)
 		GetMarketsRegionIDHistory(regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta)
+
+		// Status
+		GetStatus() (*neo.ServerStatus, *Meta)
+
+		// Universe
 		GetUniverseSystemsSystemID(id uint64) (*neo.SolarSystem, *Meta)
 		GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta)
 	}
