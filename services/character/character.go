@@ -12,11 +12,9 @@ import (
 	"github.com/volatiletech/null"
 )
 
-var rcharacter = "character:%d"
-
 func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, error) {
 	var character = new(neo.Character)
-	var key = fmt.Sprintf(rcharacter, id)
+	var key = fmt.Sprintf(neo.REDIS_CHARACTER, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -74,7 +72,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 
 	var characters = make([]*neo.Character, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rcharacter, id)
+		key := fmt.Sprintf(neo.REDIS_CHARACTER, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -121,7 +119,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 	}
 
 	for _, character := range dbTypes {
-		key := fmt.Sprintf(rcharacter, character.ID)
+		key := fmt.Sprintf(neo.REDIS_CHARACTER, character.ID)
 
 		byteSlice, err := json.Marshal(character)
 		if err != nil {

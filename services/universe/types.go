@@ -11,12 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var rtype = "type:%d"
-
 func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 
 	var invType = new(neo.Type)
-	var key = fmt.Sprintf(rtype, id)
+	var key = fmt.Sprintf(neo.REDIS_TYPE, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -80,7 +78,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 
 	var types = make([]*neo.Type, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rtype, id)
+		key := fmt.Sprintf(neo.REDIS_TYPE, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -127,7 +125,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 	}
 
 	for _, invType := range dbTypes {
-		key := fmt.Sprintf(rtype, invType.ID)
+		key := fmt.Sprintf(neo.REDIS_TYPE, invType.ID)
 
 		byteSlice, err := json.Marshal(invType)
 		if err != nil {
@@ -146,12 +144,10 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 
 }
 
-var rattributes = "type:attributes:%d"
-
 func (s *service) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAttribute, error) {
 
 	var attributes = make([]*neo.TypeAttribute, 0)
-	var key = fmt.Sprintf(rattributes, id)
+	var key = fmt.Sprintf(neo.REDIS_TYPE_ATTRIBUTES, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -187,7 +183,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 	var attributes = make(map[uint64][]*neo.TypeAttribute)
 
 	for _, id := range ids {
-		key := fmt.Sprintf(rattributes, id)
+		key := fmt.Sprintf(neo.REDIS_TYPE_ATTRIBUTES, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -240,7 +236,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 	}
 
 	for typeID, typeAttributes := range attributes {
-		key := fmt.Sprintf(rattributes, typeID)
+		key := fmt.Sprintf(neo.REDIS_TYPE_ATTRIBUTES, typeID)
 
 		byteSlice, err := json.Marshal(typeAttributes)
 		if err != nil {
@@ -261,12 +257,10 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 
 }
 
-var rcategory = "type:category:%d"
-
 func (s *service) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategory, error) {
 
 	var invCategory = new(neo.TypeCategory)
-	var key = fmt.Sprintf(rcategory, id)
+	var key = fmt.Sprintf(neo.REDIS_TYPE_CATEGORY, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -302,7 +296,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 
 	var categories = make([]*neo.TypeCategory, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rcategory, id)
+		key := fmt.Sprintf(neo.REDIS_TYPE_CATEGORY, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -349,7 +343,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 	}
 
 	for _, invCategory := range dbCategory {
-		key := fmt.Sprintf(rcategory, invCategory.ID)
+		key := fmt.Sprintf(neo.REDIS_TYPE_CATEGORY, invCategory.ID)
 
 		byteSlice, err := json.Marshal(invCategory)
 		if err != nil {
@@ -368,12 +362,10 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 
 }
 
-var rflag = "type:flag:%d"
-
 func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error) {
 
 	var invFlag = new(neo.TypeFlag)
-	var key = fmt.Sprintf(rflag, id)
+	var key = fmt.Sprintf(neo.REDIS_TYPE_FLAG, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -409,7 +401,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 
 	var flags = make([]*neo.TypeFlag, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rflag, id)
+		key := fmt.Sprintf(neo.REDIS_TYPE_FLAG, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -456,7 +448,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 	}
 
 	for _, invFlag := range dbFlags {
-		key := fmt.Sprintf(rflag, invFlag.ID)
+		key := fmt.Sprintf(neo.REDIS_TYPE_FLAG, invFlag.ID)
 
 		byteSlice, err := json.Marshal(invFlag)
 		if err != nil {
@@ -475,12 +467,10 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 
 }
 
-var rgroup = "type:group:%d"
-
 func (s *service) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, error) {
 
 	var invGroup = new(neo.TypeGroup)
-	var key = fmt.Sprintf(rgroup, id)
+	var key = fmt.Sprintf(neo.REDIS_TYPE_GROUP, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -516,7 +506,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*ne
 
 	var groups = make([]*neo.TypeGroup, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rgroup, id)
+		key := fmt.Sprintf(neo.REDIS_TYPE_GROUP, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -563,7 +553,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*ne
 	}
 
 	for _, invGroup := range dbGroups {
-		key := fmt.Sprintf(rgroup, invGroup.ID)
+		key := fmt.Sprintf(neo.REDIS_TYPE_GROUP, invGroup.ID)
 
 		byteSlice, err := json.Marshal(invGroup)
 		if err != nil {

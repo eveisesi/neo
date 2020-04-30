@@ -17,10 +17,9 @@ import (
 
 type (
 	Service interface {
-		// WebsocketExporter(channel string) error
-		HistoryExporter(channel string, mindate, maxdate string) error
-		Importer(channel string, gLimit, gSleep int64) error
-		Websocket(channel string) error
+		HistoryExporter(mindate, maxdate string) error
+		Importer(gLimit, gSleep int64) error
+		Websocket() error
 		neo.KillmailRespository
 	}
 
@@ -57,9 +56,8 @@ type (
 )
 
 var (
-	conn    *websocket.Conn
-	err     error
-	channel string
+	conn *websocket.Conn
+	err  error
 )
 
 func NewService(

@@ -11,12 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var rregion = "region:%d"
-
 func (s *service) Region(ctx context.Context, id uint64) (*neo.Region, error) {
 
 	var region = new(neo.Region)
-	var key = fmt.Sprintf(rregion, id)
+	var key = fmt.Sprintf(neo.REDIS_REGION, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -52,7 +50,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.
 
 	var regions = make([]*neo.Region, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rregion, id)
+		key := fmt.Sprintf(neo.REDIS_REGION, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -99,7 +97,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.
 	}
 
 	for _, region := range dbRegions {
-		key := fmt.Sprintf(rregion, region.ID)
+		key := fmt.Sprintf(neo.REDIS_REGION, region.ID)
 
 		byteSlice, err := json.Marshal(region)
 		if err != nil {

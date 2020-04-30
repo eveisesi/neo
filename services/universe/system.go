@@ -11,13 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Redis SolarSystem Key
-var rsystem = "system:%d"
-
 func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
 
 	var system = new(neo.SolarSystem)
-	var key = fmt.Sprintf(rsystem, id)
+	var key = fmt.Sprintf(neo.REDIS_SYSTEM, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -75,7 +72,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64
 
 	var systems = make([]*neo.SolarSystem, 0)
 	for _, v := range ids {
-		key := fmt.Sprintf(rsystem, v)
+		key := fmt.Sprintf(neo.REDIS_SYSTEM, v)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -123,7 +120,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64
 	}
 
 	for _, system := range dbSystems {
-		key := fmt.Sprintf(rsystem, system.ID)
+		key := fmt.Sprintf(neo.REDIS_SYSTEM, system.ID)
 
 		byteSlice, err := json.Marshal(system)
 		if err != nil {

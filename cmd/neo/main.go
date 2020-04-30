@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
+	"html/template"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/inancgumus/screen"
@@ -39,11 +40,10 @@ func init() {
 			Usage: "Listen to a Redis PubSub channel for killmail hashes. On Message receive, reach out to CCP for Killmail Data and process.",
 			Action: func(c *cli.Context) error {
 				app := core.New()
-				channel := c.String("channel")
 				limit := c.Int64("gLimit")
 				sleep := c.Int64("gSleep")
 
-				err := app.Killmail.Importer(channel, limit, sleep)
+				err := app.Killmail.Importer(limit, sleep)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
@@ -51,11 +51,6 @@ func init() {
 				return nil
 			},
 			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     "channel",
-					Usage:    "channel is the key to use when push killmail ids and hashes to redis",
-					Required: true,
-				},
 				cli.Int64Flag{
 					Name:     "gLimit",
 					Usage:    "gLimit is the number of goroutines that the limiter should allow to be in flight at any one time",
@@ -73,11 +68,10 @@ func init() {
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {
 				app := core.New()
-				channel := c.String("channel")
 				maxdate := c.String("maxdate")
 				mindate := c.String("mindate")
 
-				err := app.Killmail.HistoryExporter(channel, mindate, maxdate)
+				err := app.Killmail.HistoryExporter(mindate, maxdate)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
@@ -85,11 +79,6 @@ func init() {
 				return cli.NewExitError(nil, 0)
 			},
 			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     "channel",
-					Usage:    "channel is the key to use when  pulling killmail ids and hashes from redis to be resolved and inserted into the database",
-					Required: true,
-				},
 				cli.StringFlag{
 					Name:     "maxdate",
 					Usage:    "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
@@ -165,11 +154,19 @@ func init() {
 					app := core.New()
 
 					ts := time.Now().Add(time.Minute * -6).UnixNano()
-					count, err := app.Redis.ZRemRangeByScore("esi:tracking:success", "-inf", strconv.FormatInt(ts, 10)).Result()
+					count := int64(0)
+					a, err := app.Redis.ZRemRangeByScore(neo.REDIS_ESI_TRACKING_SUCCESS, "-inf", strconv.FormatInt(ts, 10)).Result()
 					if err != nil {
 						app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
 						return
 					}
+					count += a
+					b, err := app.Redis.ZRemRangeByScore(neo.REDIS_ESI_TRACKING_FAILED, "-inf", strconv.FormatInt(ts, 10)).Result()
+					if err != nil {
+						app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
+						return
+					}
+					count += b
 
 					app.Logger.WithField("removed", count).Info("successfully cleared keys from success queue")
 					app.Redis.Close()
@@ -195,42 +192,83 @@ func init() {
 			Name:  "listen",
 			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
 			Action: func(c *cli.Context) error {
-				_ = core.New().Killmail.Websocket(c.String("channel"))
+				_ = core.New().Killmail.Websocket()
 
 				return nil
-			},
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     "channel",
-					Usage:    "channel is the key to use when pushing killmail ids and hashes to redis to be resolved and inserted into the database",
-					Required: true,
-				},
 			},
 		},
 		cli.Command{
 			Name: "monitor",
 			Action: func(c *cli.Context) error {
-
+				var err error
 				app := core.New()
 
-				prevEsiPastFiveMinutes := int64(0)
+				var params = struct {
+					SuccessfulESI     int64
+					PrevSuccessfulESI int64
+					DiffSuccessfulESI int64
+
+					FailedESI     int64
+					PrevFailedESI int64
+					DiffFailedESI int64
+
+					ProcessingQueue     int64
+					PrevProcessingQueue int64
+					DiffProcessingQueue int64
+				}{
+					SuccessfulESI:     0,
+					PrevSuccessfulESI: 0,
+					DiffSuccessfulESI: 0,
+
+					FailedESI:     0,
+					PrevFailedESI: 0,
+					DiffFailedESI: 0,
+
+					ProcessingQueue:     0,
+					PrevProcessingQueue: 0,
+					DiffProcessingQueue: 0,
+				}
+
+				tpl, err := template.ParseFiles("templates/top.tpl")
+				if err != nil {
+					return cli.NewExitError(errors.Wrap(err, "unable to parse tempalte"), 1)
+				}
 				for {
 
 					screen.Clear()
 					screen.MoveTopLeft()
 
-					esiPastFiveMinutes, err := app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					params.SuccessfulESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					if err != nil {
+						return cli.NewExitError(errors.Wrap(err, "failed to fetch successful esi calls"), 1)
+					}
+					params.FailedESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					if err != nil {
+						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+					}
+
+					params.ProcessingQueue, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					if err != nil {
+						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+					}
+
+					err = tpl.Execute(os.Stdout, params)
 					if err != nil {
 						return cli.NewExitError(err, 1)
 					}
 
-					fmt.Printf("%d: Successful ESI Calls in Past Five Minutes (%d)\t\t%d: Failed ESI Calls in the Past Five Minutes (%d)\n", esiPastFiveMinutes, esiPastFiveMinutes-prevEsiPastFiveMinutes, 0, 0)
 					time.Sleep(time.Second * 2)
-					prevEsiPastFiveMinutes = esiPastFiveMinutes
 
+					params.DiffSuccessfulESI = params.SuccessfulESI - params.PrevSuccessfulESI
+					params.PrevSuccessfulESI = params.SuccessfulESI
+					params.DiffFailedESI = params.FailedESI - params.PrevFailedESI
+					params.PrevFailedESI = params.FailedESI
+					params.DiffProcessingQueue = params.ProcessingQueue - params.PrevProcessingQueue
+					params.PrevProcessingQueue = params.ProcessingQueue
 				}
 			},
 		},
+
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {

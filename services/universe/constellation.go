@@ -11,12 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var rconstellation = "constellation:%d"
-
 func (s *service) Constellation(ctx context.Context, id uint64) (*neo.Constellation, error) {
 
 	var constellation = new(neo.Constellation)
-	var key = fmt.Sprintf(rconstellation, id)
+	var key = fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -52,7 +50,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 
 	var constellations = make([]*neo.Constellation, 0)
 	for _, id := range ids {
-		key := fmt.Sprintf(rconstellation, id)
+		key := fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
 		result, err := s.redis.Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
@@ -99,7 +97,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 	}
 
 	for _, constellation := range dbConstellations {
-		key := fmt.Sprintf(rconstellation, constellation.ID)
+		key := fmt.Sprintf(neo.REDIS_CONSTELLATION, constellation.ID)
 
 		byteSlice, err := json.Marshal(constellation)
 		if err != nil {

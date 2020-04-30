@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/eveisesi/neo"
+
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-func (s *service) Websocket(inputchan string) error {
-
-	channel = inputchan
+func (s *service) Websocket() error {
 
 	for {
 		for {
@@ -73,7 +73,7 @@ func (s *service) handleWSSPayload(msg []byte) {
 		Hash: message.Hash,
 	})
 
-	_, err = s.redis.ZAdd(channel, redis.Z{Score: 1, Member: payload}).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 1, Member: payload}).Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("something is wrong")
 	}

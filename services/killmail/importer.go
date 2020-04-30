@@ -42,12 +42,12 @@ func (s *service) loopManager() {
 
 }
 
-func (s *service) Importer(channel string, gLimit, gSleep int64) error {
+func (s *service) Importer(gLimit, gSleep int64) error {
 
 	limit := limiter.NewConcurrencyLimiter(int(gLimit))
 
 	for {
-		count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to determine count of message queue")
 		}
@@ -58,7 +58,7 @@ func (s *service) Importer(channel string, gLimit, gSleep int64) error {
 			continue
 		}
 
-		results, err := s.redis.ZPopMin(channel, gLimit).Result()
+		results, err := s.redis.ZPopMin(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
@@ -113,7 +113,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
-		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 0, Member: message})
 		return
 	}
 
@@ -123,7 +123,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).WithError(err).Error("unexpected response code from esi")
-		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 0, Member: message})
 		return
 	}
 

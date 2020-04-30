@@ -13,7 +13,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func (s *service) HistoryExporter(channel string, min, max string) error {
+func (s *service) HistoryExporter(min, max string) error {
 	// Attempt to fetch Current Date from Redis
 	current, err := s.redis.Get(neo.ZKB_HISTORY_DATE).Result()
 	if err != nil && err.Error() != "redis: nil" {
@@ -122,7 +122,7 @@ func (s *service) HistoryExporter(channel string, min, max string) error {
 		}
 
 		entry.Info("handling hashes")
-		s.handleHashes(channel, hashes)
+		s.handleHashes(hashes)
 		entry.Info("finished with hashes && done pulling killmail history for date")
 
 		if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
@@ -137,7 +137,7 @@ func (s *service) HistoryExporter(channel string, min, max string) error {
 
 }
 
-func (s *service) handleHashes(channel string, hashes map[string]string) {
+func (s *service) handleHashes(hashes map[string]string) {
 
 	// Make Sure the Redis Server is still alive and nothing has happened to it
 	pong, err := s.redis.Ping().Result()
@@ -167,12 +167,12 @@ func (s *service) handleHashes(channel string, hashes map[string]string) {
 			continue
 		}
 
-		s.redis.ZAdd(channel, redis.Z{Score: 2, Member: msg})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 2, Member: msg})
 		dispatched++
 
 	}
 
-	count, err := s.redis.ZCount(channel, "-inf", "+inf").Result()
+	count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to get count of redis zset")
 	}

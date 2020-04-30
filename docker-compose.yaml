@@ -5,7 +5,7 @@ services:
         image: docker.pkg.github.com/eveisesi/neo/neo:latest
         network_mode: "host"
         restart: on-failure
-        command: ./neo import --channel=${REDIS_CHANNEL} --gLimit ${PROCESS_LIMIT} --gSleep ${PROCESS_SLEEP}
+        command: ./neo import --gLimit ${PROCESS_LIMIT} --gSleep ${PROCESS_SLEEP}
         container_name: import
         hostname: import
         env_file:
@@ -49,7 +49,7 @@ services:
         image: docker.pkg.github.com/eveisesi/neo/neo:latest
         network_mode: "host"
         restart: on-failure
-        command: ./neo tracker
+        command: ./neo tracking
         container_name: tracker
         hostname: tracker
         env_file:

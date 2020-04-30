@@ -11,12 +11,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var rmaterials = "blueprint:materials:%d"
-
 func (s *service) BlueprintMaterials(ctx context.Context, id uint64) ([]*neo.BlueprintMaterial, error) {
 
 	var materials = make([]*neo.BlueprintMaterial, 0)
-	var key = fmt.Sprintf(rmaterials, id)
+	var key = fmt.Sprintf(neo.REDIS_BLUEPRINT_MATERIALS, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -46,12 +44,10 @@ func (s *service) BlueprintMaterials(ctx context.Context, id uint64) ([]*neo.Blu
 	return materials, errors.Wrap(err, "failed to cache type in redis")
 }
 
-var rproduct = "blueprint:product:%d"
-
 func (s *service) BlueprintProduct(ctx context.Context, id uint64) (*neo.BlueprintProduct, error) {
 
 	var product = new(neo.BlueprintProduct)
-	var key = fmt.Sprintf(rproduct, id)
+	var key = fmt.Sprintf(neo.REDIS_BLUEPRINT_PRODUCT, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -83,11 +79,9 @@ func (s *service) BlueprintProduct(ctx context.Context, id uint64) (*neo.Bluepri
 
 }
 
-var rproducttypeid = "blueprint:producttypeid:%d"
-
 func (s *service) BlueprintProductByProductTypeID(ctx context.Context, id uint64) (*neo.BlueprintProduct, error) {
 	var product = new(neo.BlueprintProduct)
-	var key = fmt.Sprintf(rproducttypeid, id)
+	var key = fmt.Sprintf(neo.REDIS_BLUEPRINT_PRODUCTTYPEID, id)
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
