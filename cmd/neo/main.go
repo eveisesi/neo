@@ -1,13 +1,14 @@
 package main
 
 import (
-	"html/template"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/jedib0t/go-pretty/table"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -206,64 +207,65 @@ func init() {
 				var params = struct {
 					SuccessfulESI     int64
 					PrevSuccessfulESI int64
-					DiffSuccessfulESI int64
 
 					FailedESI     int64
 					PrevFailedESI int64
-					DiffFailedESI int64
 
 					ProcessingQueue     int64
 					PrevProcessingQueue int64
-					DiffProcessingQueue int64
-				}{
-					SuccessfulESI:     0,
-					PrevSuccessfulESI: 0,
-					DiffSuccessfulESI: 0,
-
-					FailedESI:     0,
-					PrevFailedESI: 0,
-					DiffFailedESI: 0,
-
-					ProcessingQueue:     0,
-					PrevProcessingQueue: 0,
-					DiffProcessingQueue: 0,
-				}
-
-				tpl, err := template.ParseFiles("templates/top.tpl")
-				if err != nil {
-					return cli.NewExitError(errors.Wrap(err, "unable to parse tempalte"), 1)
-				}
+				}{}
 				for {
 
 					screen.Clear()
 					screen.MoveTopLeft()
 
+					tw := table.NewWriter()
 					params.SuccessfulESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 					if err != nil {
 						return cli.NewExitError(errors.Wrap(err, "failed to fetch successful esi calls"), 1)
 					}
+
 					params.FailedESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 					if err != nil {
 						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
 					}
 
-					params.ProcessingQueue, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+					params.ProcessingQueue, err = app.Redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 					if err != nil {
 						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
 					}
 
-					err = tpl.Execute(os.Stdout, params)
-					if err != nil {
-						return cli.NewExitError(err, 1)
-					}
+					tw.AppendRows(
+						[]table.Row{
+							table.Row{
+								fmt.Sprintf(
+									"%d: Queue Processing (%d)",
+									params.ProcessingQueue,
+									params.ProcessingQueue-params.PrevProcessingQueue,
+								),
+								fmt.Sprintf(
+									"%d: Successful ESI Call in Last Five Minutes (%d)",
+									params.SuccessfulESI,
+									params.SuccessfulESI-params.PrevSuccessfulESI,
+								),
+							},
+							table.Row{
+								"",
+								fmt.Sprintf(
+									"%d: Failed ESI Call in Last Five Minutes (%d)",
+									params.FailedESI,
+									params.FailedESI-params.PrevFailedESI,
+								),
+							},
+						},
+					)
+
+					fmt.Println(tw.Render())
 
 					time.Sleep(time.Second * 2)
 
-					params.DiffSuccessfulESI = params.SuccessfulESI - params.PrevSuccessfulESI
 					params.PrevSuccessfulESI = params.SuccessfulESI
-					params.DiffFailedESI = params.FailedESI - params.PrevFailedESI
 					params.PrevFailedESI = params.FailedESI
-					params.DiffProcessingQueue = params.ProcessingQueue - params.PrevProcessingQueue
 					params.PrevProcessingQueue = params.ProcessingQueue
 				}
 			},
