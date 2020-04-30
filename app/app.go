@@ -179,7 +179,8 @@ func New() *App {
 }
 
 func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
-	return mysql.Connect(&sqlDriver.Config{
+
+	c := &sqlDriver.Config{
 		User:         cfg.DBUser,
 		Passwd:       cfg.DBPass,
 		Net:          "tcp",
@@ -195,7 +196,18 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 		Loc:                  time.UTC,
 		MaxAllowedPacket:     4 << 20, // 4 MiB
 		AllowNativePasswords: true,
-	})
+	}
+
+	db, err := mysql.Connect(c)
+	if err != nil {
+		return nil, err
+	}
+
+	db.SetMaxIdleConns(64)
+	db.SetMaxOpenConns(64)
+	db.SetConnMaxLifetime(time.Minute)
+
+	return db, nil
 }
 
 func loadEnv() (*neo.Config, error) {
