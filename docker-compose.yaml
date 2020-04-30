@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
     import:
-        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
         command: ./neo import --gLimit ${PROCESS_LIMIT} --gSleep ${PROCESS_SLEEP}
@@ -13,7 +13,7 @@ services:
         volumes:
             - ./logs:/app/logs
     serve:
-        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
         command: ./neo serve
@@ -24,7 +24,7 @@ services:
         volumes:
             - ./logs:/app/logs
     cron:
-        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
         command: ./neo cron
@@ -35,7 +35,7 @@ services:
         volumes:
             - ./logs:/app/logs
     listen:
-        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
         command: ./neo listen
@@ -46,7 +46,7 @@ services:
         volumes:
             - ./logs:/app/logs
     tracker:
-        image: docker.pkg.github.com/eveisesi/neo/neo:latest
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
         command: ./neo tracking
