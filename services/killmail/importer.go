@@ -111,7 +111,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
 	if m.IsError() {
-		s.logger.WithError(m.Msg).WithFields(logrus.Fields{
+		s.logger.WithError(m.Msg).WithFields(killmailLoggerFields).WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
 			"query": m.Query,
@@ -129,6 +129,8 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		s.redis.ZAdd(channel, redis.Z{Score: 0, Member: message})
 		return
 	}
+
+	killmailLoggerFields["killTime"] = killmail.KillmailTime.Format("2006-01-02 15:04:05")
 
 	killmail.Hash = payload.Hash
 
