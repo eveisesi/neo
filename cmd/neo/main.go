@@ -26,10 +26,7 @@ var (
 )
 
 func init() {
-	err := godotenv.Load(".env")
-	if err != nil {
-		log.Println("godotenv: ", err)
-	}
+	godotenv.Load(".env")
 
 	app = cli.NewApp()
 	app.Name = "Neo Core"

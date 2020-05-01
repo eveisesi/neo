@@ -62,20 +62,25 @@ func (s *service) handleWSSPayload(msg []byte) {
 	var message WSPayload
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
-		s.logger.WithError(err).Fatal("failed to unmarhal message into message struct")
+		s.logger.WithError(err).WithField("msg", string(msg)).Error("failed to unmarhal message into message struct")
 	}
 
-	payload, _ := json.Marshal(struct {
+	payload, err := json.Marshal(struct {
 		ID   string `json:"id"`
 		Hash string `json:"hash"`
 	}{
 		ID:   strconv.FormatUint(uint64(message.KillID), 10),
 		Hash: message.Hash,
 	})
+	if err != nil {
+		s.logger.WithError(err).Error("unable to marshal WSSPayload")
+		return
+	}
 
 	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 1, Member: payload}).Result()
 	if err != nil {
-		s.logger.WithError(err).Fatal("something is wrong")
+		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
+		return
 	}
 
 	s.logger.WithFields(logrus.Fields{
