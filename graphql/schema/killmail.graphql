@@ -9,11 +9,14 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     moonID: Int
     solarSystemID: Int!
     warID: Int
-    killmailTime: Time!
     isNPC: Boolean!
     isAwox: Boolean!
     isSolo: Boolean!
+    droppedValue: Float!
+    destroyedValue: Float!
+    fittedValue: Float!
     totalValue: Float!
+    killmailTime: Time!
 
     system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)

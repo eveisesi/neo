@@ -81,19 +81,22 @@ type ComplexityRoot struct {
 	}
 
 	Killmail struct {
-		Attackers     func(childComplexity int) int
-		Hash          func(childComplexity int) int
-		ID            func(childComplexity int) int
-		IsAwox        func(childComplexity int) int
-		IsNPC         func(childComplexity int) int
-		IsSolo        func(childComplexity int) int
-		KillmailTime  func(childComplexity int) int
-		MoonID        func(childComplexity int) int
-		SolarSystemID func(childComplexity int) int
-		System        func(childComplexity int) int
-		TotalValue    func(childComplexity int) int
-		Victim        func(childComplexity int) int
-		WarID         func(childComplexity int) int
+		Attackers      func(childComplexity int) int
+		DestroyedValue func(childComplexity int) int
+		DroppedValue   func(childComplexity int) int
+		FittedValue    func(childComplexity int) int
+		Hash           func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IsAwox         func(childComplexity int) int
+		IsNPC          func(childComplexity int) int
+		IsSolo         func(childComplexity int) int
+		KillmailTime   func(childComplexity int) int
+		MoonID         func(childComplexity int) int
+		SolarSystemID  func(childComplexity int) int
+		System         func(childComplexity int) int
+		TotalValue     func(childComplexity int) int
+		Victim         func(childComplexity int) int
+		WarID          func(childComplexity int) int
 	}
 
 	KillmailAttacker struct {
@@ -377,6 +380,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Killmail.Attackers(childComplexity), true
+
+	case "Killmail.destroyedValue":
+		if e.complexity.Killmail.DestroyedValue == nil {
+			break
+		}
+
+		return e.complexity.Killmail.DestroyedValue(childComplexity), true
+
+	case "Killmail.droppedValue":
+		if e.complexity.Killmail.DroppedValue == nil {
+			break
+		}
+
+		return e.complexity.Killmail.DroppedValue(childComplexity), true
+
+	case "Killmail.fittedValue":
+		if e.complexity.Killmail.FittedValue == nil {
+			break
+		}
+
+		return e.complexity.Killmail.FittedValue(childComplexity), true
 
 	case "Killmail.hash":
 		if e.complexity.Killmail.Hash == nil {
@@ -1143,11 +1167,14 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     moonID: Int
     solarSystemID: Int!
     warID: Int
-    killmailTime: Time!
     isNPC: Boolean!
     isAwox: Boolean!
     isSolo: Boolean!
+    droppedValue: Float!
+    destroyedValue: Float!
+    fittedValue: Float!
     totalValue: Float!
+    killmailTime: Time!
 
     system: SolarSystem!
     attackers: [KillmailAttacker]! @goField(forceResolver: true)
@@ -2046,43 +2073,6 @@ func (ec *executionContext) _Killmail_warID(ctx context.Context, field graphql.C
 	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Killmail_killmailTime(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Killmail",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.KillmailTime, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Killmail_isNPC(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2194,6 +2184,117 @@ func (ec *executionContext) _Killmail_isSolo(ctx context.Context, field graphql.
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Killmail_droppedValue(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Killmail",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DroppedValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Killmail_destroyedValue(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Killmail",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DestroyedValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Killmail_fittedValue(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Killmail",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FittedValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Killmail_totalValue(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -2229,6 +2330,43 @@ func (ec *executionContext) _Killmail_totalValue(ctx context.Context, field grap
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Killmail_killmailTime(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Killmail",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KillmailTime, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Killmail_system(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
@@ -6760,11 +6898,6 @@ func (ec *executionContext) _Killmail(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "warID":
 			out.Values[i] = ec._Killmail_warID(ctx, field, obj)
-		case "killmailTime":
-			out.Values[i] = ec._Killmail_killmailTime(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "isNPC":
 			out.Values[i] = ec._Killmail_isNPC(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6780,8 +6913,28 @@ func (ec *executionContext) _Killmail(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "droppedValue":
+			out.Values[i] = ec._Killmail_droppedValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "destroyedValue":
+			out.Values[i] = ec._Killmail_destroyedValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fittedValue":
+			out.Values[i] = ec._Killmail_fittedValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "totalValue":
 			out.Values[i] = ec._Killmail_totalValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "killmailTime":
+			out.Values[i] = ec._Killmail_killmailTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
