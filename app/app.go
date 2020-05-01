@@ -79,7 +79,8 @@ func New() *App {
 	logger.Info("successfully pinged db server")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: cfg.RedisAddr,
+		Addr:       cfg.RedisAddr,
+		MaxRetries: 3,
 	})
 
 	logger.Info("pinging redis server")
