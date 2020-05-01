@@ -77,7 +77,7 @@ func (s *service) handleWSSPayload(msg []byte) {
 		return
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 1, Member: payload}).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 1, Member: string(payload)}).Result()
 	if err != nil {
 		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
 		return
