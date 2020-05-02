@@ -173,6 +173,8 @@ func (s *service) FetchHistory(from int) {
 		})
 	}
 
+	s.logger.Info("done fetching market data")
+
 }
 
 func (s *service) processGroup(v int) {

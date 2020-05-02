@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -267,7 +268,14 @@ func init() {
 				}
 			},
 		},
-
+		cli.Command{
+			Name: "recal",
+			Action: func(c *cli.Context) error {
+				app := core.New()
+				app.Killmail.Recalculate(context.Background(), app.DB)
+				return nil
+			},
+		},
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {

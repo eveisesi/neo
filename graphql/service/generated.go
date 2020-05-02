@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 		QuantityDestroyed func(childComplexity int) int
 		QuantityDropped   func(childComplexity int) int
 		Singleton         func(childComplexity int) int
+		TotalValue        func(childComplexity int) int
 		Type              func(childComplexity int) int
 		Typeflag          func(childComplexity int) int
 	}
@@ -149,6 +150,7 @@ type ComplexityRoot struct {
 		CorporationID func(childComplexity int) int
 		DamageTaken   func(childComplexity int) int
 		FactionID     func(childComplexity int) int
+		Fitted        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Items         func(childComplexity int) int
 		KillmailID    func(childComplexity int) int
@@ -165,6 +167,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Killmail         func(childComplexity int, id int, hash string) int
 		KillmailRecent   func(childComplexity int, page *int) int
+		KillmailTopByAge func(childComplexity int, age *int, limit *int) int
 		QueryPlaceholder func(childComplexity int) int
 	}
 
@@ -248,6 +251,7 @@ type KillmailVictimResolver interface {
 	Ship(ctx context.Context, obj *neo.KillmailVictim) (*neo.Type, error)
 	Position(ctx context.Context, obj *neo.KillmailVictim) (*neo.KillmailPosition, error)
 	Items(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error)
+	Fitted(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error)
 }
 type MutationResolver interface {
 	MutationPlaceholder(ctx context.Context) (bool, error)
@@ -255,6 +259,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	QueryPlaceholder(ctx context.Context) (bool, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
+	KillmailTopByAge(ctx context.Context, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
 }
 type SolarSystemResolver interface {
@@ -675,6 +680,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailItem.Singleton(childComplexity), true
 
+	case "KillmailItem.totalValue":
+		if e.complexity.KillmailItem.TotalValue == nil {
+			break
+		}
+
+		return e.complexity.KillmailItem.TotalValue(childComplexity), true
+
 	case "KillmailItem.type":
 		if e.complexity.KillmailItem.Type == nil {
 			break
@@ -766,6 +778,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailVictim.FactionID(childComplexity), true
 
+	case "KillmailVictim.fitted":
+		if e.complexity.KillmailVictim.Fitted == nil {
+			break
+		}
+
+		return e.complexity.KillmailVictim.Fitted(childComplexity), true
+
 	case "KillmailVictim.id":
 		if e.complexity.KillmailVictim.ID == nil {
 			break
@@ -845,6 +864,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.KillmailRecent(childComplexity, args["page"].(*int)), true
+
+	case "Query.killmailTopByAge":
+		if e.complexity.Query.KillmailTopByAge == nil {
+			break
+		}
+
+		args, err := ec.field_Query_killmailTopByAge_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.KillmailTopByAge(childComplexity, args["age"].(*int), args["limit"].(*int)), true
 
 	case "Query.queryPlaceholder":
 		if e.complexity.Query.QueryPlaceholder == nil {
@@ -1158,6 +1189,7 @@ var parsedSchema = gqlparser.MustLoadSchema(
 `},
 	&ast.Source{Name: "graphql/schema/killmail.graphql", Input: `extend type Query {
     killmail(id: Int!, hash: String!): Killmail!
+    killmailTopByAge(age: Int = 7, limit: Int = 7): [Killmail]!
     killmailRecent(page: Int = 1): [Killmail]!
 }
 
@@ -1219,6 +1251,7 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     ship: Type
     position: KillmailPosition @goField(forceResolver: true)
     items: [KillmailItem]! @goField(forceResolver: true)
+    fitted: [KillmailItem]! @goField(forceResolver: true)
 }
 
 type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
@@ -1232,6 +1265,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     singleton: Int!
     isParent: Boolean!
     itemValue: Float!
+    totalValue: Float!
 
     type: Type
     typeflag: TypeFlag
@@ -1355,6 +1389,28 @@ func (ec *executionContext) field_Query_killmailRecent_args(ctx context.Context,
 		}
 	}
 	args["page"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_killmailTopByAge_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["age"]; ok {
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["age"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg1
 	return args, nil
 }
 
@@ -3400,6 +3456,43 @@ func (ec *executionContext) _KillmailItem_itemValue(ctx context.Context, field g
 	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _KillmailItem_totalValue(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "KillmailItem",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _KillmailItem_type(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4138,6 +4231,43 @@ func (ec *executionContext) _KillmailVictim_items(ctx context.Context, field gra
 	return ec.marshalNKillmailItem2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailItem(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _KillmailVictim_fitted(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "KillmailVictim",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.KillmailVictim().Fitted(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.KillmailItem)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNKillmailItem2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailItem(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_mutationPlaceholder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4254,6 +4384,50 @@ func (ec *executionContext) _Query_killmail(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_killmailTopByAge(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_killmailTopByAge_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().KillmailTopByAge(rctx, args["age"].(*int), args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.Killmail)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_killmailRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -7157,6 +7331,11 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "totalValue":
+			out.Values[i] = ec._KillmailItem_totalValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "type":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7339,6 +7518,20 @@ func (ec *executionContext) _KillmailVictim(ctx context.Context, sel ast.Selecti
 				}
 				return res
 			})
+		case "fitted":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._KillmailVictim_fitted(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7419,6 +7612,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_killmail(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "killmailTopByAge":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_killmailTopByAge(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

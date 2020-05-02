@@ -60,3 +60,47 @@ const REDIS_TYPE_GROUP = "neo:type:group:%d"
 
 // NEO Queues
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
+
+// FlagIDs to FittingSlots
+
+var SLOT_TO_FLAGIDS = map[string]map[uint64]bool{
+	"low": map[uint64]bool{
+		11: true, 12: true, 13: true, 14: true, 15: true, 16: true, 17: true, 18: true,
+	},
+
+	"mid": map[uint64]bool{
+		19: true, 20: true, 21: true, 22: true, 23: true, 24: true, 25: true, 26: true,
+	},
+
+	"hi": map[uint64]bool{
+		27: true, 28: true, 29: true, 30: true, 31: true, 32: true, 33: true, 34: true,
+	},
+
+	"drone": map[uint64]bool{
+		87: true,
+	},
+
+	"implants": map[uint64]bool{
+		89: true,
+	},
+
+	"rigs": map[uint64]bool{
+		92: true, 93: true, 94: true, 95: true, 96: true, 97: true, 98: true, 99: true,
+	},
+
+	"cargo": map[uint64]bool{
+		5: true,
+	},
+
+	"subsystem": map[uint64]bool{
+		125: true, 126: true, 127: true, 128: true, 129: true, 130: true, 131: true, 132: true,
+	},
+
+	"fighter_tubes": map[uint64]bool{
+		159: true, 160: true, 161: true, 162: true, 163: true,
+	},
+
+	"structure_service": map[uint64]bool{
+		164: true, 165: true, 166: true, 167: true, 168: true, 169: true, 170: true, 171: true,
+	},
+}

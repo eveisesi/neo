@@ -1,5 +1,6 @@
 extend type Query {
     killmail(id: Int!, hash: String!): Killmail!
+    killmailTopByAge(age: Int = 7, limit: Int = 7): [Killmail]!
     killmailRecent(page: Int = 1): [Killmail]!
 }
 
@@ -61,6 +62,7 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     ship: Type
     position: KillmailPosition @goField(forceResolver: true)
     items: [KillmailItem]! @goField(forceResolver: true)
+    fitted: [KillmailItem]! @goField(forceResolver: true)
 }
 
 type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
@@ -74,6 +76,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     singleton: Int!
     isParent: Boolean!
     itemValue: Float!
+    totalValue: Float!
 
     type: Type
     typeflag: TypeFlag
