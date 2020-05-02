@@ -3,6 +3,8 @@ package tools
 import (
 	"math/rand"
 	"time"
+
+	"github.com/eveisesi/neo"
 )
 
 func RandomString(length int) string {
@@ -16,4 +18,18 @@ func RandomString(length int) string {
 		b[i] = charset[seededRand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+func SlotForFlagID(id uint64) string {
+
+	for slot, flags := range neo.SLOT_TO_FLAGIDS {
+		for flag := range flags {
+			if flag == id {
+				return slot
+			}
+		}
+	}
+
+	return ""
+
 }
