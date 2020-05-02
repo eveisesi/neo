@@ -17,6 +17,15 @@ func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.K
 	return r.Services.Killmail.KillmailRecent(ctx, null.IntFromPtr(page))
 }
 
+func (r *queryResolver) KillmailTopByAge(ctx context.Context, age *int, limit *int) ([]*neo.Killmail, error) {
+
+	newAge := *age
+	newLimit := *limit
+
+	return r.Services.KillmailTop(ctx, uint64(newAge), uint64(newLimit))
+
+}
+
 func (r *Resolver) Killmail() service.KillmailResolver {
 	return &killmailResolver{r}
 }
@@ -33,109 +42,4 @@ func (r *killmailResolver) Victim(ctx context.Context, obj *neo.Killmail) (*neo.
 
 func (r *killmailResolver) System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error) {
 	return r.Dataloader(ctx).SolarSystemLoader.Load(obj.SolarSystemID)
-}
-
-func (r *Resolver) KillmailAttacker() service.KillmailAttackerResolver {
-	return &killmailAttackerResolver{r}
-}
-
-type killmailAttackerResolver struct{ *Resolver }
-
-func (r *killmailAttackerResolver) Alliance(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Alliance, error) {
-	if !obj.AllianceID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint64)
-}
-
-func (r *killmailAttackerResolver) Corporation(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Corporation, error) {
-	if !obj.CorporationID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint64)
-}
-
-func (r *killmailAttackerResolver) Character(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Character, error) {
-	if !obj.CharacterID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).CharacterLoader.Load(obj.CharacterID.Uint64)
-}
-
-func (r *killmailAttackerResolver) Ship(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error) {
-	if !obj.ShipTypeID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID.Uint64)
-}
-
-func (r *killmailAttackerResolver) Weapon(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error) {
-	if !obj.WeaponTypeID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.WeaponTypeID.Uint64)
-}
-
-func (r *Resolver) KillmailItem() service.KillmailItemResolver {
-	return &killmailItemResolver{r}
-}
-
-type killmailItemResolver struct{ *Resolver }
-
-func (r *killmailItemResolver) Type(ctx context.Context, obj *neo.KillmailItem) (*neo.Type, error) {
-	return r.Dataloader(ctx).TypeLoader.Load(obj.ItemTypeID)
-}
-
-func (r *killmailItemResolver) Typeflag(ctx context.Context, obj *neo.KillmailItem) (*neo.TypeFlag, error) {
-	if obj.Flag == 0 {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).TypeFlagLoader.Load(obj.Flag)
-}
-
-func (r *Resolver) KillmailVictim() service.KillmailVictimResolver {
-	return &killmailVictimResolver{r}
-}
-
-type killmailVictimResolver struct{ *Resolver }
-
-func (r *killmailVictimResolver) Alliance(ctx context.Context, obj *neo.KillmailVictim) (*neo.Alliance, error) {
-	if !obj.AllianceID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint64)
-}
-
-func (r *killmailVictimResolver) Corporation(ctx context.Context, obj *neo.KillmailVictim) (*neo.Corporation, error) {
-	if !obj.CorporationID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint64)
-}
-
-func (r *killmailVictimResolver) Character(ctx context.Context, obj *neo.KillmailVictim) (*neo.Character, error) {
-	if !obj.CharacterID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).CharacterLoader.Load(obj.CharacterID.Uint64)
-}
-
-func (r *killmailVictimResolver) Ship(ctx context.Context, obj *neo.KillmailVictim) (*neo.Type, error) {
-	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID)
-}
-
-func (r *killmailVictimResolver) Position(ctx context.Context, obj *neo.KillmailVictim) (*neo.KillmailPosition, error) {
-	if obj.PosX.Valid && obj.PosY.Valid && obj.PosZ.Valid {
-		return &neo.KillmailPosition{
-			X: obj.PosX,
-			Y: obj.PosY,
-			Z: obj.PosZ,
-		}, nil
-	}
-
-	return nil, nil
-}
-
-func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error) {
-	return r.Dataloader(ctx).KillmailItemsLoader.Load(obj.KillmailID)
 }
