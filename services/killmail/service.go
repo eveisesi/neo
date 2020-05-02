@@ -1,7 +1,11 @@
 package killmail
 
 import (
+	"context"
 	"net/http"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/korovkin/limiter"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
@@ -13,10 +17,12 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"github.com/volatiletech/null"
 )
 
 type (
 	Service interface {
+		Recalculate(ctx context.Context, db *sqlx.DB)
 		HistoryExporter(mindate, maxdate string) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
@@ -88,4 +94,39 @@ func NewService(
 		txn,
 		killmail,
 	}
+}
+
+func (s *service) Recalculate(ctx context.Context, db *sqlx.DB) {
+
+	nextID := null.NewUint64(83288286, true)
+	limiter := limiter.NewConcurrencyLimiter(40)
+	var count int
+	err = db.Get(&count, `SELECT COUNT(id) FROM killmails where id > ?`, nextID.Uint64)
+
+	s.logger.WithField("remaining", count).Println()
+
+	for {
+
+		killmails, err := s.KillmailGTID(ctx, nextID)
+		if err != nil {
+			s.logger.WithError(err).Fatal("failed to fetch killmails")
+		}
+
+		if len(killmails) == 0 {
+			break
+		}
+
+		for _, killmail := range killmails {
+			limiter.ExecuteWithTicket(func(workerID int) {
+				s.processKillmailRecalc(killmail, workerID)
+			})
+		}
+		s.logger.WithField("currentID", nextID.Uint64).Info("batch update successful")
+
+		nextID = null.NewUint64(killmails[len(killmails)-1].ID, true)
+
+	}
+
+	s.logger.Info("done updating killmails")
+
 }

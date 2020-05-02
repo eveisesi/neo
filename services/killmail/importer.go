@@ -301,6 +301,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	}
 
 	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
+	fittedValue += shipValue
 	totalValue = append(totalValue, shipValue)
 
 	sum := float64(0)
@@ -326,6 +327,101 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	s.logger.WithFields(killmailLoggerFields).Info("killmail successfully imported")
 	time.Sleep(time.Millisecond * time.Duration(sleep))
+}
+
+func (s *service) processKillmailRecalc(killmail *neo.Killmail, workerID int) {
+
+	var ctx = context.Background()
+
+	killmailLoggerFields := logrus.Fields{
+		"id":            killmail.ID,
+		"hash":          killmail.Hash,
+		"workerID":      workerID,
+		"killmail_time": killmail.KillmailTime,
+	}
+
+	var totalValue = make([]float64, 0)
+	victim, err := s.KillmailVictimByKillmailID(ctx, killmail.ID)
+	if err != nil {
+		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to fetch victim for killmail")
+		return
+	}
+
+	shipValue := s.market.FetchTypePrice(victim.ShipTypeID, killmail.KillmailTime)
+	totalValue = append(totalValue, shipValue)
+	victim.ShipValue = shipValue
+
+	txn, err := s.txn.Begin()
+	if err != nil {
+		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to start txn with DB")
+		return
+	}
+
+	err = s.UpdateKillmailVictimTxn(ctx, txn, victim)
+	if err != nil {
+		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to update victim in db")
+		return
+	}
+
+	items, err := s.KillmailItemsByKillmailID(ctx, killmail.ID)
+	if err != nil {
+		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to fetch victim for killmail")
+		return
+	}
+
+	destroyedValue := float64(0)
+	droppedValue := float64(0)
+
+	for _, item := range items {
+		itemValue := float64(0)
+		if item.Singleton != 2 {
+			itemValue = s.market.FetchTypePrice(item.ItemTypeID, killmail.KillmailTime)
+		} else {
+			itemValue = 0.01
+		}
+
+		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
+		totalValue = append(totalValue, itemValue*float64(quantity))
+
+		item.ItemValue = itemValue
+		if item.QuantityDestroyed.Valid {
+			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint64)
+		} else if item.QuantityDropped.Valid {
+			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
+		}
+	}
+
+	err = s.UpdateKillmailItemsTxn(ctx, txn, items)
+	if err != nil {
+		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to update victim in db")
+		return
+	}
+
+	err = txn.Commit()
+	if err != nil {
+		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to commit transaction")
+		return
+	}
+
+	fittedValue := s.calculatedFittedValue(victim.Items)
+	fittedValue += shipValue
+	totalValue = append(totalValue, shipValue)
+
+	sum := float64(0)
+	for _, v := range totalValue {
+		sum += v
+	}
+
+	killmail.DestroyedValue = destroyedValue
+	killmail.DroppedValue = droppedValue
+	killmail.FittedValue = fittedValue
+	killmail.TotalValue = sum
+
+	err = s.UpdateKillmail(ctx, killmail.ID, killmail.Hash, killmail)
+	if err != nil {
+		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail victim into db")
+	}
+
 }
 
 func (s *service) handleVictimItems(items []*neo.KillmailItem) {
