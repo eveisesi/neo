@@ -38,6 +38,24 @@ func (r *killmailRepository) Killmail(ctx context.Context, id uint64, hash strin
 
 }
 
+func (r *killmailRepository) KillmailGTID(ctx context.Context, id null.Uint64) ([]*neo.Killmail, error) {
+
+	var killmails = make([]*neo.Killmail, 0)
+	mods := make([]qm.QueryMod, 0)
+	if id.Valid {
+		mods = append(mods, boiler.KillmailWhere.ID.GT(id.Uint64))
+	}
+
+	mods = append(mods, qm.Limit(10000), qm.OrderBy(boiler.KillmailColumns.ID+" ASC"))
+
+	err := boiler.Killmails(
+		mods...,
+	).Bind(ctx, r.db, &killmails)
+
+	return killmails, err
+
+}
+
 func (r *killmailRepository) CreateKillmail(ctx context.Context, killmail *neo.Killmail) (*neo.Killmail, error) {
 
 	var bKillmail = new(boiler.Killmail)
@@ -100,6 +118,19 @@ func (r *killmailRepository) UpdateKillmail(ctx context.Context, id uint64, hash
 
 func (r *killmailRepository) KillmailExists(ctx context.Context, id uint64, hash string) (bool, error) {
 	return boiler.KillmailExists(ctx, r.db, id, hash)
+}
+
+func (r *killmailRepository) KillmailTop(ctx context.Context, age uint64, limit uint64) ([]*neo.Killmail, error) {
+
+	var killmails = make([]*neo.Killmail, 0)
+	err := boiler.Killmails(
+		qm.Where("killmail_time >= CURDATE() - INTERVAL ? DAY", age),
+		qm.Limit(int(limit)),
+		qm.OrderBy(boiler.KillmailColumns.TotalValue+" DESC"),
+	).Bind(ctx, r.db, &killmails)
+
+	return killmails, err
+
 }
 
 func (r *killmailRepository) KillmailRecent(ctx context.Context, page null.Int) ([]*neo.Killmail, error) {
@@ -235,6 +266,17 @@ func (r *killmailRepository) CreateKillmailAttackersTxn(ctx context.Context, txn
 
 }
 
+func (r *killmailRepository) KillmailItemsByKillmailID(ctx context.Context, id uint64) ([]*neo.KillmailItem, error) {
+
+	var items = make([]*neo.KillmailItem, 0)
+	err := boiler.KillmailItems(
+		boiler.KillmailItemWhere.KillmailID.EQ(id),
+	).Bind(ctx, r.db, &items)
+
+	return items, err
+
+}
+
 func (r *killmailRepository) KillmailItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error) {
 
 	var items = make([]*neo.KillmailItem, 0)
@@ -342,6 +384,79 @@ func (r *killmailRepository) CreateKillmailItemsTxn(ctx context.Context, txn neo
 
 }
 
+func (r *killmailRepository) UpdateKillmailItems(ctx context.Context, items []*neo.KillmailItem) error {
+
+	for _, item := range items {
+		var bItem = new(boiler.KillmailItem)
+		err := copier.Copy(bItem, item)
+		if err != nil {
+			return errors.Wrap(err, "failed to copy item to orm")
+		}
+
+		_, err = bItem.Update(ctx, r.db, boil.Infer())
+		if err != nil {
+			return errors.Wrap(err, "failed to update item in db")
+		}
+
+		err = copier.Copy(item, bItem)
+		if err != nil {
+			return errors.Wrap(err, "failed to copy orm to item")
+		}
+
+	}
+
+	return nil
+
+}
+
+func (r *killmailRepository) UpdateKillmailItemsTxn(ctx context.Context, txn neo.Transactioner, items []*neo.KillmailItem) error {
+
+	var t = txn.(*transaction)
+	for _, item := range items {
+		var bItem = new(boiler.KillmailItem)
+		err := copier.Copy(bItem, item)
+		if err != nil {
+			return errors.Wrap(err, "failed to copy item to orm")
+		}
+
+		_, err = bItem.Update(ctx, t, boil.Infer())
+		if err != nil {
+			return errors.Wrap(err, "failed to update item in db")
+		}
+
+		err = copier.Copy(item, bItem)
+		if err != nil {
+			return errors.Wrap(err, "failed to copy orm to item")
+		}
+
+	}
+
+	return nil
+
+}
+
+func (r *killmailRepository) KillmailAttackersByKillmailID(ctx context.Context, id uint64) ([]*neo.KillmailAttacker, error) {
+
+	var attackers = make([]*neo.KillmailAttacker, 0)
+	err := boiler.KillmailAttackers(
+		boiler.KillmailAttackerWhere.KillmailID.EQ(id),
+	).Bind(ctx, r.db, &attackers)
+
+	return attackers, err
+
+}
+
+func (r *killmailRepository) KillmailVictimByKillmailID(ctx context.Context, id uint64) (*neo.KillmailVictim, error) {
+
+	var victim = new(neo.KillmailVictim)
+	err := boiler.KillmailVictims(
+		boiler.KillmailVictimWhere.KillmailID.EQ(id),
+	).Bind(ctx, r.db, victim)
+
+	return victim, err
+
+}
+
 func (r *killmailRepository) KillmailVictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailVictim, error) {
 
 	var victims = make([]*neo.KillmailVictim, 0)
@@ -395,6 +510,43 @@ func (r *killmailRepository) CreateKillmailVictimTxn(ctx context.Context, txn ne
 	err = copier.Copy(victim, bVictim)
 
 	return victim, errors.Wrap(err, "failed to copy orm to victim")
+
+}
+
+func (r *killmailRepository) UpdateKillmailVictim(ctx context.Context, victim *neo.KillmailVictim) error {
+	var bVictim = new(boiler.KillmailVictim)
+	err := copier.Copy(bVictim, victim)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy victim to orm")
+	}
+
+	_, err = bVictim.Update(ctx, r.db, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "failed to update victim in db")
+	}
+
+	err = copier.Copy(victim, bVictim)
+
+	return errors.Wrap(err, "failed to copy orm to victim")
+}
+
+func (r *killmailRepository) UpdateKillmailVictimTxn(ctx context.Context, txn neo.Transactioner, victim *neo.KillmailVictim) error {
+
+	var t = txn.(*transaction)
+	var bVictim = new(boiler.KillmailVictim)
+	err := copier.Copy(bVictim, victim)
+	if err != nil {
+		return errors.Wrap(err, "failed to copy victim to orm")
+	}
+
+	_, err = bVictim.Update(ctx, t, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "failed to update victim in db")
+	}
+
+	err = copier.Copy(victim, bVictim)
+
+	return errors.Wrap(err, "failed to copy orm to victim")
 
 }
 
@@ -493,53 +645,6 @@ func (r *killmailRepository) KillmailsByCorporationID(ctx context.Context, id ui
 }
 
 func (r *killmailRepository) KillmailsByAllianceID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
-
-	var killmails = make([]*neo.Killmail, 0)
-
-	err := boiler.Killmails(
-		qm.InnerJoin(
-			fmt.Sprintf(
-				"%s ON %s.%s = %s.%s",
-				boiler.TableNames.KillmailVictim,
-				boiler.TableNames.KillmailVictim,
-				boiler.KillmailVictimColumns.KillmailID,
-				boiler.TableNames.Killmails,
-				boiler.KillmailColumns.ID,
-			),
-		),
-		qm.InnerJoin(
-			fmt.Sprintf(
-				"%s ON %s.%s = %s.%s",
-				boiler.TableNames.KillmailAttackers,
-				boiler.TableNames.KillmailAttackers,
-				boiler.KillmailAttackerColumns.KillmailID,
-				boiler.TableNames.Killmails,
-				boiler.KillmailColumns.ID,
-			),
-		),
-		qm.Where(
-			fmt.Sprintf(
-				"%s.%s = ?",
-				boiler.TableNames.KillmailVictim,
-				boiler.KillmailVictimColumns.CharacterID,
-			),
-			id,
-		),
-		qm.Where(
-			fmt.Sprintf(
-				"%s.%s = ?",
-				boiler.TableNames.KillmailAttackers,
-				boiler.KillmailAttackerColumns.CharacterID,
-			),
-			id,
-		),
-	).Bind(ctx, r.db, &killmails)
-
-	return killmails, err
-
-}
-
-func (r *killmailRepository) KillmailsByFactionID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
