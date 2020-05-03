@@ -21,6 +21,17 @@ type KillmailRespository interface {
 	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
 	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
 
+type MVRepository interface {
+	MVKAll(ctx context.Context, limit, age int) ([]*Killmail, error)
+	MVKByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVKByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVKByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVKByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVLByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVLByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVLByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	MVLByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+}
 	KillmailAttackersByKillmailID(ctx context.Context, id uint64) ([]*KillmailAttacker, error)
 	KillmailAttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailAttacker, error)
 	CreateKillmailAttacker(ctx context.Context, attacker *KillmailAttacker) (*KillmailAttacker, error)

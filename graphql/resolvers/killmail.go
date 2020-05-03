@@ -17,6 +17,31 @@ func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.K
 	return r.Services.Killmail.KillmailRecent(ctx, null.IntFromPtr(page))
 }
 
+func (r *queryResolver) MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
+
+	newID := 0
+	if id != nil {
+		newID = *id
+	}
+	newAge := *age
+	newLimit := *limit
+	switch entity {
+	case models.EntityAll:
+		killmails, err := r.Services.Killmail.MVKAll(ctx, newAge, newLimit)
+	case models.EntityCharacter:
+		killmails, err := r.Services.MVKByCharacterID(ctx, newID, newAge, newLimit)
+	case models.EntityCorporation:
+		killmails, err := r.Services.MVKByCorporationID(ctx, newID, newAge, newLimit)
+	case models.EntityAlliance:
+		killmails, err := r.Services.MVKByAllianceID(ctx, newID, newAge, newLimit)
+	default:
+		return nil, errors.New("invalid entity")
+	}
+
+	return killmails, err
+
+}
+
 func (r *queryResolver) KillmailTopByAge(ctx context.Context, age *int, limit *int) ([]*neo.Killmail, error) {
 
 	newAge := *age

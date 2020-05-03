@@ -1,7 +1,17 @@
 extend type Query {
     killmail(id: Int!, hash: String!): Killmail!
-    killmailTopByAge(age: Int = 7, limit: Int = 7): [Killmail]!
     killmailRecent(page: Int = 1): [Killmail]!
+    mvkByEntityID(
+        entity: Entity!
+        id: Int
+        age: Int = 7
+        limit: Int = 7
+    ): [Killmail]!
+enum Entity {
+    all
+    character
+    corporation
+    alliance
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
