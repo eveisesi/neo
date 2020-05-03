@@ -7,6 +7,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var err error
+
 var ErrEmptyTransaction = errors.New("sql transcation cannot be empty")
 
 func Connect(conf *sqlDriver.Config) (db *sqlx.DB, err error) {

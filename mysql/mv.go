@@ -19,12 +19,12 @@ func NewMVRepository(db *sqlx.DB) neo.MVRepository {
 	}
 }
 
-func (r *mvRepository) All(ctx context.Context, age uint64, limit uint64) ([]*neo.Killmail, error) {
+func (r *mvRepository) All(ctx context.Context, limit, age int) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 	err := boiler.Killmails(
 		qm.Where("killmail_time >= CURDATE() - INTERVAL ? DAY", age),
-		qm.Limit(int(limit)),
+		qm.Limit(limit),
 		qm.OrderBy(boiler.KillmailColumns.TotalValue+" DESC"),
 	).Bind(ctx, r.db, &killmails)
 

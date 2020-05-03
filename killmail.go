@@ -7,69 +7,78 @@ import (
 	"github.com/volatiletech/null"
 )
 
-type KillmailRespository interface {
+type KillmailRepository interface {
 	Killmail(ctx context.Context, id uint64, hash string) (*Killmail, error)
-	CreateKillmail(ctx context.Context, killmail *Killmail) (*Killmail, error)
-	CreateKillmailTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
-	UpdateKillmail(ctx context.Context, id uint64, hash string, killmail *Killmail) error
+	Create(ctx context.Context, killmail *Killmail) (*Killmail, error)
+	CreateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
+	Update(ctx context.Context, id uint64, hash string, killmail *Killmail) error
 
-	KillmailGTID(ctx context.Context, id null.Uint64) ([]*Killmail, error)
-	KillmailExists(ctx context.Context, id uint64, hash string) (bool, error)
-	KillmailRecent(ctx context.Context, page null.Int) ([]*Killmail, error)
-	KillmailTop(ctx context.Context, age uint64, limit uint64) ([]*Killmail, error)
-	KillmailsByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
-	KillmailsByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
-	KillmailsByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
+	GTID(ctx context.Context, id null.Uint64) ([]*Killmail, error)
+	Exists(ctx context.Context, id uint64, hash string) (bool, error)
+	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
+
+	ByIDs(ctx context.Context, ids []uint64) ([]*Killmail, error)
+	ByCharacterID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
+	ByCorporationID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
+	ByAllianceID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
+	ByShipID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
+}
 
 type MVRepository interface {
-	MVKAll(ctx context.Context, limit, age int) ([]*Killmail, error)
-	MVKByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVKByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVKByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVKByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVLByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVLByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVLByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
-	MVLByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	All(ctx context.Context, limit, age int) ([]*Killmail, error)
+	KillsByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	LossesByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	LossesByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	LossesByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	LossesByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
 }
-	KillmailAttackersByKillmailID(ctx context.Context, id uint64) ([]*KillmailAttacker, error)
-	KillmailAttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailAttacker, error)
-	CreateKillmailAttacker(ctx context.Context, attacker *KillmailAttacker) (*KillmailAttacker, error)
-	CreateKillmailAttackerTxn(ctx context.Context, txn Transactioner, attacker *KillmailAttacker) (*KillmailAttacker, error)
-	CreateKillmailAttackers(ctx context.Context, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
-	CreateKillmailAttackersTxn(ctx context.Context, txn Transactioner, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
 
-	KillmailItemsByKillmailID(ctx context.Context, id uint64) ([]*KillmailItem, error)
-	KillmailItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
-	CreateKillmailItem(ctx context.Context, item *KillmailItem) (*KillmailItem, error)
-	CreateKillmailItemTxn(ctx context.Context, txn Transactioner, item *KillmailItem) (*KillmailItem, error)
-	CreateKillmailItems(ctx context.Context, items []*KillmailItem) ([]*KillmailItem, error)
-	CreateKillmailItemsTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) ([]*KillmailItem, error)
-	UpdateKillmailItems(ctx context.Context, items []*KillmailItem) error
-	UpdateKillmailItemsTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) error
+type KillmailAttackerRepository interface {
+	ByKillmailID(ctx context.Context, id uint64) ([]*KillmailAttacker, error)
+	ByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailAttacker, error)
+	Create(ctx context.Context, attacker *KillmailAttacker) (*KillmailAttacker, error)
+	CreateWithTxn(ctx context.Context, txn Transactioner, attacker *KillmailAttacker) (*KillmailAttacker, error)
+	CreateBulk(ctx context.Context, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
+	CreateBulkWithTxn(ctx context.Context, txn Transactioner, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
+}
 
-	KillmailVictimByKillmailID(ctx context.Context, id uint64) (*KillmailVictim, error)
-	KillmailVictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailVictim, error)
-	CreateKillmailVictim(ctx context.Context, attacker *KillmailVictim) (*KillmailVictim, error)
-	CreateKillmailVictimTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) (*KillmailVictim, error)
-	UpdateKillmailVictim(ctx context.Context, victim *KillmailVictim) error
-	UpdateKillmailVictimTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) error
+type KillmailItemRepository interface {
+	ByKillmailID(ctx context.Context, id uint64) ([]*KillmailItem, error)
+	ByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailItem, error)
+	Create(ctx context.Context, item *KillmailItem) (*KillmailItem, error)
+	CreateWithTxn(ctx context.Context, txn Transactioner, item *KillmailItem) (*KillmailItem, error)
+	CreateBulk(ctx context.Context, items []*KillmailItem) ([]*KillmailItem, error)
+	CreateBulkWithTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) ([]*KillmailItem, error)
+	UpdateBulk(ctx context.Context, items []*KillmailItem) error
+	UpdateBulkWithTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) error
+}
+
+type KillmailVictimRepository interface {
+	ByKillmailID(ctx context.Context, id uint64) (*KillmailVictim, error)
+	ByKillmailIDs(ctx context.Context, ids []uint64) ([]*KillmailVictim, error)
+	Create(ctx context.Context, victim *KillmailVictim) (*KillmailVictim, error)
+	CreateWithTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) (*KillmailVictim, error)
+	Update(ctx context.Context, victim *KillmailVictim) error
+	UpdateWithTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) error
 }
 
 type Killmail struct {
-	ID             uint64     `json:"id"`
-	Hash           string     `json:"hash"`
-	MoonID         null.Int64 `json:"moon_id,omitempty"`
-	SolarSystemID  uint64     `json:"solar_system_id"`
-	WarID          null.Int64 `json:"war_id,omitempty"`
-	IsNPC          bool       `json:"isNPC"`
-	IsAwox         bool       `json:"isAwox"`
-	IsSolo         bool       `json:"isSolo"`
-	DroppedValue   float64    `json:"droppedValue"`
-	DestroyedValue float64    `json:"destroyedValue"`
-	FittedValue    float64    `json:"fittedValue"`
-	TotalValue     float64    `json:"totalValue"`
-	KillmailTime   time.Time  `json:"killmail_time"`
+	ID             uint64     `db:"id" json:"id"`
+	Hash           string     `db:"hash" json:"hash"`
+	MoonID         null.Int64 `db:"moon_id" json:"moon_id,omitempty"`
+	SolarSystemID  uint64     `db:"solar_system_id" json:"solar_system_id"`
+	WarID          null.Int64 `db:"war_id" json:"war_id,omitempty"`
+	IsNPC          bool       `db:"is_npc" json:"isNPC"`
+	IsAwox         bool       `db:"is_awox" json:"isAwox"`
+	IsSolo         bool       `db:"is_solo" json:"isSolo"`
+	DroppedValue   float64    `db:"dropped_value" json:"droppedValue"`
+	DestroyedValue float64    `db:"destroyed_value" json:"destroyedValue"`
+	FittedValue    float64    `db:"fitted_value" json:"fittedValue"`
+	TotalValue     float64    `db:"total_value" json:"totalValue"`
+	KillmailTime   time.Time  `db:"killmail_time" json:"killmail_time"`
 
 	Attackers []*KillmailAttacker `json:"attackers"`
 	Victim    *KillmailVictim     `json:"victim"`

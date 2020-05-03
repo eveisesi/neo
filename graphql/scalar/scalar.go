@@ -39,7 +39,7 @@ func UnmarshalFloat64(v interface{}) (float64, error) {
 
 func MarshalInt64(u int64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.FormatInt(u, 10))
+		_, _ = io.WriteString(w, strconv.FormatInt(u, 10))
 	})
 }
 
@@ -53,7 +53,7 @@ func UnmarshalInt64(v interface{}) (int64, error) {
 
 func MarshalString(s string) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, s)
+		_, _ = io.WriteString(w, s)
 	})
 }
 
@@ -67,7 +67,7 @@ func UnmarshalString(v interface{}) (string, error) {
 
 func MarshalTime(t time.Time) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, t.Format("2006-01-02 15:03:04"))
+		_, _ = io.WriteString(w, t.Format("2006-01-02 15:03:04"))
 	})
 }
 
@@ -87,7 +87,7 @@ func UnmarshalTime(v interface{}) (time.Time, error) {
 
 func MarshalUint64(u uint64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		io.WriteString(w, strconv.FormatUint(u, 10))
+		_, _ = io.WriteString(w, strconv.FormatUint(u, 10))
 	})
 }
 

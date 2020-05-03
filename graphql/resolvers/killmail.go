@@ -2,10 +2,10 @@ package resolvers
 
 import (
 	"context"
-
-	"github.com/volatiletech/null"
+	"errors"
 
 	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/service"
 )
 
@@ -14,26 +14,45 @@ func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo
 }
 
 func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
-	return r.Services.Killmail.KillmailRecent(ctx, null.IntFromPtr(page))
+
+	newPage := 1
+	if page != nil && *page > 0 {
+		newPage = *page
+	}
+
+	return r.Services.Killmail.RecentKillmails(ctx, newPage)
 }
 
 func (r *queryResolver) MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
 
-	newID := 0
+	newID := uint64(0)
 	if id != nil {
-		newID = *id
+		newID = uint64(*id)
 	}
 	newAge := *age
 	newLimit := *limit
+
+	if newAge > 14 {
+		newAge = 14
+	}
+
+	if newLimit > 14 {
+		newLimit = 14
+	}
+
+	var killmails []*neo.Killmail
+
 	switch entity {
 	case models.EntityAll:
-		killmails, err := r.Services.Killmail.MVKAll(ctx, newAge, newLimit)
+		killmails, err = r.Services.Killmail.MVKAll(ctx, newAge, newLimit)
 	case models.EntityCharacter:
-		killmails, err := r.Services.MVKByCharacterID(ctx, newID, newAge, newLimit)
+		killmails, err = r.Services.MVKByCharacterID(ctx, newID, newAge, newLimit)
 	case models.EntityCorporation:
-		killmails, err := r.Services.MVKByCorporationID(ctx, newID, newAge, newLimit)
+		killmails, err = r.Services.MVKByCorporationID(ctx, newID, newAge, newLimit)
 	case models.EntityAlliance:
-		killmails, err := r.Services.MVKByAllianceID(ctx, newID, newAge, newLimit)
+		killmails, err = r.Services.MVKByAllianceID(ctx, newID, newAge, newLimit)
+	case models.EntityShip:
+		killmails, err = r.Services.MVKByShipID(ctx, newID, newAge, newLimit)
 	default:
 		return nil, errors.New("invalid entity")
 	}
@@ -42,13 +61,30 @@ func (r *queryResolver) MvkByEntityID(ctx context.Context, entity models.Entity,
 
 }
 
-func (r *queryResolver) KillmailTopByAge(ctx context.Context, age *int, limit *int) ([]*neo.Killmail, error) {
+func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error) {
 
-	newAge := *age
-	newLimit := *limit
+	newPage := *page
 
-	return r.Services.KillmailTop(ctx, uint64(newAge), uint64(newLimit))
+	if newPage > 10 {
+		newPage = 10
+	}
 
+	var killmails []*neo.Killmail
+
+	switch entity {
+	case models.EntityAll:
+		return nil, errors.New("All Type is not supported on this query")
+	case models.EntityCharacter:
+		killmails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), newPage)
+	case models.EntityCorporation:
+		killmails, err = r.Services.KillmailsByCorporationID(ctx, uint64(id), newPage)
+	case models.EntityAlliance:
+		killmails, err = r.Services.KillmailsByAllianceID(ctx, uint64(id), newPage)
+	default:
+		return nil, errors.New("invalid entity")
+	}
+
+	return killmails, err
 }
 
 func (r *Resolver) Killmail() service.KillmailResolver {

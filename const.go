@@ -104,3 +104,5 @@ var SLOT_TO_FLAGIDS = map[string]map[uint64]bool{
 		164: true, 165: true, 166: true, 167: true, 168: true, 169: true, 170: true, 171: true,
 	},
 }
+
+const KILLMAILS_PER_PAGE = 50

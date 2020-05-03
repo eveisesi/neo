@@ -17,7 +17,7 @@ func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *ge
 			attackers := make([][]*neo.KillmailAttacker, len(ids))
 			errors := make([]error, len(ids))
 
-			rows, err := killmail.KillmailAttackersByKillmailIDs(ctx, ids)
+			rows, err := killmail.AttackersByKillmailIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors
@@ -47,7 +47,7 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 			items := make([][]*neo.KillmailItem, len(ids))
 			errors := make([]error, len(ids))
 
-			rows, err := killmail.KillmailItemsByKillmailIDs(ctx, ids)
+			rows, err := killmail.ItemsByKillmailIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors
@@ -90,7 +90,7 @@ func KillmailVictimLoader(ctx context.Context, killmail killmail.Service) *gener
 			victims := make([]*neo.KillmailVictim, len(ids))
 			errors := make([]error, len(ids))
 
-			rows, err := killmail.KillmailVictimsByKillmailIDs(ctx, ids)
+			rows, err := killmail.VictimsByKillmailIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors

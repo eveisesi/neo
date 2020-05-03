@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -27,7 +26,7 @@ var (
 )
 
 func init() {
-	godotenv.Load(".env")
+	_ = godotenv.Load(".env")
 
 	app = cli.NewApp()
 	app.Name = "Neo Core"
@@ -268,14 +267,14 @@ func init() {
 				}
 			},
 		},
-		cli.Command{
-			Name: "recal",
-			Action: func(c *cli.Context) error {
-				app := core.New()
-				app.Killmail.Recalculate(context.Background(), app.DB)
-				return nil
-			},
-		},
+		// cli.Command{
+		// 	Name: "recal",
+		// 	Action: func(c *cli.Context) error {
+		// 		app := core.New()
+		// 		app.Killmail.Recalculate(context.Background(), app.DB)
+		// 		return nil
+		// 	},
+		// },
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {

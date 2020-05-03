@@ -14,6 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/scalar"
 	null1 "github.com/eveisesi/neo/graphql/scalar/null"
 	"github.com/vektah/gqlparser"
@@ -39,7 +40,9 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Character() CharacterResolver
 	Constellation() ConstellationResolver
+	Corporation() CorporationResolver
 	Killmail() KillmailResolver
 	KillmailAttacker() KillmailAttackerResolver
 	KillmailItem() KillmailItemResolver
@@ -62,8 +65,9 @@ type ComplexityRoot struct {
 	}
 
 	Character struct {
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
+		Corporation func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
 	}
 
 	Constellation struct {
@@ -75,9 +79,10 @@ type ComplexityRoot struct {
 	}
 
 	Corporation struct {
-		ID     func(childComplexity int) int
-		Name   func(childComplexity int) int
-		Ticker func(childComplexity int) int
+		Alliance func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Ticker   func(childComplexity int) int
 	}
 
 	Killmail struct {
@@ -165,10 +170,14 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Killmail         func(childComplexity int, id int, hash string) int
-		KillmailRecent   func(childComplexity int, page *int) int
-		KillmailTopByAge func(childComplexity int, age *int, limit *int) int
-		QueryPlaceholder func(childComplexity int) int
+		AllianceByAllianceID       func(childComplexity int, id int) int
+		CharacterByCharacterID     func(childComplexity int, id int) int
+		CorporationByCorporationID func(childComplexity int, id int) int
+		Killmail                   func(childComplexity int, id int, hash string) int
+		KillmailRecent             func(childComplexity int, page *int) int
+		KillmailsByEntityID        func(childComplexity int, entity models.Entity, id int, page *int) int
+		MvkByEntityID              func(childComplexity int, entity models.Entity, id *int, age *int, limit *int) int
+		QueryPlaceholder           func(childComplexity int) int
 	}
 
 	Region struct {
@@ -225,8 +234,14 @@ type ComplexityRoot struct {
 	}
 }
 
+type CharacterResolver interface {
+	Corporation(ctx context.Context, obj *neo.Character) (*neo.Corporation, error)
+}
 type ConstellationResolver interface {
 	Region(ctx context.Context, obj *neo.Constellation) (*neo.Region, error)
+}
+type CorporationResolver interface {
+	Alliance(ctx context.Context, obj *neo.Corporation) (*neo.Alliance, error)
 }
 type KillmailResolver interface {
 	System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error)
@@ -258,9 +273,13 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	QueryPlaceholder(ctx context.Context) (bool, error)
+	AllianceByAllianceID(ctx context.Context, id int) (*neo.Alliance, error)
+	CharacterByCharacterID(ctx context.Context, id int) (*neo.Character, error)
+	CorporationByCorporationID(ctx context.Context, id int) (*neo.Corporation, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
-	KillmailTopByAge(ctx context.Context, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
+	MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
+	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
 }
 type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
@@ -308,6 +327,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Alliance.Ticker(childComplexity), true
+
+	case "Character.corporation":
+		if e.complexity.Character.Corporation == nil {
+			break
+		}
+
+		return e.complexity.Character.Corporation(childComplexity), true
 
 	case "Character.id":
 		if e.complexity.Character.ID == nil {
@@ -357,6 +383,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Constellation.RegionID(childComplexity), true
+
+	case "Corporation.alliance":
+		if e.complexity.Corporation.Alliance == nil {
+			break
+		}
+
+		return e.complexity.Corporation.Alliance(childComplexity), true
 
 	case "Corporation.id":
 		if e.complexity.Corporation.ID == nil {
@@ -841,6 +874,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.MutationPlaceholder(childComplexity), true
 
+	case "Query.allianceByAllianceID":
+		if e.complexity.Query.AllianceByAllianceID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_allianceByAllianceID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AllianceByAllianceID(childComplexity, args["id"].(int)), true
+
+	case "Query.characterByCharacterID":
+		if e.complexity.Query.CharacterByCharacterID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_characterByCharacterID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CharacterByCharacterID(childComplexity, args["id"].(int)), true
+
+	case "Query.corporationByCorporationID":
+		if e.complexity.Query.CorporationByCorporationID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_corporationByCorporationID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CorporationByCorporationID(childComplexity, args["id"].(int)), true
+
 	case "Query.killmail":
 		if e.complexity.Query.Killmail == nil {
 			break
@@ -865,17 +934,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.KillmailRecent(childComplexity, args["page"].(*int)), true
 
-	case "Query.killmailTopByAge":
-		if e.complexity.Query.KillmailTopByAge == nil {
+	case "Query.killmailsByEntityID":
+		if e.complexity.Query.KillmailsByEntityID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_killmailTopByAge_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_killmailsByEntityID_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.KillmailTopByAge(childComplexity, args["age"].(*int), args["limit"].(*int)), true
+		return e.complexity.Query.KillmailsByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int)), true
+
+	case "Query.mvkByEntityID":
+		if e.complexity.Query.MvkByEntityID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_mvkByEntityID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.MvkByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int)), true
 
 	case "Query.queryPlaceholder":
 		if e.complexity.Query.QueryPlaceholder == nil {
@@ -1170,27 +1251,58 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "graphql/schema/alliance.graphql", Input: `type Alliance @goModel(model: "github.com/eveisesi/neo.Alliance") {
+	&ast.Source{Name: "graphql/schema/alliance.graphql", Input: `extend type Query {
+    allianceByAllianceID(id: Int!): Alliance!
+}
+
+type Alliance @goModel(model: "github.com/eveisesi/neo.Alliance") {
     id: Int!
     name: String!
     ticker: String!
 }
 `},
-	&ast.Source{Name: "graphql/schema/character.graphql", Input: `type Character @goModel(model: "github.com/eveisesi/neo.Character") {
+	&ast.Source{Name: "graphql/schema/character.graphql", Input: `extend type Query {
+    characterByCharacterID(id: Int!): Character!
+}
+
+type Character @goModel(model: "github.com/eveisesi/neo.Character") {
     id: Int!
     name: String!
+
+    corporation: Corporation!
 }
 `},
-	&ast.Source{Name: "graphql/schema/corporation.graphql", Input: `type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
+	&ast.Source{Name: "graphql/schema/corporation.graphql", Input: `extend type Query {
+    corporationByCorporationID(id: Int!): Corporation!
+}
+
+type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     id: Int!
     name: String!
     ticker: String!
+
+    alliance: Alliance
 }
 `},
 	&ast.Source{Name: "graphql/schema/killmail.graphql", Input: `extend type Query {
     killmail(id: Int!, hash: String!): Killmail!
-    killmailTopByAge(age: Int = 7, limit: Int = 7): [Killmail]!
     killmailRecent(page: Int = 1): [Killmail]!
+
+    mvkByEntityID(
+        entity: Entity!
+        id: Int
+        age: Int = 7
+        limit: Int = 7
+    ): [Killmail]!
+    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+}
+
+enum Entity {
+    all
+    character
+    corporation
+    alliance
+    ship
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
@@ -1378,6 +1490,48 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_allianceByAllianceID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_characterByCharacterID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_corporationByCorporationID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_killmailRecent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1389,28 +1543,6 @@ func (ec *executionContext) field_Query_killmailRecent_args(ctx context.Context,
 		}
 	}
 	args["page"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_killmailTopByAge_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *int
-	if tmp, ok := rawArgs["age"]; ok {
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["age"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["limit"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["limit"] = arg1
 	return args, nil
 }
 
@@ -1433,6 +1565,74 @@ func (ec *executionContext) field_Query_killmail_args(ctx context.Context, rawAr
 		}
 	}
 	args["hash"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_killmailsByEntityID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 models.Entity
+	if tmp, ok := rawArgs["entity"]; ok {
+		arg0, err = ec.unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["entity"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["page"]; ok {
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["page"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_mvkByEntityID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 models.Entity
+	if tmp, ok := rawArgs["entity"]; ok {
+		arg0, err = ec.unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["entity"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["age"]; ok {
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["age"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg3
 	return args, nil
 }
 
@@ -1655,6 +1855,43 @@ func (ec *executionContext) _Character_name(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Character_corporation(ctx context.Context, field graphql.CollectedField, obj *neo.Character) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Character",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Character().Corporation(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Corporation)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCorporation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐCorporation(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Constellation_id(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
@@ -1948,6 +2185,40 @@ func (ec *executionContext) _Corporation_ticker(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Corporation_alliance(ctx context.Context, field graphql.CollectedField, obj *neo.Corporation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Corporation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Corporation().Alliance(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Alliance)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOAlliance2ᚖgithubᚗcomᚋeveisesiᚋneoᚐAlliance(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Killmail_id(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
@@ -4342,6 +4613,138 @@ func (ec *executionContext) _Query_queryPlaceholder(ctx context.Context, field g
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_allianceByAllianceID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_allianceByAllianceID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().AllianceByAllianceID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Alliance)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNAlliance2ᚖgithubᚗcomᚋeveisesiᚋneoᚐAlliance(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_characterByCharacterID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_characterByCharacterID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CharacterByCharacterID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Character)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCharacter2ᚖgithubᚗcomᚋeveisesiᚋneoᚐCharacter(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_corporationByCorporationID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_corporationByCorporationID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CorporationByCorporationID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Corporation)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNCorporation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐCorporation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_killmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4386,50 +4789,6 @@ func (ec *executionContext) _Query_killmail(ctx context.Context, field graphql.C
 	return ec.marshalNKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_killmailTopByAge(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_killmailTopByAge_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().KillmailTopByAge(rctx, args["age"].(*int), args["limit"].(*int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*neo.Killmail)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Query_killmailRecent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -4457,6 +4816,94 @@ func (ec *executionContext) _Query_killmailRecent(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().KillmailRecent(rctx, args["page"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.Killmail)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_mvkByEntityID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_mvkByEntityID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().MvkByEntityID(rctx, args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.Killmail)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_killmailsByEntityID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_killmailsByEntityID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().KillmailsByEntityID(rctx, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6934,13 +7381,27 @@ func (ec *executionContext) _Character(ctx context.Context, sel ast.SelectionSet
 		case "id":
 			out.Values[i] = ec._Character_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Character_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "corporation":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Character_corporation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7019,18 +7480,29 @@ func (ec *executionContext) _Corporation(ctx context.Context, sel ast.SelectionS
 		case "id":
 			out.Values[i] = ec._Corporation_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Corporation_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "ticker":
 			out.Values[i] = ec._Corporation_ticker(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "alliance":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Corporation_alliance(ctx, field, obj)
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7603,6 +8075,48 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "allianceByAllianceID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_allianceByAllianceID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "characterByCharacterID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_characterByCharacterID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "corporationByCorporationID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_corporationByCorporationID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "killmail":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7617,20 +8131,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "killmailTopByAge":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_killmailTopByAge(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "killmailRecent":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -7640,6 +8140,34 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_killmailRecent(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "mvkByEntityID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_mvkByEntityID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "killmailsByEntityID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_killmailsByEntityID(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -8246,6 +8774,20 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) marshalNAlliance2githubᚗcomᚋeveisesiᚋneoᚐAlliance(ctx context.Context, sel ast.SelectionSet, v neo.Alliance) graphql.Marshaler {
+	return ec._Alliance(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNAlliance2ᚖgithubᚗcomᚋeveisesiᚋneoᚐAlliance(ctx context.Context, sel ast.SelectionSet, v *neo.Alliance) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Alliance(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	return graphql.UnmarshalBoolean(v)
 }
@@ -8274,6 +8816,20 @@ func (ec *executionContext) marshalNBoolean2githubᚗcomᚋvolatiletechᚋnull�
 	return res
 }
 
+func (ec *executionContext) marshalNCharacter2githubᚗcomᚋeveisesiᚋneoᚐCharacter(ctx context.Context, sel ast.SelectionSet, v neo.Character) graphql.Marshaler {
+	return ec._Character(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCharacter2ᚖgithubᚗcomᚋeveisesiᚋneoᚐCharacter(ctx context.Context, sel ast.SelectionSet, v *neo.Character) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Character(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNConstellation2githubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx context.Context, sel ast.SelectionSet, v neo.Constellation) graphql.Marshaler {
 	return ec._Constellation(ctx, sel, &v)
 }
@@ -8286,6 +8842,29 @@ func (ec *executionContext) marshalNConstellation2ᚖgithubᚗcomᚋeveisesiᚋn
 		return graphql.Null
 	}
 	return ec._Constellation(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNCorporation2githubᚗcomᚋeveisesiᚋneoᚐCorporation(ctx context.Context, sel ast.SelectionSet, v neo.Corporation) graphql.Marshaler {
+	return ec._Corporation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCorporation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐCorporation(ctx context.Context, sel ast.SelectionSet, v *neo.Corporation) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Corporation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, v interface{}) (models.Entity, error) {
+	var res models.Entity
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, sel ast.SelectionSet, v models.Entity) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {

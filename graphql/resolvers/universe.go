@@ -7,6 +7,10 @@ import (
 	"github.com/eveisesi/neo/graphql/service"
 )
 
+func (r *queryResolver) KillmailsByShipID(ctx context.Context, id int, page *int) ([]*neo.Killmail, error) {
+	return r.Services.KillmailsByShipID(ctx, uint64(id), *page)
+}
+
 func (r *Resolver) Constellation() service.ConstellationResolver {
 	return &constellationResolver{r}
 }

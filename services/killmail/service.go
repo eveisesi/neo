@@ -4,9 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/korovkin/limiter"
-
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
@@ -17,16 +14,43 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"github.com/volatiletech/null"
 )
 
 type (
 	Service interface {
-		Recalculate(ctx context.Context, db *sqlx.DB)
+		// Business Appliances
+		// Recalculate(ctx context.Context, db *sqlx.DB)
 		HistoryExporter(mindate, maxdate string) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
-		neo.KillmailRespository
+
+		// Killmails
+		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
+		RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error)
+		KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByAllianceID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+
+		// Attackers
+		AttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailAttacker, error)
+
+		// Items
+		ItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error)
+
+		// Victim
+		VictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailVictim, error)
+
+		// MVKs/MVLs
+		MVKAll(ctx context.Context, age, limit int) ([]*neo.Killmail, error)
+		MVKByCharacterID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVLByCharacterID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVLByCorporationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByCorporationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVLByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVLByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 	}
 
 	Message struct {
@@ -57,7 +81,11 @@ type (
 		universe    universe.Service
 		market      market.Service
 		txn         neo.Starter
-		neo.KillmailRespository
+		killmails   neo.KillmailRepository
+		attackers   neo.KillmailAttackerRepository
+		items       neo.KillmailItemRepository
+		victim      neo.KillmailVictimRepository
+		mvks        neo.MVRepository
 	}
 )
 
@@ -78,7 +106,11 @@ func NewService(
 	universe universe.Service,
 	market market.Service,
 	txn neo.Starter,
-	killmail neo.KillmailRespository,
+	killmails neo.KillmailRepository,
+	attackers neo.KillmailAttackerRepository,
+	items neo.KillmailItemRepository,
+	victim neo.KillmailVictimRepository,
+	mvks neo.MVRepository,
 ) Service {
 	return &service{
 		client,
@@ -92,41 +124,45 @@ func NewService(
 		universe,
 		market,
 		txn,
-		killmail,
+		killmails,
+		attackers,
+		items,
+		victim,
+		mvks,
 	}
 }
 
-func (s *service) Recalculate(ctx context.Context, db *sqlx.DB) {
+// func (s *service) Recalculate(ctx context.Context, db *sqlx.DB) {
 
-	nextID := null.NewUint64(83288286, true)
-	limiter := limiter.NewConcurrencyLimiter(40)
-	var count int
-	err = db.Get(&count, `SELECT COUNT(id) FROM killmails where id > ?`, nextID.Uint64)
+// 	nextID := null.NewUint64(83288286, true)
+// 	limiter := limiter.NewConcurrencyLimiter(40)
+// 	var count int
+// 	err = db.Get(&count, `SELECT COUNT(id) FROM killmails where id > ?`, nextID.Uint64)
 
-	s.logger.WithField("remaining", count).Println()
+// 	s.logger.WithField("remaining", count).Println()
 
-	for {
+// 	for {
 
-		killmails, err := s.KillmailGTID(ctx, nextID)
-		if err != nil {
-			s.logger.WithError(err).Fatal("failed to fetch killmails")
-		}
+// 		killmails, err := s.killmails.GTID(ctx, nextID)
+// 		if err != nil {
+// 			s.logger.WithError(err).Fatal("failed to fetch killmails")
+// 		}
 
-		if len(killmails) == 0 {
-			break
-		}
+// 		if len(killmails) == 0 {
+// 			break
+// 		}
 
-		for _, killmail := range killmails {
-			limiter.ExecuteWithTicket(func(workerID int) {
-				s.processKillmailRecalc(killmail, workerID)
-			})
-		}
-		s.logger.WithField("currentID", nextID.Uint64).Info("batch update successful")
+// 		for _, killmail := range killmails {
+// 			limiter.ExecuteWithTicket(func(workerID int) {
+// 				s.processKillmailRecalc(killmail, workerID)
+// 			})
+// 		}
+// 		s.logger.WithField("currentID", nextID.Uint64).Info("batch update successful")
 
-		nextID = null.NewUint64(killmails[len(killmails)-1].ID, true)
+// 		nextID = null.NewUint64(killmails[len(killmails)-1].ID, true)
 
-	}
+// 	}
 
-	s.logger.Info("done updating killmails")
+// 	s.logger.Info("done updating killmails")
 
-}
+// }

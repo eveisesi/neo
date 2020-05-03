@@ -3,6 +3,11 @@ package resolvers
 import (
 	"context"
 
+	"github.com/eveisesi/neo/services/alliance"
+	"github.com/eveisesi/neo/services/character"
+	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/universe"
+
 	"github.com/eveisesi/neo/graphql/dataloaders"
 	"github.com/eveisesi/neo/graphql/service"
 	"github.com/eveisesi/neo/services/killmail"
@@ -16,10 +21,22 @@ type Resolver struct {
 }
 
 type Killmail killmail.Service
+type Alliance alliance.Service
+type Corporation corporation.Service
+type Character character.Service
+type Universe universe.Service
 
 type Services struct {
 	Killmail
+	Alliance
+	Corporation
+	Character
+	Universe
 }
+
+var (
+	err error
+)
 
 func (r *Resolver) Mutation() service.MutationResolver {
 	return &mutationResolver{r}

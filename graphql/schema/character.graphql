@@ -1,4 +1,10 @@
+extend type Query {
+    characterByCharacterID(id: Int!): Character!
+}
+
 type Character @goModel(model: "github.com/eveisesi/neo.Character") {
     id: Int!
     name: String!
+
+    corporation: Corporation!
 }

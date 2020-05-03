@@ -68,7 +68,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 	return character, errors.Wrap(err, "failed to cache solar character in redis")
 }
 
-func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
+func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
 
 	var characters = make([]*neo.Character, 0)
 	for _, id := range ids {

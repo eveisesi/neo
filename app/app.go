@@ -158,6 +158,9 @@ func New() *App {
 		market,
 		txn,
 		mysql.NewKillmailRepository(db),
+		mysql.NewKillmailAttackerRepository(db),
+		mysql.NewKillmailItemRepository(db),
+		mysql.NewKillmailVictimRepository(db),
 		mysql.NewMVRepository(db),
 	)
 
