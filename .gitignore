@@ -2,3 +2,4 @@
 .app-env
 .config/*.*
 logs
+neo
