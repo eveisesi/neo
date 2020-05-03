@@ -52,7 +52,7 @@ func (r *mvRepository) KillsByCharacterID(ctx context.Context, id uint64, limit,
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.character_id = ?
+			SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.character_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -86,7 +86,7 @@ func (r *mvRepository) LossesByCharacterID(ctx context.Context, id uint64, limit
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.character_id = ?
+			SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.character_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -120,7 +120,7 @@ func (r *mvRepository) KillsByCorporationID(ctx context.Context, id uint64, limi
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.corporation_id = ?
+			SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.corporation_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -154,7 +154,7 @@ func (r *mvRepository) LossesByCorporationID(ctx context.Context, id uint64, lim
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.corporation_id = ?
+			SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.corporation_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -188,7 +188,7 @@ func (r *mvRepository) KillsByAllianceID(ctx context.Context, id uint64, limit, 
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.alliance_id = ?
+			SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.alliance_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -222,7 +222,7 @@ func (r *mvRepository) LossesByAllianceID(ctx context.Context, id uint64, limit,
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.alliance_id = ?
+			SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.alliance_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -256,7 +256,7 @@ func (r *mvRepository) KillsByShipID(ctx context.Context, id uint64, limit, age 
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ?
+			SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
@@ -290,7 +290,7 @@ func (r *mvRepository) LossesByShipID(ctx context.Context, id uint64, limit, age
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.ship_type_id = ?
+			SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.ship_type_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE
