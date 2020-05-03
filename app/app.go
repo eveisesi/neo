@@ -210,7 +210,7 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 
 	db.SetMaxIdleConns(64)
 	db.SetMaxOpenConns(64)
-	db.SetConnMaxLifetime(time.Minute)
+	// db.SetConnMaxLifetime(time.Minute)
 
 	return db, nil
 }
