@@ -165,9 +165,7 @@ func (s *service) FetchHistory(from int) {
 	limiter := limiter.NewConcurrencyLimiter(20)
 
 	for _, v := range groups {
-		if from > 0 && from > v {
-			continue
-		}
+		s.tracker.GateKeeper()
 		limiter.Execute(func() {
 			s.processGroup(v)
 		})

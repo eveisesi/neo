@@ -5,6 +5,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/esi"
+	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
@@ -23,9 +24,10 @@ type service struct {
 	universe universe.Service
 	txn      neo.Starter
 	neo.MarketRepository
+	tracker tracker.Service
 }
 
-func NewService(redis *redis.Client, esi esi.Service, logger *logrus.Logger, universe universe.Service, txn neo.Starter, market neo.MarketRepository) Service {
+func NewService(redis *redis.Client, esi esi.Service, logger *logrus.Logger, universe universe.Service, txn neo.Starter, market neo.MarketRepository, tracker tracker.Service) Service {
 	return &service{
 		redis,
 		esi,
@@ -33,5 +35,6 @@ func NewService(redis *redis.Client, esi esi.Service, logger *logrus.Logger, uni
 		universe,
 		txn,
 		market,
+		tracker,
 	}
 }
