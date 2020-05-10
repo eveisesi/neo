@@ -10,7 +10,6 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/inancgumus/screen"
 
@@ -267,14 +266,6 @@ func init() {
 				}
 			},
 		},
-		// cli.Command{
-		// 	Name: "recal",
-		// 	Action: func(c *cli.Context) error {
-		// 		app := core.New()
-		// 		app.Killmail.Recalculate(context.Background(), app.DB)
-		// 		return nil
-		// 	},
-		// },
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {
@@ -285,125 +276,9 @@ func init() {
 				start := time.Date(beginning.Year(), beginning.Month(), beginning.Day(), 10, 58, 0, 0, time.UTC)
 				end := time.Date(beginning.Year(), beginning.Month(), beginning.Day(), 11, 25, 0, 0, time.UTC)
 
-				for {
+				app.Tracker.Run(start, end)
 
-					status, err := app.Redis.Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
-					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get tracking status from redis")
-					}
-
-					count, err := app.Redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
-					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get error count from redis")
-					}
-
-					players, err := app.Redis.Get(neo.TQ_PLAYER_COUNT).Int64()
-					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get error count from redis")
-					}
-
-					vip, err := app.Redis.Get(neo.TQ_VIP_MODE).Int64()
-					if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-						app.Logger.WithError(err).Fatal("unexpected error encountered attempting to get error count from redis")
-					}
-
-					app.Logger.WithFields(logrus.Fields{
-						neo.REDIS_ESI_TRACKING_STATUS: status,
-						neo.REDIS_ESI_ERROR_COUNT:     count,
-						neo.TQ_PLAYER_COUNT:           players,
-						neo.TQ_VIP_MODE:               vip,
-					}).Println()
-
-					// Status:
-					// Downtime: 3
-					// Red: 2
-					// Yellow: 1
-					// Green: 0
-
-					now := time.Now().In(time.UTC)
-
-					if players < 100 {
-						if status != neo.COUNT_STATUS_DOWNTIME {
-							app.Logger.WithFields(logrus.Fields{
-								neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-							}).Error("updating status in redis")
-							app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
-						}
-					} else if vip > 0 {
-						if status != neo.COUNT_STATUS_DOWNTIME {
-							app.Logger.WithFields(logrus.Fields{
-								neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-							}).Error("updating status in redis")
-							app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
-						}
-					} else {
-						if status == neo.COUNT_STATUS_DOWNTIME {
-							if now.Unix() < start.Unix() || now.Unix() > end.Unix() {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_GREEN,
-								}).Info("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
-							}
-						} else if status != neo.COUNT_STATUS_DOWNTIME {
-							if now.Unix() >= start.Unix() && now.Unix() <= end.Unix() {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-								}).Info("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
-							}
-						} else if status == neo.COUNT_STATUS_RED {
-							if count > 20 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_GREEN,
-								}).Error("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
-							} else if count >= 10 && count <= 20 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_YELLOW,
-								}).Warning("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_YELLOW, 0)
-							}
-						} else if status == neo.COUNT_STATUS_YELLOW {
-							if count < 10 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_RED,
-								}).Warning("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_RED, 0)
-							} else if count >= 20 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_GREEN,
-								}).Info("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
-							}
-						} else if status == neo.COUNT_STATUS_GREEN {
-							if count <= 20 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_YELLOW,
-								}).Warning("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_YELLOW, 0)
-							} else if count <= 10 {
-								app.Logger.WithFields(logrus.Fields{
-									neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_RED,
-								}).Warning("updating status in redis")
-								app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_RED, 0)
-							}
-						}
-
-					}
-
-					if status > neo.COUNT_STATUS_GREEN && status < neo.COUNT_STATUS_DOWNTIME {
-						ts, err := app.Redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
-						if err != nil {
-							continue
-						}
-
-						if now.Unix() > ts && status != neo.COUNT_STATUS_GREEN {
-							app.Logger.Info("set tracking green. error count has been reset")
-							app.Redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
-						}
-					}
-					time.Sleep(time.Second)
-				}
+				return nil
 			},
 		},
 	}

@@ -12,36 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *service) loopManager() {
-
-	for {
-
-		status, err := s.redis.Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			break
-		}
-
-		if status == neo.COUNT_STATUS_DOWNTIME {
-			s.logger.WithField("status", status).Info("loop manager blocking process due to downtime")
-			time.Sleep(time.Second)
-			continue
-		} else if status == neo.COUNT_STATUS_RED {
-
-			s.logger.WithField("status", status).Error("loop manager blocking process due to red alert")
-			time.Sleep(time.Second)
-			continue
-		} else if status == neo.COUNT_STATUS_YELLOW {
-			s.logger.WithField("status", status).Warning("slowing down due to status")
-			time.Sleep(time.Millisecond * 250)
-			break
-		} else if status == neo.COUNT_STATUS_GREEN {
-			break
-		}
-
-	}
-
-}
-
 func (s *service) Importer(gLimit, gSleep int64) error {
 
 	limit := limiter.NewConcurrencyLimiter(int(gLimit))
@@ -49,7 +19,9 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 	for {
 		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 		if err != nil {
-			s.logger.WithError(err).Fatal("unable to determine count of message queue")
+			s.logger.WithError(err).Error("unable to determine count of message queue")
+			time.Sleep(time.Second * 2)
+			continue
 		}
 
 		if count == 0 {
@@ -64,7 +36,7 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 		}
 
 		for _, result := range results {
-			s.loopManager()
+			s.tracker.GateKeeper()
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
 				s.processMessage([]byte(message), workerID, gSleep)
@@ -131,77 +103,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	killmail.Hash = payload.Hash
 
-	_, err = s.universe.SolarSystem(ctx, killmail.SolarSystemID)
-	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime solar system")
-	}
-
-	victim := killmail.Victim
-
-	if victim.AllianceID.Valid {
-		_, err := s.alliance.Alliance(ctx, victim.AllianceID.Uint64)
-		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim alliance")
-		}
-	}
-
-	if victim.CorporationID.Valid {
-		_, err := s.corporation.Corporation(ctx, victim.CorporationID.Uint64)
-		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
-		}
-	}
-
-	if victim.CharacterID.Valid {
-		_, err := s.character.Character(ctx, victim.CharacterID.Uint64)
-		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
-		}
-	}
-
-	_, err = s.universe.Type(ctx, victim.ShipTypeID)
-	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim ship type")
-	}
-
-	for _, attacker := range killmail.Attackers {
-		if attacker.AllianceID.Valid {
-			_, err := s.alliance.Alliance(ctx, attacker.AllianceID.Uint64)
-			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker alliance")
-			}
-		}
-
-		if attacker.CorporationID.Valid {
-			_, err := s.corporation.Corporation(ctx, attacker.CorporationID.Uint64)
-			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
-			}
-		}
-
-		if attacker.CharacterID.Valid {
-			_, err := s.character.Character(ctx, attacker.CharacterID.Uint64)
-			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
-			}
-		}
-
-		if attacker.ShipTypeID.Valid {
-			_, err = s.universe.Type(ctx, attacker.ShipTypeID.Uint64)
-			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
-			}
-		}
-
-		if attacker.WeaponTypeID.Valid {
-			_, err = s.universe.Type(ctx, attacker.WeaponTypeID.Uint64)
-			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
-			}
-		}
-	}
-
-	s.handleVictimItems(killmail.Victim.Items)
+	s.primeKillmailNodes(ctx, killmail, killmailLoggerFields)
 
 	txn, err := s.txn.Begin()
 	if err != nil {
@@ -315,6 +217,17 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		return
 	}
 
+	isAwox := s.calcIsAwox(ctx, killmail)
+	isNPC := s.calcIsNPC(ctx, killmail)
+	isSolo := s.calcIsSolo(ctx, killmail)
+
+	killmailLoggerFields["isAwox"] = isAwox
+	killmailLoggerFields["isNPC"] = isNPC
+	killmailLoggerFields["isSolo"] = isSolo
+
+	killmail.IsAwox = isAwox
+	killmail.IsNPC = isNPC
+	killmail.IsSolo = isSolo
 	killmail.DestroyedValue = destroyedValue
 	killmail.DroppedValue = droppedValue
 	killmail.FittedValue = fittedValue
@@ -329,100 +242,187 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 
-// func (s *service) processKillmailRecalc(killmail *neo.Killmail, workerID int) {
+func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 
-// 	var ctx = context.Background()
+	if killmail.Victim == nil {
+		return false
+	}
+	if killmail.Attackers == nil {
+		return false
+	}
 
-// 	killmailLoggerFields := logrus.Fields{
-// 		"id":            killmail.ID,
-// 		"hash":          killmail.Hash,
-// 		"workerID":      workerID,
-// 		"killmail_time": killmail.KillmailTime,
-// 	}
+	if !killmail.Victim.CorporationID.Valid {
+		return false
+	}
 
-// 	var totalValue = make([]float64, 0)
-// 	victim, err := s.victim.ByKillmailID(ctx, killmail.ID)
-// 	if err != nil {
-// 		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to fetch victim for killmail")
-// 		return
-// 	}
+	//
+	victimCorporationID := killmail.Victim.CorporationID.Uint64
+	// Victim is in an NPC Corp. This is not an AWOX since characters
+	// cannot choose which NPC Corp they are in
+	if victimCorporationID < 98000000 {
+		return false
+	}
 
-// 	shipValue := s.market.FetchTypePrice(victim.ShipTypeID, killmail.KillmailTime)
-// 	totalValue = append(totalValue, shipValue)
-// 	victim.ShipValue = shipValue
+	shipType, err := s.universe.Type(ctx, killmail.Victim.ShipTypeID)
+	if err != nil {
+		return false
+	}
 
-// 	txn, err := s.txn.Begin()
-// 	if err != nil {
-// 		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to start txn with DB")
-// 		return
-// 	}
+	switch shipType.GroupID {
+	// Capsule, Shuttle, Corvette, Citizen Ships
+	case 29, 31, 237, 2001:
+		return false
+	}
 
-// 	err = s.victim.UpdateWithTxn(ctx, txn, victim)
-// 	if err != nil {
-// 		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to update victim in db")
-// 		return
-// 	}
+	for _, attacker := range killmail.Attackers {
+		if !attacker.CorporationID.Valid {
+			continue
+		}
 
-// 	items, err := s.items.ByKillmailID(ctx, killmail.ID)
-// 	if err != nil {
-// 		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to fetch victim for killmail")
-// 		return
-// 	}
+		if !attacker.ShipTypeID.Valid {
+			continue
+		}
 
-// 	destroyedValue := float64(0)
-// 	droppedValue := float64(0)
+		attackerShip, err := s.universe.Type(context.Background(), attacker.ShipTypeID.Uint64)
+		if err != nil {
+			continue
+		}
 
-// 	for _, item := range items {
-// 		itemValue := float64(0)
-// 		if item.Singleton != 2 {
-// 			itemValue = s.market.FetchTypePrice(item.ItemTypeID, killmail.KillmailTime)
-// 		} else {
-// 			itemValue = 0.01
-// 		}
+		switch attackerShip.GroupID {
+		// Capsule, Shuttle, Corvette, Citizen Ships
+		case 29, 31, 237, 361, 2001:
+			goto LoopEnd
+		}
 
-// 		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
-// 		totalValue = append(totalValue, itemValue*float64(quantity))
+		if attacker.CorporationID.Uint64 == victimCorporationID {
+			return true
+		}
+	LoopEnd:
+	}
 
-// 		item.ItemValue = itemValue
-// 		if item.QuantityDestroyed.Valid {
-// 			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint64)
-// 		} else if item.QuantityDropped.Valid {
-// 			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
-// 		}
-// 	}
+	return false
 
-// 	err = s.items.UpdateBulkWithTxn(ctx, txn, items)
-// 	if err != nil {
-// 		s.logger.WithError(err).WithFields(killmailLoggerFields).Error("failed to update victim in db")
-// 		return
-// 	}
+}
 
-// 	err = txn.Commit()
-// 	if err != nil {
-// 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to commit transaction")
-// 		return
-// 	}
+func (s *service) calcIsNPC(ctx context.Context, killmail *neo.Killmail) bool {
 
-// 	fittedValue := s.calculatedFittedValue(victim.Items)
-// 	fittedValue += shipValue
-// 	totalValue = append(totalValue, shipValue)
+	if killmail.Victim == nil {
+		return false
+	}
 
-// 	sum := float64(0)
-// 	for _, v := range totalValue {
-// 		sum += v
-// 	}
+	if killmail.Attackers == nil {
+		return false
+	}
 
-// 	killmail.DestroyedValue = destroyedValue
-// 	killmail.DroppedValue = droppedValue
-// 	killmail.FittedValue = fittedValue
-// 	killmail.TotalValue = sum
+	for _, attacker := range killmail.Attackers {
+		if !attacker.CorporationID.Valid {
+			continue
+		}
 
-// 	err = s.killmails.Update(ctx, killmail.ID, killmail.Hash, killmail)
-// 	if err != nil {
-// 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail victim into db")
-// 	}
+		if attacker.CorporationID.Uint64 >= 98000000 {
+			return false
+		}
+	}
 
-// }
+	return true
+
+}
+
+func (s *service) calcIsSolo(ctx context.Context, killmail *neo.Killmail) bool {
+
+	if killmail.Victim == nil {
+		return false
+	}
+
+	if killmail.Attackers == nil {
+		return false
+	}
+
+	if len(killmail.Attackers) > 1 {
+		return false
+	}
+
+	attacker := killmail.Attackers[0]
+
+	return attacker.CorporationID.Uint64 >= 98000000
+
+}
+
+func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail, killmailLoggerFields logrus.Fields) {
+	_, err = s.universe.SolarSystem(ctx, killmail.SolarSystemID)
+	if err != nil {
+		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime solar system")
+	}
+
+	victim := killmail.Victim
+
+	if victim != nil {
+		if victim.AllianceID.Valid {
+			_, err := s.alliance.Alliance(ctx, victim.AllianceID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim alliance")
+			}
+		}
+
+		if victim.CorporationID.Valid {
+			_, err := s.corporation.Corporation(ctx, victim.CorporationID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
+			}
+		}
+
+		if victim.CharacterID.Valid {
+			_, err := s.character.Character(ctx, victim.CharacterID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
+			}
+		}
+
+		_, err = s.universe.Type(ctx, victim.ShipTypeID)
+		if err != nil {
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim ship type")
+		}
+	}
+
+	for _, attacker := range killmail.Attackers {
+		if attacker.AllianceID.Valid {
+			_, err := s.alliance.Alliance(ctx, attacker.AllianceID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker alliance")
+			}
+		}
+
+		if attacker.CorporationID.Valid {
+			_, err := s.corporation.Corporation(ctx, attacker.CorporationID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
+			}
+		}
+
+		if attacker.CharacterID.Valid {
+			_, err := s.character.Character(ctx, attacker.CharacterID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
+			}
+		}
+
+		if attacker.ShipTypeID.Valid {
+			_, err = s.universe.Type(ctx, attacker.ShipTypeID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
+			}
+		}
+
+		if attacker.WeaponTypeID.Valid {
+			_, err = s.universe.Type(ctx, attacker.WeaponTypeID.Uint64)
+			if err != nil {
+				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
+			}
+		}
+	}
+
+	s.handleVictimItems(killmail.Victim.Items)
+}
 
 func (s *service) handleVictimItems(items []*neo.KillmailItem) {
 	for _, item := range items {

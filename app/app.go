@@ -17,6 +17,7 @@ import (
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/token"
+	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"golang.org/x/oauth2"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -46,6 +47,7 @@ type App struct {
 	Killmail    killmail.Service
 	Market      market.Service
 	Token       token.Service
+	Tracker     tracker.Service
 	Universe    universe.Service
 }
 
@@ -121,6 +123,12 @@ func New() *App {
 		mysql.NewBlueprintRepository(db),
 		mysql.NewUniverseRepository(db),
 	)
+
+	tracker := tracker.NewService(
+		redisClient,
+		logger,
+	)
+
 	market := market.NewService(
 		redisClient,
 		esiClient,
@@ -128,6 +136,7 @@ func New() *App {
 		universe,
 		txn,
 		mysql.NewMarketRepository(db),
+		tracker,
 	)
 	token := token.NewService(
 		client,
@@ -156,6 +165,7 @@ func New() *App {
 		alliance,
 		universe,
 		market,
+		tracker,
 		txn,
 		mysql.NewKillmailRepository(db),
 		mysql.NewKillmailAttackerRepository(db),
@@ -178,6 +188,7 @@ func New() *App {
 		Killmail:    killmail,
 		Market:      market,
 		Token:       token,
+		Tracker:     tracker,
 		Universe:    universe,
 	}
 
@@ -192,8 +203,8 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 		Addr:         cfg.DBHost,
 		DBName:       cfg.DBName,
 		Timeout:      time.Second * 2,
-		ReadTimeout:  time.Second * 10,
-		WriteTimeout: time.Second * 10,
+		ReadTimeout:  time.Second * 30,
+		WriteTimeout: time.Second * 30,
 		ParseTime:    true,
 
 		// Defaults
@@ -210,7 +221,7 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 
 	db.SetMaxIdleConns(64)
 	db.SetMaxOpenConns(64)
-	// db.SetConnMaxLifetime(time.Minute)
+	db.SetConnMaxLifetime(time.Minute * 5)
 
 	return db, nil
 }

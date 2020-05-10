@@ -10,6 +10,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/market"
+	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis"
 	"github.com/gorilla/websocket"
@@ -80,6 +81,7 @@ type (
 		alliance    alliance.Service
 		universe    universe.Service
 		market      market.Service
+		tracker     tracker.Service
 		txn         neo.Starter
 		killmails   neo.KillmailRepository
 		attackers   neo.KillmailAttackerRepository
@@ -100,12 +102,18 @@ func NewService(
 	esi esi.Service,
 	logger *logrus.Logger,
 	config *neo.Config,
+
+	// Services
 	character character.Service,
 	corporation corporation.Service,
 	alliance alliance.Service,
 	universe universe.Service,
 	market market.Service,
+	tracker tracker.Service,
+
 	txn neo.Starter,
+
+	// Repositories
 	killmails neo.KillmailRepository,
 	attackers neo.KillmailAttackerRepository,
 	items neo.KillmailItemRepository,
@@ -123,6 +131,7 @@ func NewService(
 		alliance,
 		universe,
 		market,
+		tracker,
 		txn,
 		killmails,
 		attackers,
