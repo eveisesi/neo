@@ -56,3 +56,8 @@ services:
             - .env
         volumes:
             - ./logs:/app/logs
+    ui:
+        image: docker.pkg.github.com/eveisesi/neo-ui/ui:0.1.2
+        restart: always
+        container_name: ui
+        hostname: ui
