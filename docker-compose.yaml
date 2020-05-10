@@ -61,3 +61,5 @@ services:
         restart: always
         container_name: ui
         hostname: ui
+        ports:
+            - "5000:80"
