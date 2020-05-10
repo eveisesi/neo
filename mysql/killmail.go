@@ -168,9 +168,9 @@ func (r *killmailRepository) ByCharacterID(ctx context.Context, id uint64, limit
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.character_id = ?
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.character_id = ? LIMIT 500)
 			UNION
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.character_id = ?
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.character_id = ? LIMIT 500)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
@@ -202,9 +202,9 @@ func (r *killmailRepository) ByCorporationID(ctx context.Context, id uint64, lim
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.corporation_id = ?
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.corporation_id = ? LIMIT 500)
 			UNION
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.corporation_id = ?
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.corporation_id = ? LIMIT 500)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
@@ -236,9 +236,9 @@ func (r *killmailRepository) ByAllianceID(ctx context.Context, id uint64, limit,
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.alliance_id = ?
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.alliance_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 500)
 			UNION
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.alliance_id = ?
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.alliance_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 500)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
@@ -270,9 +270,9 @@ func (r *killmailRepository) ByShipID(ctx context.Context, id uint64, limit, off
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT killmail_victim.killmail_id FROM killmail_victim WHERE killmail_victim.ship_type_id = ?
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.ship_type_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 500)
 			UNION
-			SELECT killmail_attackers.killmail_id FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ?
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 500)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
