@@ -270,7 +270,7 @@ func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 
 	switch shipType.GroupID {
 	// Capsule, Shuttle, Corvette, Citizen Ships
-	case 29, 31, 237, 2001:
+	case 29, 31, 237, 361, 2001:
 		return false
 	}
 
