@@ -20,6 +20,7 @@ import (
 	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/token"
+	"github.com/eveisesi/neo/services/top"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"golang.org/x/oauth2"
@@ -51,6 +52,7 @@ type App struct {
 	Market      market.Service
 	Search      search.Service
 	Token       token.Service
+	Top         top.Service
 	Tracker     tracker.Service
 	Universe    universe.Service
 }
@@ -123,12 +125,6 @@ func New() *App {
 		esiClient,
 		mysql.NewCorporationRepository(db),
 	)
-	universe := universe.NewService(
-		redisClient,
-		esiClient,
-		mysql.NewBlueprintRepository(db),
-		mysql.NewUniverseRepository(db),
-	)
 
 	search := search.NewService(
 		autocompleter,
@@ -136,9 +132,20 @@ func New() *App {
 		mysql.NewSearchRepository(db),
 	)
 
+	top := top.NewService(
+		redisClient,
+	)
+
 	tracker := tracker.NewService(
 		redisClient,
 		logger,
+	)
+
+	universe := universe.NewService(
+		redisClient,
+		esiClient,
+		mysql.NewBlueprintRepository(db),
+		mysql.NewUniverseRepository(db),
 	)
 
 	market := market.NewService(
@@ -203,6 +210,7 @@ func New() *App {
 		Market:      market,
 		Search:      search,
 		Token:       token,
+		Top:         top,
 		Tracker:     tracker,
 		Universe:    universe,
 	}

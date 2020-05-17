@@ -1,17 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/jedib0t/go-pretty/table"
-	"github.com/pkg/errors"
-
-	"github.com/inancgumus/screen"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
@@ -195,75 +190,9 @@ func init() {
 			},
 		},
 		cli.Command{
-			Name: "monitor",
+			Name: "top",
 			Action: func(c *cli.Context) error {
-				var err error
-				app := core.New()
-
-				var params = struct {
-					SuccessfulESI     int64
-					PrevSuccessfulESI int64
-
-					FailedESI     int64
-					PrevFailedESI int64
-
-					ProcessingQueue     int64
-					PrevProcessingQueue int64
-				}{}
-				for {
-
-					screen.Clear()
-					screen.MoveTopLeft()
-
-					tw := table.NewWriter()
-					params.SuccessfulESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
-					if err != nil {
-						return cli.NewExitError(errors.Wrap(err, "failed to fetch successful esi calls"), 1)
-					}
-
-					params.FailedESI, err = app.Redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
-					if err != nil {
-						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
-					}
-
-					params.ProcessingQueue, err = app.Redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
-					if err != nil {
-						return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
-					}
-
-					tw.AppendRows(
-						[]table.Row{
-							table.Row{
-								fmt.Sprintf(
-									"%d: Queue Processing (%d)",
-									params.ProcessingQueue,
-									params.ProcessingQueue-params.PrevProcessingQueue,
-								),
-								fmt.Sprintf(
-									"%d: Successful ESI Call in Last Five Minutes (%d)",
-									params.SuccessfulESI,
-									params.SuccessfulESI-params.PrevSuccessfulESI,
-								),
-							},
-							table.Row{
-								"",
-								fmt.Sprintf(
-									"%d: Failed ESI Call in Last Five Minutes (%d)",
-									params.FailedESI,
-									params.FailedESI-params.PrevFailedESI,
-								),
-							},
-						},
-					)
-
-					fmt.Println(tw.Render())
-
-					time.Sleep(time.Second * 2)
-
-					params.PrevSuccessfulESI = params.SuccessfulESI
-					params.PrevFailedESI = params.FailedESI
-					params.PrevProcessingQueue = params.ProcessingQueue
-				}
+				return core.New().Top.Run()
 			},
 		},
 		cli.Command{
