@@ -281,6 +281,20 @@ func init() {
 				return nil
 			},
 		},
+		cli.Command{
+			Name: "buildAutoCompleter",
+			Action: func(c *cli.Context) error {
+
+				app := core.New()
+
+				err := app.Search.Build()
+				if err != nil {
+					return cli.NewExitError(err, 1)
+				}
+
+				return nil
+			},
+		},
 	}
 }
 

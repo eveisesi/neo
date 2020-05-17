@@ -6,6 +6,7 @@ import (
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
+	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/universe"
 
 	"github.com/eveisesi/neo/graphql/dataloaders"
@@ -25,6 +26,7 @@ type Alliance alliance.Service
 type Corporation corporation.Service
 type Character character.Service
 type Universe universe.Service
+type Search search.Service
 
 type Services struct {
 	Killmail
@@ -32,6 +34,7 @@ type Services struct {
 	Corporation
 	Character
 	Universe
+	Search
 }
 
 var (

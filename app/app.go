@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/RediSearch/redisearch-go/redisearch"
+
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
@@ -16,6 +18,7 @@ import (
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
+	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
@@ -46,6 +49,7 @@ type App struct {
 	Corporation corporation.Service
 	Killmail    killmail.Service
 	Market      market.Service
+	Search      search.Service
 	Token       token.Service
 	Tracker     tracker.Service
 	Universe    universe.Service
@@ -84,6 +88,8 @@ func New() *App {
 		Addr:       cfg.RedisAddr,
 		MaxRetries: 3,
 	})
+
+	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
 
 	logger.Info("pinging redis server")
 
@@ -124,6 +130,12 @@ func New() *App {
 		mysql.NewUniverseRepository(db),
 	)
 
+	search := search.NewService(
+		autocompleter,
+		logger,
+		mysql.NewSearchRepository(db),
+	)
+
 	tracker := tracker.NewService(
 		redisClient,
 		logger,
@@ -138,6 +150,7 @@ func New() *App {
 		mysql.NewMarketRepository(db),
 		tracker,
 	)
+
 	token := token.NewService(
 		client,
 		&oauth2.Config{
@@ -154,6 +167,7 @@ func New() *App {
 		cfg.SSOJWKSURL,
 		mysql.NewTokenRepository(db),
 	)
+
 	killmail := killmail.NewService(
 		client,
 		redisClient,
@@ -187,6 +201,7 @@ func New() *App {
 		Corporation: corporation,
 		Killmail:    killmail,
 		Market:      market,
+		Search:      search,
 		Token:       token,
 		Tracker:     tracker,
 		Universe:    universe,

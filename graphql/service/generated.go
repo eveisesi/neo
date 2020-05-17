@@ -178,11 +178,19 @@ type ComplexityRoot struct {
 		KillmailsByEntityID        func(childComplexity int, entity models.Entity, id int, page *int) int
 		MvkByEntityID              func(childComplexity int, entity models.Entity, id *int, age *int, limit *int) int
 		QueryPlaceholder           func(childComplexity int) int
+		Search                     func(childComplexity int, term string) int
 	}
 
 	Region struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	SearchableEntity struct {
+		ID    func(childComplexity int) int
+		Image func(childComplexity int) int
+		Name  func(childComplexity int) int
+		Type  func(childComplexity int) int
 	}
 
 	SolarSystem struct {
@@ -280,6 +288,7 @@ type QueryResolver interface {
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
 	MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
+	Search(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
 }
 type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
@@ -965,6 +974,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.QueryPlaceholder(childComplexity), true
 
+	case "Query.search":
+		if e.complexity.Query.Search == nil {
+			break
+		}
+
+		args, err := ec.field_Query_search_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Search(childComplexity, args["term"].(string)), true
+
 	case "Region.id":
 		if e.complexity.Region.ID == nil {
 			break
@@ -978,6 +999,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Region.Name(childComplexity), true
+
+	case "SearchableEntity.id":
+		if e.complexity.SearchableEntity.ID == nil {
+			break
+		}
+
+		return e.complexity.SearchableEntity.ID(childComplexity), true
+
+	case "SearchableEntity.image":
+		if e.complexity.SearchableEntity.Image == nil {
+			break
+		}
+
+		return e.complexity.SearchableEntity.Image(childComplexity), true
+
+	case "SearchableEntity.name":
+		if e.complexity.SearchableEntity.Name == nil {
+			break
+		}
+
+		return e.complexity.SearchableEntity.Name(childComplexity), true
+
+	case "SearchableEntity.type":
+		if e.complexity.SearchableEntity.Type == nil {
+			break
+		}
+
+		return e.complexity.SearchableEntity.Type(childComplexity), true
 
 	case "SolarSystem.constellation":
 		if e.complexity.SolarSystem.Constellation == nil {
@@ -1405,6 +1454,18 @@ type Mutation {
 
 scalar Time
 `},
+	&ast.Source{Name: "graphql/schema/search.graphql", Input: `extend type Query {
+    search(term: String!): [SearchableEntity]!
+}
+
+type SearchableEntity
+    @goModel(model: "github.com/eveisesi/neo.SearchableEntity") {
+    id: Int!
+    name: String!
+    type: String!
+    image: String!
+}
+`},
 	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
     id: Int!
     name: String!
@@ -1633,6 +1694,20 @@ func (ec *executionContext) field_Query_mvkByEntityID_args(ctx context.Context, 
 		}
 	}
 	args["limit"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["term"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["term"] = arg0
 	return args, nil
 }
 
@@ -4921,6 +4996,50 @@ func (ec *executionContext) _Query_killmailsByEntityID(ctx context.Context, fiel
 	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_search(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_search_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Search(rctx, args["term"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*neo.SearchableEntity)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSearchableEntity2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -5053,6 +5172,154 @@ func (ec *executionContext) _Region_name(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SearchableEntity_id(ctx context.Context, field graphql.CollectedField, obj *neo.SearchableEntity) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SearchableEntity",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SearchableEntity_name(ctx context.Context, field graphql.CollectedField, obj *neo.SearchableEntity) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SearchableEntity",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SearchableEntity_type(ctx context.Context, field graphql.CollectedField, obj *neo.SearchableEntity) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SearchableEntity",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _SearchableEntity_image(ctx context.Context, field graphql.CollectedField, obj *neo.SearchableEntity) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "SearchableEntity",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Image, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8173,6 +8440,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "search":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_search(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -8206,6 +8487,48 @@ func (ec *executionContext) _Region(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "name":
 			out.Values[i] = ec._Region_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var searchableEntityImplementors = []string{"SearchableEntity"}
+
+func (ec *executionContext) _SearchableEntity(ctx context.Context, sel ast.SelectionSet, obj *neo.SearchableEntity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, searchableEntityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SearchableEntity")
+		case "id":
+			out.Values[i] = ec._SearchableEntity_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			out.Values[i] = ec._SearchableEntity_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._SearchableEntity_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "image":
+			out.Values[i] = ec._SearchableEntity_image(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -9090,6 +9413,43 @@ func (ec *executionContext) marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRe
 	return ec._Region(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNSearchableEntity2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx context.Context, sel ast.SelectionSet, v []*neo.SearchableEntity) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOSearchableEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalNSolarSystem2githubᚗcomᚋeveisesiᚋneoᚐSolarSystem(ctx context.Context, sel ast.SelectionSet, v neo.SolarSystem) graphql.Marshaler {
 	return ec._SolarSystem(ctx, sel, &v)
 }
@@ -9568,6 +9928,17 @@ func (ec *executionContext) marshalOKillmailPosition2ᚖgithubᚗcomᚋeveisesi�
 		return graphql.Null
 	}
 	return ec._KillmailPosition(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOSearchableEntity2githubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx context.Context, sel ast.SelectionSet, v neo.SearchableEntity) graphql.Marshaler {
+	return ec._SearchableEntity(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOSearchableEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx context.Context, sel ast.SelectionSet, v *neo.SearchableEntity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._SearchableEntity(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

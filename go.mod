@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/99designs/gqlgen v0.10.2
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
+	github.com/RediSearch/redisearch-go v1.0.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/friendsofgo/errors v0.9.2
@@ -13,6 +14,7 @@ require (
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
+	github.com/gomodule/redigo v1.8.1 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/inancgumus/screen v0.0.0-20190314163918-06e984b86ed3
@@ -36,12 +38,12 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.5.0
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser v1.3.1
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.6.1+incompatible
+	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4

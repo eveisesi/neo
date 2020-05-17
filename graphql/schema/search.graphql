@@ -1,0 +1,11 @@
+extend type Query {
+    search(term: String!): [SearchableEntity]!
+}
+
+type SearchableEntity
+    @goModel(model: "github.com/eveisesi/neo.SearchableEntity") {
+    id: Int!
+    name: String!
+    type: String!
+    image: String!
+}

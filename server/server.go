@@ -21,6 +21,7 @@ import (
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/killmail"
+	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-chi/chi"
@@ -38,6 +39,7 @@ type Server struct {
 	character   character.Service
 	corporation corporation.Service
 	killmail    killmail.Service
+	search      search.Service
 	universe    universe.Service
 }
 
@@ -52,6 +54,7 @@ func Action(c *cli.Context) {
 		app.Character,
 		app.Corporation,
 		app.Killmail,
+		app.Search,
 		app.Token,
 		app.Universe,
 	)
@@ -89,6 +92,7 @@ func NewServer(
 	character character.Service,
 	corporation corporation.Service,
 	killmail killmail.Service,
+	search search.Service,
 	token token.Service,
 	universe universe.Service,
 ) *Server {
@@ -103,6 +107,7 @@ func NewServer(
 		character:   character,
 		corporation: corporation,
 		killmail:    killmail,
+		search:      search,
 		token:       token,
 		universe:    universe,
 	}
@@ -134,6 +139,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 				Corporation: s.corporation,
 				Character:   s.character,
 				Universe:    s.universe,
+				Search:      s.search,
 			},
 			Dataloader: CtxLoaders,
 		},
