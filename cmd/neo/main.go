@@ -165,6 +165,15 @@ func init() {
 					app.DB.Close()
 				})
 
+				_, _ = c.AddFunc("0 0 11 * * *", func() {
+					app := core.New()
+
+					err := app.Search.Build()
+					if err != nil {
+						app.Logger.WithError(err).Error("failed to rebuild autocompleter index")
+					}
+				})
+
 				c.Run()
 
 				return nil
@@ -211,7 +220,8 @@ func init() {
 			},
 		},
 		cli.Command{
-			Name: "buildAutoCompleter",
+			Name:        "autocompleter",
+			Description: "Manually rebuild the autocompleter index",
 			Action: func(c *cli.Context) error {
 
 				app := core.New()
