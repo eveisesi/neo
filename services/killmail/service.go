@@ -141,37 +141,27 @@ func NewService(
 	}
 }
 
-// func (s *service) Recalculate(ctx context.Context, db *sqlx.DB) {
+func ChunkSliceKillmails(slice []*neo.Killmail, size int) [][]*neo.Killmail {
 
-// 	nextID := null.NewUint64(83288286, true)
-// 	limiter := limiter.NewConcurrencyLimiter(40)
-// 	var count int
-// 	err = db.Get(&count, `SELECT COUNT(id) FROM killmails where id > ?`, nextID.Uint64)
+	var chunk = make([][]*neo.Killmail, 0)
+	if len(slice) <= size {
+		chunk = append(chunk, slice)
+		slice = nil
+		return chunk
+	}
 
-// 	s.logger.WithField("remaining", count).Println()
+	for x := 0; x < len(slice); x += size {
+		end := x + size
 
-// 	for {
+		if end > len(slice) {
+			end = len(slice)
+		}
 
-// 		killmails, err := s.killmails.GTID(ctx, nextID)
-// 		if err != nil {
-// 			s.logger.WithError(err).Fatal("failed to fetch killmails")
-// 		}
+		chunk = append(chunk, slice[x:end])
+	}
 
-// 		if len(killmails) == 0 {
-// 			break
-// 		}
+	slice = nil
 
-// 		for _, killmail := range killmails {
-// 			limiter.ExecuteWithTicket(func(workerID int) {
-// 				s.processKillmailRecalc(killmail, workerID)
-// 			})
-// 		}
-// 		s.logger.WithField("currentID", nextID.Uint64).Info("batch update successful")
+	return chunk
 
-// 		nextID = null.NewUint64(killmails[len(killmails)-1].ID, true)
-
-// 	}
-
-// 	s.logger.Info("done updating killmails")
-
-// }
+}

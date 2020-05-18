@@ -9,6 +9,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"github.com/sirkon/go-format"
 )
 
 func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
@@ -54,32 +55,227 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 
 func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
 
-	offset := (neo.KILLMAILS_PER_PAGE * page) - neo.KILLMAILS_PER_PAGE
+	var killmails = make([]*neo.Killmail, 0)
+	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+		"type": "characters",
+		"id":   id,
+		"page": page,
+	})
 
-	return s.killmails.ByCharacterID(ctx, id, neo.KILLMAILS_PER_PAGE, offset)
+	results, err := s.redis.Get(key).Bytes()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, err
+	}
+
+	if len(results) > 0 {
+		err = json.Unmarshal(results, &killmails)
+
+		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
+	}
+
+	killmails, err = s.killmails.ByCharacterID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	kmChunk := ChunkSliceKillmails(killmails, 50)
+
+	for i, chunk := range kmChunk {
+
+		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+			"type": "characters",
+			"id":   id,
+			"page": i,
+		})
+
+		bSlice, err := json.Marshal(chunk)
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
+			continue
+		}
+
+		_, err = s.redis.Set(innerKey, bSlice, time.Minute*30).Result()
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
+		}
+
+	}
+
+	if page >= len(kmChunk) {
+		return nil, nil
+	}
+
+	return kmChunk[page], nil
 
 }
 
 func (s *service) KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
 
-	offset := (neo.KILLMAILS_PER_PAGE * page) - neo.KILLMAILS_PER_PAGE
+	var killmails = make([]*neo.Killmail, 0)
+	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+		"type": "corporations",
+		"id":   id,
+		"page": page,
+	})
 
-	return s.killmails.ByCorporationID(ctx, id, neo.KILLMAILS_PER_PAGE, offset)
+	results, err := s.redis.Get(key).Bytes()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, err
+	}
+
+	if len(results) > 0 {
+		err = json.Unmarshal(results, &killmails)
+
+		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
+	}
+
+	killmails, err = s.killmails.ByCorporationID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	kmChunk := ChunkSliceKillmails(killmails, 50)
+
+	for i, chunk := range kmChunk {
+
+		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+			"type": "corporations",
+			"id":   id,
+			"page": i,
+		})
+
+		bSlice, err := json.Marshal(chunk)
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
+			continue
+		}
+
+		_, err = s.redis.Set(innerKey, bSlice, time.Minute*30).Result()
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
+		}
+
+	}
+
+	if page > len(kmChunk) {
+		return nil, nil
+	}
+
+	return kmChunk[page], nil
 
 }
 
 func (s *service) KillmailsByAllianceID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
 
-	offset := (neo.KILLMAILS_PER_PAGE * page) - neo.KILLMAILS_PER_PAGE
+	var killmails = make([]*neo.Killmail, 0)
+	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+		"type": "alliances",
+		"id":   id,
+		"page": page,
+	})
 
-	return s.killmails.ByAllianceID(ctx, id, neo.KILLMAILS_PER_PAGE, offset)
+	results, err := s.redis.Get(key).Bytes()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, err
+	}
+
+	if len(results) > 0 {
+		err = json.Unmarshal(results, &killmails)
+
+		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
+	}
+
+	killmails, err = s.killmails.ByAllianceID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	kmChunk := ChunkSliceKillmails(killmails, 50)
+
+	for i, chunk := range kmChunk {
+
+		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+			"type": "alliances",
+			"id":   id,
+			"page": i,
+		})
+
+		bSlice, err := json.Marshal(chunk)
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
+			continue
+		}
+
+		_, err = s.redis.Set(innerKey, bSlice, time.Minute*30).Result()
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
+		}
+
+	}
+
+	if page > len(kmChunk) {
+		return nil, nil
+	}
+
+	return kmChunk[page], nil
 
 }
 
 func (s *service) KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
 
-	offset := (neo.KILLMAILS_PER_PAGE * page) - neo.KILLMAILS_PER_PAGE
+	var killmails = make([]*neo.Killmail, 0)
+	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+		"type": "ships",
+		"id":   id,
+		"page": page,
+	})
 
-	return s.killmails.ByShipID(ctx, id, neo.KILLMAILS_PER_PAGE, offset)
+	results, err := s.redis.Get(key).Bytes()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, err
+	}
+
+	if len(results) > 0 {
+		err = json.Unmarshal(results, &killmails)
+
+		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
+	}
+
+	killmails, err = s.killmails.ByShipID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	kmChunk := ChunkSliceKillmails(killmails, 50)
+
+	for i, chunk := range kmChunk {
+
+		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+			"type": "ships",
+			"id":   id,
+			"page": i,
+		})
+
+		bSlice, err := json.Marshal(chunk)
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
+			continue
+		}
+
+		_, err = s.redis.Set(innerKey, bSlice, time.Minute*30).Result()
+		if err != nil {
+			s.logger.WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
+		}
+
+	}
+
+	if page > len(kmChunk) {
+		return nil, nil
+	}
+
+	return kmChunk[page], nil
 
 }

@@ -63,10 +63,13 @@ func (r *queryResolver) MvkByEntityID(ctx context.Context, entity models.Entity,
 
 func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error) {
 
-	newPage := *page
-
-	if newPage > 10 {
-		newPage = 10
+	if *page > 0 {
+		*page = *page - 1
+		if *page > 10 {
+			*page = 10
+		}
+	} else if *page < 0 {
+		*page = 0
 	}
 
 	var killmails []*neo.Killmail
@@ -75,11 +78,13 @@ func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.E
 	case models.EntityAll:
 		return nil, errors.New("All Type is not supported on this query")
 	case models.EntityCharacter:
-		killmails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), newPage)
+		killmails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), *page)
 	case models.EntityCorporation:
-		killmails, err = r.Services.KillmailsByCorporationID(ctx, uint64(id), newPage)
+		killmails, err = r.Services.KillmailsByCorporationID(ctx, uint64(id), *page)
 	case models.EntityAlliance:
-		killmails, err = r.Services.KillmailsByAllianceID(ctx, uint64(id), newPage)
+		killmails, err = r.Services.KillmailsByAllianceID(ctx, uint64(id), *page)
+	case models.EntityShip:
+		return nil, errors.New("comming soom(tm)")
 	default:
 		return nil, errors.New("invalid entity")
 	}

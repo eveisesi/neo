@@ -150,7 +150,7 @@ func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*
 
 }
 
-func (r *killmailRepository) ByCharacterID(ctx context.Context, id uint64, limit, offset int) ([]*neo.Killmail, error) {
+func (r *killmailRepository) ByCharacterID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -168,23 +168,23 @@ func (r *killmailRepository) ByCharacterID(ctx context.Context, id uint64, limit
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.character_id = ? LIMIT 500)
-			UNION
-			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.character_id = ? LIMIT 500)
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.character_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 1000)
+			UNION ALL
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.character_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 1000)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
-		LIMIT ? OFFSET ?
+		LIMIT 1000
 	`
 
 	killmails := make([]*neo.Killmail, 0)
-	err := r.db.SelectContext(ctx, &killmails, query, id, id, limit, offset)
+	err := r.db.SelectContext(ctx, &killmails, query, id, id)
 
 	return killmails, err
 
 }
 
-func (r *killmailRepository) ByCorporationID(ctx context.Context, id uint64, limit, offset int) ([]*neo.Killmail, error) {
+func (r *killmailRepository) ByCorporationID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -202,23 +202,23 @@ func (r *killmailRepository) ByCorporationID(ctx context.Context, id uint64, lim
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.corporation_id = ? LIMIT 500)
-			UNION
-			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.corporation_id = ? LIMIT 500)
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.corporation_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 1000)
+			UNION ALL
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.corporation_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 1000)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
-		LIMIT ? OFFSET ?
+		LIMIT 1000
 	`
 
 	killmails := make([]*neo.Killmail, 0)
-	err := r.db.SelectContext(ctx, &killmails, query, id, id, limit, offset)
+	err := r.db.SelectContext(ctx, &killmails, query, id, id)
 
 	return killmails, err
 
 }
 
-func (r *killmailRepository) ByAllianceID(ctx context.Context, id uint64, limit, offset int) ([]*neo.Killmail, error) {
+func (r *killmailRepository) ByAllianceID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -236,23 +236,23 @@ func (r *killmailRepository) ByAllianceID(ctx context.Context, id uint64, limit,
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.alliance_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 500)
-			UNION
-			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.alliance_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 500)
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.alliance_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 1000)
+			UNION ALL
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.alliance_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 1000)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
-		LIMIT ? OFFSET ?
+		LIMIT 1000
 	`
 
 	killmails := make([]*neo.Killmail, 0)
-	err := r.db.SelectContext(ctx, &killmails, query, id, id, limit, offset)
+	err := r.db.SelectContext(ctx, &killmails, query, id, id)
 
 	return killmails, err
 
 }
 
-func (r *killmailRepository) ByShipID(ctx context.Context, id uint64, limit, offset int) ([]*neo.Killmail, error) {
+func (r *killmailRepository) ByShipID(ctx context.Context, id uint64) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -270,17 +270,17 @@ func (r *killmailRepository) ByShipID(ctx context.Context, id uint64, limit, off
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.ship_type_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 500)
-			UNION
-			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 500)
+			(SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.ship_type_id = ? ORDER BY killmail_victim.killmail_id DESC LIMIT 1000)
+			UNION ALL
+			(SELECT DISTINCT(killmail_attackers.killmail_id) FROM killmail_attackers WHERE killmail_attackers.ship_type_id = ? ORDER BY killmail_attackers.killmail_id DESC LIMIT 1000)
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		ORDER BY killmails.killmail_time DESC
-		LIMIT ? OFFSET ?
+		LIMIT 1000
 	`
 
 	killmails := make([]*neo.Killmail, 0)
-	err := r.db.SelectContext(ctx, &killmails, query, id, id, limit, offset)
+	err := r.db.SelectContext(ctx, &killmails, query, id, id)
 
 	return killmails, err
 

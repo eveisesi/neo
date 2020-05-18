@@ -11,10 +11,6 @@ func (r *queryResolver) CorporationByCorporationID(ctx context.Context, id int) 
 	return r.Services.Corporation.Corporation(ctx, uint64(id))
 }
 
-func (r *queryResolver) KillmailsByCorporationID(ctx context.Context, corporationID int, page *int) ([]*neo.Killmail, error) {
-	return r.Services.KillmailsByCorporationID(ctx, uint64(corporationID), *page)
-}
-
 func (r *Resolver) Corporation() service.CorporationResolver {
 	return &corporationResolver{r}
 }

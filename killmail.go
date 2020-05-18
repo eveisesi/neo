@@ -18,10 +18,10 @@ type KillmailRepository interface {
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
 
 	ByIDs(ctx context.Context, ids []uint64) ([]*Killmail, error)
-	ByCharacterID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
-	ByCorporationID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
-	ByAllianceID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
-	ByShipID(ctx context.Context, id uint64, limit int, offset int) ([]*Killmail, error)
+	ByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByShipID(ctx context.Context, id uint64) ([]*Killmail, error)
 }
 
 type MVRepository interface {
