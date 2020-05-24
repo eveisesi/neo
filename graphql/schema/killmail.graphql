@@ -53,11 +53,11 @@ type KillmailAttacker
     shipTypeID: Int
     weaponTypeID: Int
 
-    alliance: Alliance
-    corporation: Corporation
-    character: Character
-    ship: Type
-    weapon: Type
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
+    weapon: Type @goField(forceResolver: true)
 }
 
 type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
@@ -71,10 +71,10 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     shipTypeID: Int!
     shipValue: Float!
 
-    alliance: Alliance
-    corporation: Corporation
-    character: Character
-    ship: Type
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
     position: KillmailPosition @goField(forceResolver: true)
     items: [KillmailItem]! @goField(forceResolver: true)
     fitted: [KillmailItem]! @goField(forceResolver: true)

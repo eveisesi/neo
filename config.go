@@ -28,4 +28,8 @@ type Config struct {
 	SSOAuthorizationURL string `envconfig:"SSO_AUTHORIZATION_URL" required:"true"`
 	SSOTokenURL         string `envconfig:"SSO_TOKEN_URL" required:"true"`
 	SSOJWKSURL          string `envconfig:"SSO_JWKS_URL" required:"true"`
+
+	SlackNotifierEnabled        bool   `envconfig:"SLACK_NOTIFIER_ENABLED" default:"false"`
+	SlackNotifierWebhookURL     string `envconfig:"SLACK_NOTIFIER_URL"`
+	SlackNotifierValueThreshold int    `envconfig:"SLACK_NOTIFIER_THRESHOLD"`
 }

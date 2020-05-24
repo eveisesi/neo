@@ -121,3 +121,25 @@ func (s *service) GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]
 	return ids, m
 
 }
+
+func (s *service) GetMarketsPrices() ([]*neo.MarketPrices, *Meta) {
+
+	path := "/v1/markets/prices/"
+
+	response, m := s.request(request{
+		method: http.MethodGet,
+		path:   path,
+	})
+	if m.IsError() {
+		return nil, m
+	}
+
+	prices := make([]*neo.MarketPrices, 0)
+	err := json.Unmarshal(response, &prices)
+	if err != nil {
+		m.Msg = errors.Wrapf(err, "unable to unmarshal response body on request %s", path)
+	}
+
+	return prices, m
+
+}

@@ -252,7 +252,6 @@ type CorporationResolver interface {
 	Alliance(ctx context.Context, obj *neo.Corporation) (*neo.Alliance, error)
 }
 type KillmailResolver interface {
-	System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error)
 	Attackers(ctx context.Context, obj *neo.Killmail) ([]*neo.KillmailAttacker, error)
 	Victim(ctx context.Context, obj *neo.Killmail) (*neo.KillmailVictim, error)
 }
@@ -1388,11 +1387,11 @@ type KillmailAttacker
     shipTypeID: Int
     weaponTypeID: Int
 
-    alliance: Alliance
-    corporation: Corporation
-    character: Character
-    ship: Type
-    weapon: Type
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
+    weapon: Type @goField(forceResolver: true)
 }
 
 type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
@@ -1406,10 +1405,10 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     shipTypeID: Int!
     shipValue: Float!
 
-    alliance: Alliance
-    corporation: Corporation
-    character: Character
-    ship: Type
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
     position: KillmailPosition @goField(forceResolver: true)
     items: [KillmailItem]! @goField(forceResolver: true)
     fitted: [KillmailItem]! @goField(forceResolver: true)
@@ -1500,7 +1499,7 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     published: Boolean!
     marketGroupID: Int
 
-    group: TypeGroup!
+    group: TypeGroup! @goField(forceResolver: true)
     attributes: [TypeAttribute]!
 }
 
@@ -2784,13 +2783,13 @@ func (ec *executionContext) _Killmail_system(ctx context.Context, field graphql.
 		Object:   "Killmail",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Killmail().System(rctx, obj)
+		return obj.System, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7852,19 +7851,10 @@ func (ec *executionContext) _Killmail(ctx context.Context, sel ast.SelectionSet,
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "system":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Killmail_system(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Killmail_system(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "attackers":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

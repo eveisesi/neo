@@ -153,7 +153,7 @@ func (s *service) getFixedPrice(id uint64, date time.Time) float64 {
 	return 0.00
 }
 
-func (s *service) FetchHistory(from int) {
+func (s *service) FetchHistory() {
 	s.logger.Info("fetching market groups")
 
 	groups, m := s.esi.GetMarketGroups()
@@ -188,6 +188,16 @@ func (s *service) processGroup(v int) {
 	for _, t := range group.Types {
 
 		s.logger.WithField("type_id", t).Info("processing historical records for type")
+
+		info, err := s.universe.Type(context.Background(), t)
+		if err != nil {
+			s.logger.WithError(err).WithField("type_id", t).Error("failed to fetch item info")
+			return
+		}
+
+		if !info.Published {
+			continue
+		}
 
 		records, m := s.esi.GetMarketsRegionIDHistory(region, strconv.FormatUint(t, 10))
 		if m.IsError() {
@@ -229,33 +239,4 @@ func chunkRecords(records []*neo.HistoricalRecord, limit int) [][]*neo.Historica
 	}
 
 	return chunks
-}
-
-func (s *service) ProcessType(workerID, id int) {
-	s.logger.WithField("type_id", id).Info("requesting records for type")
-
-	records, m := s.esi.GetMarketsRegionIDHistory(region, strconv.Itoa(id))
-	if m.IsError() {
-		s.logger.WithError(m).WithField("type_id", id).Error("failed to make request for historical records of type")
-		return
-	}
-
-	if m.Code != 200 {
-		s.logger.WithField("type_id", id).WithField("code", m.Code).Error("unexpected response code received from ESI fro page of market averages")
-		return
-	}
-
-	if len(records) == 0 {
-		return
-	}
-
-	for _, t := range records {
-		t.TypeID = uint64(id)
-	}
-
-	_, err := s.MarketRepository.CreateHistoricalRecord(context.Background(), records)
-	if err != nil {
-		s.logger.WithError(err).WithField("type_id", id).Error("unable to insert historical record into db")
-	}
-
 }

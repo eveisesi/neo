@@ -82,6 +82,8 @@ type Killmail struct {
 
 	Attackers []*KillmailAttacker `json:"attackers"`
 	Victim    *KillmailVictim     `json:"victim"`
+
+	System *SolarSystem `json:"-"`
 }
 
 type KillmailAttacker struct {
@@ -96,6 +98,12 @@ type KillmailAttacker struct {
 	SecurityStatus float64     `json:"security_status"`
 	ShipTypeID     null.Uint64 `json:"ship_type_id"`
 	WeaponTypeID   null.Uint64 `json:"weapon_type_id"`
+
+	Alliance    *Alliance    `json:"-"`
+	Character   *Character   `json:"-"`
+	Corporation *Corporation `json:"-"`
+	Ship        *Type        `json:"-"`
+	Weapon      *Type        `json:"-"`
 }
 
 type KillmailItem struct {
@@ -111,6 +119,7 @@ type KillmailItem struct {
 	Singleton         uint64      `json:"singleton"`
 	IsParent          bool        `json:"is_parent"`
 
+	Item  *Type           `json:"-"`
 	Items []*KillmailItem `json:"items"`
 }
 
@@ -128,6 +137,11 @@ type KillmailVictim struct {
 	PosX          null.Float64      `json:"pos_x"`
 	PosY          null.Float64      `json:"pos_y"`
 	PosZ          null.Float64      `json:"pos_z"`
+
+	Alliance    *Alliance    `json:"-"`
+	Character   *Character   `json:"-"`
+	Corporation *Corporation `json:"-"`
+	Ship        *Type        `json:"-"`
 
 	Items []*KillmailItem `json:"items"`
 }

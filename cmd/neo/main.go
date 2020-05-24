@@ -94,13 +94,11 @@ func init() {
 			Action: func(ctx *cli.Context) error {
 
 				if ctx.Bool("now") {
-					from := 0
-					if ctx.Int("from") > 0 {
-						from = ctx.Int("from")
-					}
 					app := core.New()
 
-					app.Market.FetchHistory(from)
+					app.Market.FetchPrices()
+
+					app.Market.FetchHistory()
 				}
 
 				c := cron.New(
@@ -117,8 +115,9 @@ func init() {
 				)
 				_, _ = c.AddFunc("0 10 11 * * *", func() {
 					app := core.New()
+					app.Market.FetchPrices()
 
-					app.Market.FetchHistory(0)
+					app.Market.FetchHistory()
 
 				})
 
@@ -231,6 +230,16 @@ func init() {
 					return cli.NewExitError(err, 1)
 				}
 
+				return nil
+			},
+		},
+		cli.Command{
+			Name:        "notifications",
+			Description: "Notifications subscribe to the a Redis PubSub. When the importer detects a killmail with a value greater than the configured notification value, it publishes the id and hash to this pubsub and this service will format the message for slack and post the killmail to slack",
+			Action: func(c *cli.Context) error {
+				app := core.New()
+
+				app.Notification.Run()
 				return nil
 			},
 		},

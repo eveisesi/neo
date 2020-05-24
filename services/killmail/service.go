@@ -34,12 +34,14 @@ type (
 		KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
 
 		// Attackers
+		AttackersByKillmailID(ctx context.Context, id uint64, hash string) ([]*neo.KillmailAttacker, error)
 		AttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailAttacker, error)
 
 		// Items
 		ItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error)
 
 		// Victim
+		VictimByKillmailID(ctx context.Context, id uint64, hash string) (*neo.KillmailVictim, error)
 		VictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailVictim, error)
 
 		// MVKs/MVLs

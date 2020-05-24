@@ -18,6 +18,7 @@ import (
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
+	"github.com/eveisesi/neo/services/notifications"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/top"
@@ -44,17 +45,18 @@ type App struct {
 	Client *http.Client
 	Config *neo.Config
 
-	ESI         esi.Service
-	Alliance    alliance.Service
-	Character   character.Service
-	Corporation corporation.Service
-	Killmail    killmail.Service
-	Market      market.Service
-	Search      search.Service
-	Token       token.Service
-	Top         top.Service
-	Tracker     tracker.Service
-	Universe    universe.Service
+	ESI          esi.Service
+	Alliance     alliance.Service
+	Character    character.Service
+	Corporation  corporation.Service
+	Killmail     killmail.Service
+	Market       market.Service
+	Search       search.Service
+	Notification notifications.Service
+	Token        token.Service
+	Top          top.Service
+	Tracker      tracker.Service
+	Universe     universe.Service
 }
 
 func New() *App {
@@ -195,6 +197,17 @@ func New() *App {
 		mysql.NewMVRepository(db),
 	)
 
+	notifications := notifications.NewService(
+		redisClient,
+		logger,
+		cfg,
+		character,
+		corporation,
+		alliance,
+		universe,
+		killmail,
+	)
+
 	return &App{
 		Logger: logger,
 		DB:     db,
@@ -203,16 +216,17 @@ func New() *App {
 		ESI:    esiClient,
 		Config: cfg,
 
-		Alliance:    alliance,
-		Character:   character,
-		Corporation: corporation,
-		Killmail:    killmail,
-		Market:      market,
-		Search:      search,
-		Token:       token,
-		Top:         top,
-		Tracker:     tracker,
-		Universe:    universe,
+		Alliance:     alliance,
+		Character:    character,
+		Corporation:  corporation,
+		Killmail:     killmail,
+		Market:       market,
+		Notification: notifications,
+		Search:       search,
+		Token:        token,
+		Top:          top,
+		Tracker:      tracker,
+		Universe:     universe,
 	}
 
 }

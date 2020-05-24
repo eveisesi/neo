@@ -10,7 +10,8 @@ import (
 )
 
 type MarketRepository interface {
-	BuiltPrice(ctx context.Context, id uint64, date time.Time) (*PricesBuilt, error)
+	BuiltPrice(ctx context.Context, id uint64, date time.Time) (*PriceBuilt, error)
+	InsertBuiltPrice(ctx context.Context, price *PriceBuilt) (*PriceBuilt, error)
 	HistoricalRecord(ctx context.Context, id uint64, date time.Time, limit null.Int) ([]*HistoricalRecord, error)
 	CreateHistoricalRecord(ctx context.Context, records []*HistoricalRecord) ([]*HistoricalRecord, error)
 
@@ -20,13 +21,19 @@ type MarketRepository interface {
 type HistoricalRecord struct {
 	TypeID uint64  `db:"type_id" json:"typeID"`
 	Date   *Date   `db:"date" json:"date"`
-	Price  float64 `db:"price" json:"price"`
+	Price  float64 `db:"price" json:"average"`
 }
 
-type PricesBuilt struct {
+type PriceBuilt struct {
 	TypeID uint64    `db:"type_id" json:"typeID"`
 	Date   time.Time `db:"date" json:"date"`
 	Price  float64   `db:"price" json:"price"`
+}
+
+type MarketPrices struct {
+	AdjustedPrice float64 `json:"adjusted_price"`
+	AveragePrice  float64 `json:"average_price"`
+	TypeID        uint64  `json:"type_id"`
 }
 
 type MarketGroup struct {

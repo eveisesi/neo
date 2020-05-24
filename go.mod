@@ -8,6 +8,7 @@ require (
 	github.com/RediSearch/redisearch-go v1.0.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/dustin/go-humanize v1.0.0
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/go-openapi/strfmt v0.19.5 // indirect
@@ -38,6 +39,7 @@ require (
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirkon/go-format v0.1.2
 	github.com/sirupsen/logrus v1.5.0
+	github.com/slack-go/slack v0.6.4
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser v1.3.1

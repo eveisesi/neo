@@ -47,6 +47,8 @@ type Constellation struct {
 	FactionID null.Int64 `json:"factionID"`
 	CreatedAt time.Time  `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
+
+	Region *Region `json:"-"`
 }
 
 // Region is an object representing the database table.
@@ -74,6 +76,8 @@ type SolarSystem struct {
 	Security        float64    `json:"security"`
 	CreatedAt       time.Time  `json:"created_at"`
 	UpdatedAt       time.Time  `json:"updated_at"`
+
+	Constellation *Constellation `json:"-"`
 }
 
 // Type is an object representing the database table.
@@ -86,6 +90,8 @@ type Type struct {
 	MarketGroupID null.Uint64 `json:"marketGroupID"`
 	CreatedAt     null.Time   `json:"created_at"`
 	UpdatedAt     null.Time   `json:"updated_at"`
+
+	Group *TypeGroup `json:"-"`
 }
 
 // TypeAttribute is an object representing the database table.

@@ -46,7 +46,7 @@ func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint64, date
 
 }
 
-func (r *marketRepository) BuiltPrice(ctx context.Context, id uint64, date time.Time) (*neo.PricesBuilt, error) {
+func (r *marketRepository) BuiltPrice(ctx context.Context, id uint64, date time.Time) (*neo.PriceBuilt, error) {
 
 	query := `
 		SELECT
@@ -60,23 +60,43 @@ func (r *marketRepository) BuiltPrice(ctx context.Context, id uint64, date time.
 			AND date = ?
 	`
 
-	build := new(neo.PricesBuilt)
+	build := new(neo.PriceBuilt)
 	err := r.db.GetContext(ctx, build, query, id, date.Format("2006-01-02"))
 
 	return build, err
 
 }
 
-func (r *marketRepository) CreateHistoricalRecord(ctx context.Context, records []*neo.HistoricalRecord) ([]*neo.HistoricalRecord, error) {
+func (r *marketRepository) InsertBuiltPrice(ctx context.Context, price *neo.PriceBuilt) (*neo.PriceBuilt, error) {
 
 	query := `
-		INSERT IGNORE INTO prices (
+		INSERT INTO prices_built (
 			type_id,
 			date,
 			price,
 			created_at,
 			updated_at
-		) VALUES %s
+		) VALUES (
+			?,?,?, NOW(), NOW()
+		) ON DUPLICATE KEY UPDATE price=VALUES(price)
+	`
+
+	_, err := r.db.ExecContext(ctx, query, price.TypeID, price.Date, price.Price)
+
+	return price, err
+
+}
+
+func (r *marketRepository) CreateHistoricalRecord(ctx context.Context, records []*neo.HistoricalRecord) ([]*neo.HistoricalRecord, error) {
+
+	query := `
+		INSERT INTO prices (
+			type_id,
+			date,
+			price,
+			created_at,
+			updated_at
+		) VALUES %s ON DUPLICATE KEY UPDATE price=VALUES(price)
 	`
 	args := make([]string, 0)
 	params := make([]interface{}, 0)

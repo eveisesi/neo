@@ -32,7 +32,7 @@ type Type @goModel(model: "github.com/eveisesi/neo.Type") {
     published: Boolean!
     marketGroupID: Int
 
-    group: TypeGroup!
+    group: TypeGroup! @goField(forceResolver: true)
     attributes: [TypeAttribute]!
 }
 

@@ -217,17 +217,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		return
 	}
 
-	isAwox := s.calcIsAwox(ctx, killmail)
-	isNPC := s.calcIsNPC(ctx, killmail)
-	isSolo := s.calcIsSolo(ctx, killmail)
-
-	killmailLoggerFields["isAwox"] = isAwox
-	killmailLoggerFields["isNPC"] = isNPC
-	killmailLoggerFields["isSolo"] = isSolo
-
-	killmail.IsAwox = isAwox
-	killmail.IsNPC = isNPC
-	killmail.IsSolo = isSolo
+	killmail.IsAwox = s.calcIsAwox(ctx, killmail)
+	killmail.IsNPC = s.calcIsNPC(ctx, killmail)
+	killmail.IsSolo = s.calcIsSolo(ctx, killmail)
 	killmail.DestroyedValue = destroyedValue
 	killmail.DroppedValue = droppedValue
 	killmail.FittedValue = fittedValue
@@ -239,6 +231,26 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	}
 
 	s.logger.WithFields(killmailLoggerFields).Info("killmail successfully imported")
+
+	if s.config.SlackNotifierEnabled {
+		threshold := s.config.SlackNotifierValueThreshold * 1000000
+		s.logger.WithField("fthreshold", float64(threshold)).WithField("greaterthan", killmail.TotalValue >= float64(threshold)).WithField("threshold", threshold).Info("values")
+		if killmail.TotalValue >= float64(threshold) {
+
+			bytes, _ := json.Marshal(struct {
+				ID   uint64 `json:"id"`
+				Hash string `json:"hash"`
+			}{
+				ID:   killmail.ID,
+				Hash: killmail.Hash,
+			})
+			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
+			if err != nil {
+				s.logger.WithError(err).Error("failed to publish message")
+			}
+		}
+	}
+
 	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 

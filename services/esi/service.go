@@ -42,6 +42,7 @@ type (
 		GetMarketGroupsMarketGroupID(id int) (*neo.MarketGroup, *Meta)
 		GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]int, *Meta)
 		GetMarketsRegionIDHistory(regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta)
+		GetMarketsPrices() ([]*neo.MarketPrices, *Meta)
 
 		// Status
 		GetStatus() (*neo.ServerStatus, *Meta)

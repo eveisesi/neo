@@ -46,6 +46,9 @@ const REDIS_ALLIANCE = "neo:alliance:%d"
 const REDIS_CHARACTER = "neo:character:%d"
 const REDIS_CORPORATION = "neo:corporation:%d"
 const REDIS_KILLMAIL = "neo:killmail:%d:%s"
+const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:%s:attackers"
+const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:%s:victim"
+const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:%s:victim:items"
 const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${page}"
 const REDIS_BLUEPRINT_MATERIALS = "neo:blueprint:materials:%d"
 const REDIS_BLUEPRINT_PRODUCT = "neo:blueprint:product:%d"
@@ -61,6 +64,9 @@ const REDIS_TYPE_GROUP = "neo:type:group:%d"
 
 // NEO Queues
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
+
+// NEO Notifications Redis PubSub Channel
+const REDIS_NOTIFICATION_PUBSUB = "neo:notifications"
 
 // FlagIDs to FittingSlots
 

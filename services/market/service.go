@@ -12,8 +12,9 @@ import (
 )
 
 type Service interface {
-	FetchHistory(from int)
+	FetchHistory()
 	FetchTypePrice(id uint64, date time.Time) float64
+	FetchPrices()
 	neo.MarketRepository
 }
 
