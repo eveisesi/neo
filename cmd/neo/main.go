@@ -115,9 +115,13 @@ func init() {
 				)
 				_, _ = c.AddFunc("0 10 11 * * *", func() {
 					app := core.New()
-					app.Market.FetchPrices()
 
+					app.Logger.Info("starting fetch prices")
+					app.Market.FetchPrices()
+					app.Logger.Info("done with fetch prices")
+					app.Logger.Info("starting fetch history ")
 					app.Market.FetchHistory()
+					app.Logger.Info("done with fetch history ")
 
 				})
 

@@ -152,6 +152,8 @@ func (s *service) handleHashes(hashes map[string]string) {
 	// Start the dispatch iterator
 	dispatched := 0
 
+	members := make([]redis.Z, 0)
+
 	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
 
@@ -167,9 +169,28 @@ func (s *service) handleHashes(hashes map[string]string) {
 			continue
 		}
 
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 2, Member: msg})
 		dispatched++
 
+		members = append(members, redis.Z{Score: 1, Member: msg})
+		if len(members) >= 250 {
+			_, err := s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+			if err != nil {
+				// Log error message
+				s.logger.Error("failed to add historical hashes to redis queue")
+				// Sleep for a second to see if this helps
+				time.Sleep(time.Second)
+			}
+			members = make([]redis.Z, 0)
+		}
+
+	}
+
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+	if err != nil {
+		// Log error message
+		s.logger.Error("failed to add historical hashes to redis queue")
+		// Sleep for a second to see if this helps
+		time.Sleep(time.Second)
 	}
 
 	count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
