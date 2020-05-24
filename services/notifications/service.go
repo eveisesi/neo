@@ -183,12 +183,18 @@ func (s *service) processMessage(msg Message) {
 		ship.Group = shipGroup
 	}
 
-	killmailDetailSectionBlock := goslack.NewSectionBlock(
+	killmailSectionBlock := goslack.NewSectionBlock(
 		goslack.NewTextBlockObject(
 			goslack.MarkdownType,
 			"*Killmail Details*",
 			false, false,
 		),
+		nil,
+		nil,
+	)
+
+	killmailDetailSectionBlock := goslack.NewSectionBlock(
+		nil,
 		[]*goslack.TextBlockObject{
 			goslack.NewTextBlockObject(goslack.MarkdownType, "*Ship*", false, false),
 			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackShipString(killmail.Victim.Ship), false, false),
@@ -207,12 +213,18 @@ func (s *service) processMessage(msg Message) {
 		),
 	)
 
-	victimDetailSectionBlock := goslack.NewSectionBlock(
+	victimSectionBlock := goslack.NewSectionBlock(
 		goslack.NewTextBlockObject(
 			goslack.MarkdownType,
 			"*Victim Details*",
 			false, false,
 		),
+		nil,
+		nil,
+	)
+
+	victimDetailSectionBlock := goslack.NewSectionBlock(
+		nil,
 		[]*goslack.TextBlockObject{
 			goslack.NewTextBlockObject(goslack.MarkdownType, "*Victim*", false, false),
 			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackVictimString(killmail.Victim), false, false),
@@ -233,12 +245,45 @@ func (s *service) processMessage(msg Message) {
 		),
 	)
 
+	blockElementSlc := make([]goslack.BlockElement, 0)
+	killmailActionButton := goslack.NewButtonBlockElement("view_killmail", "View Killmail", goslack.NewTextBlockObject(goslack.PlainTextType, "View Killmail", false, false))
+	killmailActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/kill/%d/%s", killmail.ID, killmail.Hash)
+	blockElementSlc = append(blockElementSlc, killmailActionButton)
+	if killmail.Victim.Character != nil {
+		victimActionButton := goslack.NewButtonBlockElement("view_victim", "View Victim", goslack.NewTextBlockObject(goslack.PlainTextType, "View Victim", false, false))
+		victimActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/characters/%d", killmail.Victim.Character.ID)
+		blockElementSlc = append(blockElementSlc, victimActionButton)
+	} else if killmail.Victim.Corporation != nil {
+		victimActionButton := goslack.NewButtonBlockElement("view_victim", "View Victim", goslack.NewTextBlockObject(goslack.PlainTextType, "View Victim", false, false))
+		victimActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/corporations/%d", killmail.Victim.Corporation.ID)
+		blockElementSlc = append(blockElementSlc, victimActionButton)
+	}
+
+	systemActionButton := goslack.NewButtonBlockElement("view_system", "View System", goslack.NewTextBlockObject(goslack.PlainTextType, "View System", false, false))
+	systemActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/system/%d", killmail.SolarSystemID)
+	blockElementSlc = append(blockElementSlc, systemActionButton)
+
+	shipActionButton := goslack.NewButtonBlockElement("view_ship", "View Ship", goslack.NewTextBlockObject(goslack.PlainTextType, "View Ship", false, false))
+	shipActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/ship/%d", killmail.Victim.ShipTypeID)
+	blockElementSlc = append(blockElementSlc, shipActionButton)
+
+	actionSectionBlock := goslack.NewActionBlock(
+		"navigate_to_site",
+		blockElementSlc...,
+	)
+
 	attachment := goslack.Attachment{
 		Blocks: goslack.Blocks{
 			BlockSet: []goslack.Block{
+				killmailSectionBlock,
+				goslack.NewDividerBlock(),
 				killmailDetailSectionBlock,
 				goslack.NewDividerBlock(),
+				victimSectionBlock,
+				goslack.NewDividerBlock(),
 				victimDetailSectionBlock,
+				goslack.NewDividerBlock(),
+				actionSectionBlock,
 			},
 		},
 	}

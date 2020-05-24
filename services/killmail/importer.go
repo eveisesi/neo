@@ -234,9 +234,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
-		s.logger.WithField("fthreshold", float64(threshold)).WithField("greaterthan", killmail.TotalValue >= float64(threshold)).WithField("threshold", threshold).Info("values")
 		if killmail.TotalValue >= float64(threshold) {
-
 			bytes, _ := json.Marshal(struct {
 				ID   uint64 `json:"id"`
 				Hash string `json:"hash"`
@@ -244,6 +242,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 				ID:   killmail.ID,
 				Hash: killmail.Hash,
 			})
+
 			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
 			if err != nil {
 				s.logger.WithError(err).Error("failed to publish message")
