@@ -34,7 +34,7 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     totalValue: Float!
     killmailTime: Time!
 
-    system: SolarSystem!
+    system: SolarSystem! @goField(forceResolver: true)
     attackers: [KillmailAttacker]! @goField(forceResolver: true)
     victim: KillmailVictim! @goField(forceResolver: true)
 }
