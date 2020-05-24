@@ -41,6 +41,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Character() CharacterResolver
+	Constellation() ConstellationResolver
 	Corporation() CorporationResolver
 	Killmail() KillmailResolver
 	KillmailAttacker() KillmailAttackerResolver
@@ -48,6 +49,7 @@ type ResolverRoot interface {
 	KillmailVictim() KillmailVictimResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	SolarSystem() SolarSystemResolver
 	Type() TypeResolver
 	TypeGroup() TypeGroupResolver
 }
@@ -243,6 +245,9 @@ type ComplexityRoot struct {
 type CharacterResolver interface {
 	Corporation(ctx context.Context, obj *neo.Character) (*neo.Corporation, error)
 }
+type ConstellationResolver interface {
+	Region(ctx context.Context, obj *neo.Constellation) (*neo.Region, error)
+}
 type CorporationResolver interface {
 	Alliance(ctx context.Context, obj *neo.Corporation) (*neo.Alliance, error)
 }
@@ -284,6 +289,9 @@ type QueryResolver interface {
 	MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
 	Search(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
+}
+type SolarSystemResolver interface {
+	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
 }
 type TypeResolver interface {
 	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
@@ -1464,7 +1472,7 @@ type SearchableEntity
     regionID: Int!
     factionID: Int
 
-    region: Region!
+    region: Region! @goField(forceResolver: true)
 }
 
 type Region @goModel(model: "github.com/eveisesi/neo.Region") {
@@ -1481,7 +1489,7 @@ type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     sunTypeID: Int
     security: Float!
 
-    constellation: Constellation!
+    constellation: Constellation! @goField(forceResolver: true)
 }
 
 type Type @goModel(model: "github.com/eveisesi/neo.Type") {
@@ -2119,13 +2127,13 @@ func (ec *executionContext) _Constellation_region(ctx context.Context, field gra
 		Object:   "Constellation",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Region, nil
+		return ec.resolvers.Constellation().Region(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5595,13 +5603,13 @@ func (ec *executionContext) _SolarSystem_constellation(ctx context.Context, fiel
 		Object:   "SolarSystem",
 		Field:    field,
 		Args:     nil,
-		IsMethod: false,
+		IsMethod: true,
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Constellation, nil
+		return ec.resolvers.SolarSystem().Constellation(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7686,25 +7694,34 @@ func (ec *executionContext) _Constellation(ctx context.Context, sel ast.Selectio
 		case "id":
 			out.Values[i] = ec._Constellation_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Constellation_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "regionID":
 			out.Values[i] = ec._Constellation_regionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "factionID":
 			out.Values[i] = ec._Constellation_factionID(ctx, field, obj)
 		case "region":
-			out.Values[i] = ec._Constellation_region(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Constellation_region(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8540,22 +8557,22 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 		case "id":
 			out.Values[i] = ec._SolarSystem_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._SolarSystem_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "regionID":
 			out.Values[i] = ec._SolarSystem_regionID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "constellationID":
 			out.Values[i] = ec._SolarSystem_constellationID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "factionID":
 			out.Values[i] = ec._SolarSystem_factionID(ctx, field, obj)
@@ -8564,13 +8581,22 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 		case "security":
 			out.Values[i] = ec._SolarSystem_security(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "constellation":
-			out.Values[i] = ec._SolarSystem_constellation(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._SolarSystem_constellation(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

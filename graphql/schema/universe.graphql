@@ -4,7 +4,7 @@ type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
     regionID: Int!
     factionID: Int
 
-    region: Region!
+    region: Region! @goField(forceResolver: true)
 }
 
 type Region @goModel(model: "github.com/eveisesi/neo.Region") {
@@ -21,7 +21,7 @@ type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
     sunTypeID: Int
     security: Float!
 
-    constellation: Constellation!
+    constellation: Constellation! @goField(forceResolver: true)
 }
 
 type Type @goModel(model: "github.com/eveisesi/neo.Type") {
