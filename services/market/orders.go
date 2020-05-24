@@ -220,7 +220,7 @@ func (s *service) processGroup(v int) {
 				s.logger.WithError(err).WithField("type_id", t).Error("failed to insert chunk of historical records into db")
 			}
 		}
-		s.logger.WithField("type_id", t).Info("successfully processed historical records for type")
+		s.logger.WithField("type_id", t).Debug("successfully processed historical records for type")
 
 	}
 	s.logger.WithField("group_id", v).Info("done processing group")
