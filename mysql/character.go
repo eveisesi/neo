@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
@@ -32,6 +33,17 @@ func (r *characterRepository) Character(ctx context.Context, id uint64) (*neo.Ch
 
 	return &character, err
 
+}
+
+func (r *characterRepository) Expired(ctx context.Context) ([]*neo.Character, error) {
+
+	var characters = make([]*neo.Character, 0)
+	err := boiler.Characters(
+		boiler.CharacterWhere.CachedUntil.LT(time.Now()),
+		qm.Limit(1000),
+	).Bind(ctx, r.db, &characters)
+
+	return characters, err
 }
 
 func (r *characterRepository) CreateCharacter(ctx context.Context, character *neo.Character) (*neo.Character, error) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"strconv"
@@ -100,21 +101,23 @@ func init() {
 
 					app.Market.FetchHistory()
 				}
+				app := core.New()
 
 				c := cron.New(
 					cron.WithLocation(time.UTC),
 					cron.WithLogger(
-						cron.VerbosePrintfLogger(
-							log.New(
-								os.Stdout,
-								"cron: ", log.LstdFlags,
-							),
+						cron.PrintfLogger(
+							// log.New(
+							// 	os.Stdout,
+							// 	"cron: ", log.LstdFlags,
+							// ),
+							app.Logger,
 						),
 					),
 					cron.WithSeconds(),
 				)
+
 				_, _ = c.AddFunc("0 10 11 * * *", func() {
-					app := core.New()
 
 					app.Logger.Info("starting fetch prices")
 					app.Market.FetchPrices()
@@ -127,7 +130,8 @@ func init() {
 
 				_, _ = c.AddFunc("*/30 * * * * *", func() {
 
-					app := core.New()
+					app.Logger.Info("checking tq server status")
+
 					serverStatus, m := app.ESI.GetStatus()
 					if m.IsError() {
 						app.Logger.WithError(m.Msg).Error("Failed to fetch tq server status from ESI")
@@ -141,12 +145,14 @@ func init() {
 
 					app.Redis.Set(neo.TQ_PLAYER_COUNT, serverStatus.Players, 0)
 					app.Redis.Set(neo.TQ_VIP_MODE, serverStatus.VIP.Bool, 0)
-					app.Redis.Close()
-					app.DB.Close()
+
+					app.Logger.Info("done checking tq server status")
+
 				})
 
 				_, _ = c.AddFunc("0 * * * * *", func() {
-					app := core.New()
+
+					app.Logger.Info("starting esi tracking set janitor")
 
 					ts := time.Now().Add(time.Minute * -6).UnixNano()
 					count := int64(0)
@@ -164,17 +170,21 @@ func init() {
 					count += b
 
 					app.Logger.WithField("removed", count).Info("successfully cleared keys from success queue")
-					app.Redis.Close()
-					app.DB.Close()
+					app.Logger.Info("stopping esi tracking set janitor")
+
 				})
 
 				_, _ = c.AddFunc("0 0 11 * * *", func() {
 					app := core.New()
 
+					app.Logger.Info("rebuilding autocompleter index")
+
 					err := app.Search.Build()
 					if err != nil {
 						app.Logger.WithError(err).Error("failed to rebuild autocompleter index")
 					}
+
+					app.Logger.Info("done rebuilding autocompleter index")
 				})
 
 				c.Run()
@@ -245,6 +255,25 @@ func init() {
 
 				app.Notification.Run()
 				return nil
+			},
+		},
+		cli.Command{
+			Name:        "updater",
+			Description: "Updater ensures that all updatable records in the database are update date according to their CacheUntil timestamp.",
+			Action: func(c *cli.Context) error {
+				app := core.New()
+				var ctx = context.Background()
+
+				ch := make(chan int, 3)
+
+				go app.Character.UpdateExpired(ctx)
+				go app.Corporation.UpdateExpired(ctx)
+				go app.Alliance.UpdateExpired(ctx)
+
+				<-ch
+
+				return nil
+
 			},
 		},
 	}

@@ -52,11 +52,9 @@ type (
 		GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta)
 	}
 	service struct {
-		client *http.Client
-		redis  *redis.Client
-		ua     string
-		// remain        uint64 // Number of Error left until a 420 will be thrown
-		// reset         uint64 // Number of Seconds remain until Remain is reset to 100
+		client      *http.Client
+		redis       *redis.Client
+		ua          string
 		maxattempts uint64
 	}
 

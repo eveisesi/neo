@@ -60,6 +60,7 @@ func (s *service) Run(start, end time.Time) {
 				s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
 			}
 		} else {
+
 			if status == neo.COUNT_STATUS_DOWNTIME {
 				if now.Unix() < start.Unix() || now.Unix() > end.Unix() {
 					s.logger.WithFields(logrus.Fields{
@@ -74,7 +75,8 @@ func (s *service) Run(start, end time.Time) {
 					}).Info("updating status in redis")
 					s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
 				}
-			} else if status == neo.COUNT_STATUS_RED {
+			}
+			if status == neo.COUNT_STATUS_RED {
 				if count > 20 {
 					s.logger.WithFields(logrus.Fields{
 						neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_GREEN,

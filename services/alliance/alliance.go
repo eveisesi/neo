@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -134,5 +135,53 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 	}
 
 	return alliances, nil
+
+}
+
+func (s *service) UpdateExpired(ctx context.Context) {
+
+	for {
+		expired, err := s.Expired(ctx)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			s.logger.WithError(err).Error("Failed to fetch expired alliances")
+			return
+		}
+
+		if len(expired) == 0 {
+			s.logger.Info("no expired alliances found")
+			time.Sleep(time.Minute * 5)
+			continue
+		}
+
+		for _, alliance := range expired {
+			s.tracker.GateKeeper()
+			newAlliance, m := s.esi.GetAlliancesAllianceID(alliance.ID, null.NewString(alliance.Etag, true))
+			if m.IsError() {
+				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
+				continue
+			}
+
+			switch m.Code {
+			case http.StatusNotModified:
+				alliance.CachedUntil = newAlliance.CachedUntil.Add(time.Hour * 24)
+				alliance.Etag = newAlliance.Etag
+
+				_, err = s.UpdateAlliance(ctx, alliance.ID, alliance)
+			case http.StatusOK:
+				_, err = s.UpdateAlliance(ctx, alliance.ID, newAlliance)
+			default:
+				s.logger.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
+			}
+
+			if err != nil {
+				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to update alliance")
+			}
+
+			s.logger.WithField("alliance_id", alliance.ID).Info("alliance successfully updated")
+
+		}
+		time.Sleep(time.Minute * 1)
+
+	}
 
 }

@@ -112,19 +112,30 @@ func New() *App {
 
 	txn := mysql.NewTransactioner(db)
 
+	tracker := tracker.NewService(
+		redisClient,
+		logger,
+	)
+
 	alliance := alliance.NewService(
 		redisClient,
+		logger,
 		esiClient,
+		tracker,
 		mysql.NewAllianceRepository(db),
 	)
 	character := character.NewService(
 		redisClient,
+		logger,
 		esiClient,
+		tracker,
 		mysql.NewCharacterRepository(db),
 	)
 	corporation := corporation.NewService(
 		redisClient,
+		logger,
 		esiClient,
+		tracker,
 		mysql.NewCorporationRepository(db),
 	)
 
@@ -136,11 +147,6 @@ func New() *App {
 
 	top := top.NewService(
 		redisClient,
-	)
-
-	tracker := tracker.NewService(
-		redisClient,
-		logger,
 	)
 
 	universe := universe.NewService(

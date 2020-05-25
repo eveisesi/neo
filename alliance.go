@@ -10,6 +10,8 @@ type AllianceRespository interface {
 	CreateAlliance(ctx context.Context, alliance *Alliance) (*Alliance, error)
 	UpdateAlliance(ctx context.Context, id uint64, alliance *Alliance) (*Alliance, error)
 	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*Alliance, error)
+
+	Expired(ctx context.Context) ([]*Alliance, error)
 }
 
 // Alliance is an object representing the database table.

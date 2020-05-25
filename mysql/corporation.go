@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
@@ -34,6 +35,18 @@ func (r *corporationRepository) Corporation(ctx context.Context, id uint64) (*ne
 
 }
 
+func (r *corporationRepository) Expired(ctx context.Context) ([]*neo.Corporation, error) {
+
+	var corporations = make([]*neo.Corporation, 0)
+	err := boiler.Corporations(
+		boiler.CorporationWhere.CachedUntil.LT(time.Now()),
+		qm.Limit(1000),
+	).Bind(ctx, r.db, &corporations)
+
+	return corporations, err
+
+}
+
 func (r *corporationRepository) CreateCorporation(ctx context.Context, corporation *neo.Corporation) (*neo.Corporation, error) {
 
 	var bCorporation = new(boiler.Corporation)
@@ -53,7 +66,7 @@ func (r *corporationRepository) CreateCorporation(ctx context.Context, corporati
 
 }
 
-func (r *corporationRepository) UpdateCharacter(ctx context.Context, id uint64, corporation *neo.Corporation) (*neo.Corporation, error) {
+func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint64, corporation *neo.Corporation) (*neo.Corporation, error) {
 
 	var bCorporation = new(boiler.Corporation)
 	err := copier.Copy(bCorporation, corporation)

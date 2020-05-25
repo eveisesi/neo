@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -68,7 +69,7 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 	return corporation, errors.Wrap(err, "failed to cache solar corporation in redis")
 }
 
-func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Corporation, error) {
+func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*neo.Corporation, error) {
 
 	var corporations = make([]*neo.Corporation, 0)
 	for _, id := range ids {
@@ -135,5 +136,55 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 	}
 
 	return corporations, nil
+
+}
+
+func (s *service) UpdateExpired(ctx context.Context) {
+
+	for {
+		expired, err := s.Expired(ctx)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			s.logger.WithError(err).Error("Failed to fetch expired corporations")
+			return
+		}
+
+		if len(expired) == 0 {
+			s.logger.Info("no expired corporations found")
+			time.Sleep(time.Minute * 5)
+			continue
+		}
+
+		for _, corporation := range expired {
+			s.tracker.GateKeeper()
+			// lets just play it safe. We've already gotten in trouble once for going to fast with these corporation updates
+			time.Sleep(time.Millisecond * 100)
+			newCorporation, m := s.esi.GetCorporationsCorporationID(corporation.ID, null.NewString(corporation.Etag, true))
+			if m.IsError() {
+				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
+				continue
+			}
+
+			switch m.Code {
+			case http.StatusNotModified:
+				corporation.CachedUntil = newCorporation.CachedUntil.Add(time.Hour * 24)
+				corporation.Etag = newCorporation.Etag
+
+				_, err = s.UpdateCorporation(ctx, corporation.ID, corporation)
+			case http.StatusOK:
+				_, err = s.UpdateCorporation(ctx, corporation.ID, newCorporation)
+			default:
+				s.logger.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
+			}
+
+			if err != nil {
+				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to update corporation")
+				continue
+			}
+
+			s.logger.WithField("corporation_id", corporation.ID).Info("corporation successfully updated")
+		}
+		time.Sleep(time.Minute * 1)
+
+	}
 
 }

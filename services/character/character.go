@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -135,5 +136,55 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 	}
 
 	return characters, nil
+
+}
+
+func (s *service) UpdateExpired(ctx context.Context) {
+
+	for {
+		expired, err := s.Expired(ctx)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			s.logger.WithError(err).Error("Failed to fetch expired characters")
+			return
+		}
+
+		if len(expired) == 0 {
+			s.logger.Info("no expired characters found")
+			time.Sleep(time.Minute * 5)
+			continue
+		}
+
+		for _, character := range expired {
+			s.tracker.GateKeeper()
+			// lets just play it safe. We've already gotten in trouble once for going to fast with these character updates
+			time.Sleep(time.Millisecond * 100)
+			newCharacter, m := s.esi.GetCharactersCharacterID(character.ID, null.NewString(character.Etag, true))
+			if m.IsError() {
+				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to fetch character from esi")
+				continue
+			}
+
+			switch m.Code {
+			case http.StatusNotModified:
+				character.CachedUntil = newCharacter.CachedUntil
+				character.Etag = newCharacter.Etag
+
+				_, err = s.UpdateCharacter(ctx, character.ID, character)
+			case http.StatusOK:
+				_, err = s.UpdateCharacter(ctx, character.ID, newCharacter)
+			default:
+				s.logger.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
+			}
+
+			if err != nil {
+				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to update character")
+				continue
+			}
+
+			s.logger.WithField("character_id", character.ID).Info("character successfully updated")
+		}
+		time.Sleep(time.Minute * 1)
+
+	}
 
 }

@@ -3,6 +3,7 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mysql/boiler"
@@ -31,6 +32,18 @@ func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*neo.Alli
 	).Bind(ctx, r.db, &alliance)
 
 	return &alliance, err
+
+}
+
+func (r *allianceRepository) Expired(ctx context.Context) ([]*neo.Alliance, error) {
+
+	var alliances = make([]*neo.Alliance, 0)
+	err := boiler.Alliances(
+		boiler.AllianceWhere.CachedUntil.LT(time.Now()),
+		qm.Limit(1000),
+	).Bind(ctx, r.db, &alliances)
+
+	return alliances, err
 
 }
 
