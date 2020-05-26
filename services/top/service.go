@@ -30,11 +30,20 @@ func NewService(redis *redis.Client) Service {
 func (s *service) Run() error {
 	var err error
 	var params = struct {
-		SuccessfulESI     int64
-		PrevSuccessfulESI int64
+		ESI200     int64
+		PrevESI200 int64
 
-		FailedESI     int64
-		PrevFailedESI int64
+		ESI304     int64
+		PrevESI304 int64
+
+		ESI420     int64
+		PrevESI420 int64
+
+		ESI4XX     int64
+		PrevESI4XX int64
+
+		ESI5XX     int64
+		PrevESI5XX int64
 
 		ProcessingQueue     int64
 		PrevProcessingQueue int64
@@ -45,12 +54,27 @@ func (s *service) Run() error {
 		screen.MoveTopLeft()
 
 		tw := table.NewWriter()
-		params.SuccessfulESI, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_SUCCESS, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+		params.ESI200, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_OK, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "failed to fetch successful esi calls"), 1)
 		}
 
-		params.FailedESI, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_FAILED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+		params.ESI304, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+		}
+
+		params.ESI420, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_CALM_DOWN, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+		}
+
+		params.ESI4XX, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_4XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+		}
+
+		params.ESI5XX, err = s.redis.ZCount(neo.REDIS_ESI_TRACKING_5XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 		if err != nil {
 			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
 		}
@@ -69,17 +93,41 @@ func (s *service) Run() error {
 						params.ProcessingQueue-params.PrevProcessingQueue,
 					),
 					fmt.Sprintf(
-						"%d: Successful ESI Call in Last Five Minutes (%d)",
-						params.SuccessfulESI,
-						params.SuccessfulESI-params.PrevSuccessfulESI,
+						"%d: ESI HTTP 200s in last 5 minutes (%d)",
+						params.ESI200,
+						params.ESI200-params.PrevESI200,
 					),
 				},
 				table.Row{
 					"",
 					fmt.Sprintf(
-						"%d: Failed ESI Call in Last Five Minutes (%d)",
-						params.FailedESI,
-						params.FailedESI-params.PrevFailedESI,
+						"%d: ESI HTTP 304s in last 5 minutes (%d)",
+						params.ESI304,
+						params.ESI304-params.PrevESI304,
+					),
+				},
+				table.Row{
+					"",
+					fmt.Sprintf(
+						"%d: ESI HTTP 420s in last 5 minutes (%d)",
+						params.ESI420,
+						params.ESI420-params.PrevESI420,
+					),
+				},
+				table.Row{
+					"",
+					fmt.Sprintf(
+						"%d: ESI HTTP 4XXs in last 5 minutes (%d)",
+						params.ESI4XX,
+						params.ESI4XX-params.PrevESI4XX,
+					),
+				},
+				table.Row{
+					"",
+					fmt.Sprintf(
+						"%d: ESI HTTP 5XXs in last 5 minutes (%d)",
+						params.ESI5XX,
+						params.ESI5XX-params.PrevESI5XX,
 					),
 				},
 			},
@@ -89,8 +137,11 @@ func (s *service) Run() error {
 
 		time.Sleep(time.Second * 2)
 
-		params.PrevSuccessfulESI = params.SuccessfulESI
-		params.PrevFailedESI = params.FailedESI
+		params.PrevESI200 = params.ESI200
+		params.PrevESI304 = params.ESI304
+		params.PrevESI420 = params.ESI420
+		params.PrevESI4XX = params.ESI4XX
+		params.PrevESI5XX = params.ESI5XX
 		params.PrevProcessingQueue = params.ProcessingQueue
 	}
 }

@@ -155,19 +155,22 @@ func init() {
 					app.Logger.Info("starting esi tracking set janitor")
 
 					ts := time.Now().Add(time.Minute * -6).UnixNano()
+					sets := []string{
+						neo.REDIS_ESI_TRACKING_OK,
+						neo.REDIS_ESI_TRACKING_NOT_MODIFIED,
+						neo.REDIS_ESI_TRACKING_CALM_DOWN,
+						neo.REDIS_ESI_TRACKING_4XX,
+						neo.REDIS_ESI_TRACKING_5XX,
+					}
 					count := int64(0)
-					a, err := app.Redis.ZRemRangeByScore(neo.REDIS_ESI_TRACKING_SUCCESS, "-inf", strconv.FormatInt(ts, 10)).Result()
-					if err != nil {
-						app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
-						return
+					for _, set := range sets {
+						a, err := app.Redis.ZRemRangeByScore(set, "-inf", strconv.FormatInt(ts, 10)).Result()
+						if err != nil {
+							app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
+							return
+						}
+						count += a
 					}
-					count += a
-					b, err := app.Redis.ZRemRangeByScore(neo.REDIS_ESI_TRACKING_FAILED, "-inf", strconv.FormatInt(ts, 10)).Result()
-					if err != nil {
-						app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
-						return
-					}
-					count += b
 
 					app.Logger.WithField("removed", count).Info("successfully cleared keys from success queue")
 					app.Logger.Info("stopping esi tracking set janitor")
@@ -267,8 +270,8 @@ func init() {
 				ch := make(chan int, 3)
 
 				go app.Character.UpdateExpired(ctx)
-				// go app.Corporation.UpdateExpired(ctx)
-				// go app.Alliance.UpdateExpired(ctx)
+				go app.Corporation.UpdateExpired(ctx)
+				go app.Alliance.UpdateExpired(ctx)
 
 				<-ch
 

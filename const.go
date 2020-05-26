@@ -22,8 +22,12 @@ const ESI_EXPIRES_HEADER_FORMAT = "Mon, 02 Jan 2006 15:04:05 MST"
 const REDIS_ESI_ERROR_COUNT = "esi:error:count"
 const REDIS_ESI_ERROR_RESET = "esi:error:reset"
 const REDIS_ESI_TRACKING_STATUS = "esi:tracking:status"
-const REDIS_ESI_TRACKING_FAILED = "esi:tracking:failed"
-const REDIS_ESI_TRACKING_SUCCESS = "esi:tracking:success"
+
+const REDIS_ESI_TRACKING_OK = "neo:esi:tracking:ok"                     // 200
+const REDIS_ESI_TRACKING_NOT_MODIFIED = "neo:esi:tracking:not_modified" // 304
+const REDIS_ESI_TRACKING_CALM_DOWN = "neo:esi:tracking:calm_down"       // 420
+const REDIS_ESI_TRACKING_4XX = "neo:esi:tracking:4xx"                   // Does not include 420s. Those are in the calm down set
+const REDIS_ESI_TRACKING_5XX = "neo:esi:tracking:5xx"
 
 // Locked is something that one of our crons can set to signal to all the other jobs that no matter what, the current status is locked and cannot be unlocked with out that same cron removing the lock
 const REDIS_ESI_TRACKING_STATUS_LOCKED = "esi:tracking:status:lock"

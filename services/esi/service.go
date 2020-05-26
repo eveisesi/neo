@@ -173,11 +173,7 @@ func (s *service) request(r request) ([]byte, *Meta) {
 	s.retrieveErrorReset(headers)
 	s.retrieveErrorCount(headers)
 
-	if m.Code < 400 {
-		s.reportSuccessfulESICall()
-	} else {
-		s.reportFailedESICall()
-	}
+	s.trackESICallStatusCode(m.Code)
 
 	return data, m
 }
@@ -247,12 +243,22 @@ func (s *service) retrieveErrorReset(h map[string]string) {
 
 }
 
-func (s *service) reportSuccessfulESICall() {
-	value := time.Now().UnixNano()
-	s.redis.ZAdd(neo.REDIS_ESI_TRACKING_SUCCESS, redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
-}
+func (s *service) trackESICallStatusCode(code int) {
 
-func (s *service) reportFailedESICall() {
 	value := time.Now().UnixNano()
-	s.redis.ZAdd(neo.REDIS_ESI_TRACKING_FAILED, redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)})
+	input := redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)}
+
+	switch n := code; {
+	case n == http.StatusOK:
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_OK, input)
+	case n == http.StatusNotModified:
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, input)
+	case n == 420:
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, input)
+	case n >= 400 && n < 500:
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_4XX, input)
+	case n > 500:
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_5XX, input)
+	}
+
 }
