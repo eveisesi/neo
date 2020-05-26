@@ -23,40 +23,46 @@ import (
 
 // Alliance is an object representing the database table.
 type Alliance struct {
-	ID          uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name        string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Ticker      string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	MemberCount uint64    `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
-	IsClosed    bool      `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
-	Etag        string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil time.Time `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
-	CreatedAt   time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt   time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID               uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name             string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Ticker           string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
+	MemberCount      uint64    `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
+	IsClosed         bool      `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
+	NotModifiedCount uint      `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
+	UpdatePriority   uint      `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
+	Etag             string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	CachedUntil      time.Time `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt        time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt        time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *allianceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L allianceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var AllianceColumns = struct {
-	ID          string
-	Name        string
-	Ticker      string
-	MemberCount string
-	IsClosed    string
-	Etag        string
-	CachedUntil string
-	CreatedAt   string
-	UpdatedAt   string
+	ID               string
+	Name             string
+	Ticker           string
+	MemberCount      string
+	IsClosed         string
+	NotModifiedCount string
+	UpdatePriority   string
+	Etag             string
+	CachedUntil      string
+	CreatedAt        string
+	UpdatedAt        string
 }{
-	ID:          "id",
-	Name:        "name",
-	Ticker:      "ticker",
-	MemberCount: "member_count",
-	IsClosed:    "is_closed",
-	Etag:        "etag",
-	CachedUntil: "cached_until",
-	CreatedAt:   "created_at",
-	UpdatedAt:   "updated_at",
+	ID:               "id",
+	Name:             "name",
+	Ticker:           "ticker",
+	MemberCount:      "member_count",
+	IsClosed:         "is_closed",
+	NotModifiedCount: "not_modified_count",
+	UpdatePriority:   "update_priority",
+	Etag:             "etag",
+	CachedUntil:      "cached_until",
+	CreatedAt:        "created_at",
+	UpdatedAt:        "updated_at",
 }
 
 // Generated where
@@ -95,6 +101,15 @@ func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field
 func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
+type whereHelperuint struct{ field string }
+
+func (w whereHelperuint) EQ(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperuint) NEQ(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperuint) LT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperuint) LTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperuint) GT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperuint) GTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 type whereHelpertime_Time struct{ field string }
 
 func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
@@ -117,25 +132,29 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 }
 
 var AllianceWhere = struct {
-	ID          whereHelperuint64
-	Name        whereHelperstring
-	Ticker      whereHelperstring
-	MemberCount whereHelperuint64
-	IsClosed    whereHelperbool
-	Etag        whereHelperstring
-	CachedUntil whereHelpertime_Time
-	CreatedAt   whereHelpertime_Time
-	UpdatedAt   whereHelpertime_Time
+	ID               whereHelperuint64
+	Name             whereHelperstring
+	Ticker           whereHelperstring
+	MemberCount      whereHelperuint64
+	IsClosed         whereHelperbool
+	NotModifiedCount whereHelperuint
+	UpdatePriority   whereHelperuint
+	Etag             whereHelperstring
+	CachedUntil      whereHelpertime_Time
+	CreatedAt        whereHelpertime_Time
+	UpdatedAt        whereHelpertime_Time
 }{
-	ID:          whereHelperuint64{field: "`alliances`.`id`"},
-	Name:        whereHelperstring{field: "`alliances`.`name`"},
-	Ticker:      whereHelperstring{field: "`alliances`.`ticker`"},
-	MemberCount: whereHelperuint64{field: "`alliances`.`member_count`"},
-	IsClosed:    whereHelperbool{field: "`alliances`.`is_closed`"},
-	Etag:        whereHelperstring{field: "`alliances`.`etag`"},
-	CachedUntil: whereHelpertime_Time{field: "`alliances`.`cached_until`"},
-	CreatedAt:   whereHelpertime_Time{field: "`alliances`.`created_at`"},
-	UpdatedAt:   whereHelpertime_Time{field: "`alliances`.`updated_at`"},
+	ID:               whereHelperuint64{field: "`alliances`.`id`"},
+	Name:             whereHelperstring{field: "`alliances`.`name`"},
+	Ticker:           whereHelperstring{field: "`alliances`.`ticker`"},
+	MemberCount:      whereHelperuint64{field: "`alliances`.`member_count`"},
+	IsClosed:         whereHelperbool{field: "`alliances`.`is_closed`"},
+	NotModifiedCount: whereHelperuint{field: "`alliances`.`not_modified_count`"},
+	UpdatePriority:   whereHelperuint{field: "`alliances`.`update_priority`"},
+	Etag:             whereHelperstring{field: "`alliances`.`etag`"},
+	CachedUntil:      whereHelpertime_Time{field: "`alliances`.`cached_until`"},
+	CreatedAt:        whereHelpertime_Time{field: "`alliances`.`created_at`"},
+	UpdatedAt:        whereHelpertime_Time{field: "`alliances`.`updated_at`"},
 }
 
 // AllianceRels is where relationship names are stored.
@@ -155,9 +174,9 @@ func (*allianceR) NewStruct() *allianceR {
 type allianceL struct{}
 
 var (
-	allianceAllColumns            = []string{"id", "name", "ticker", "member_count", "is_closed", "etag", "cached_until", "created_at", "updated_at"}
+	allianceAllColumns            = []string{"id", "name", "ticker", "member_count", "is_closed", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
 	allianceColumnsWithoutDefault = []string{"id", "name", "ticker", "etag", "cached_until", "created_at", "updated_at"}
-	allianceColumnsWithDefault    = []string{"member_count", "is_closed"}
+	allianceColumnsWithDefault    = []string{"member_count", "is_closed", "not_modified_count", "update_priority"}
 	alliancePrimaryKeyColumns     = []string{"id"}
 )
 

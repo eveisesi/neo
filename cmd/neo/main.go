@@ -267,8 +267,8 @@ func init() {
 				ch := make(chan int, 3)
 
 				go app.Character.UpdateExpired(ctx)
-				go app.Corporation.UpdateExpired(ctx)
-				go app.Alliance.UpdateExpired(ctx)
+				// go app.Corporation.UpdateExpired(ctx)
+				// go app.Alliance.UpdateExpired(ctx)
 
 				<-ch
 

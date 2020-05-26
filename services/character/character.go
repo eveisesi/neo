@@ -156,8 +156,6 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, character := range expired {
 			s.tracker.GateKeeper()
-			// lets just play it safe. We've already gotten in trouble once for going to fast with these character updates
-			time.Sleep(time.Millisecond * 100)
 			newCharacter, m := s.esi.GetCharactersCharacterID(character.ID, null.NewString(character.Etag, true))
 			if m.IsError() {
 				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to fetch character from esi")
@@ -167,15 +165,15 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			switch m.Code {
 			case http.StatusNotModified:
 
-				// character.NoResponseCount++
+				character.NotModifiedCount++
 
-				// if character.NoResponseCount >= 5 && character.UpdatePriority < 2 {
-				// 	character.NoResponseCount == 0
-				// 	character.UpdatePriority++
-				// }
+				if character.NotModifiedCount >= 5 && character.UpdatePriority < 2 {
+					character.NotModifiedCount = 0
+					character.UpdatePriority++
+				}
 
-				// character.CachedUntil = newCharacter.CachedUntil.AddDate(0, 0, character.UpdatePriority)
-				// character.Etag = newCharacter.Etag
+				character.CachedUntil = newCharacter.CachedUntil.AddDate(0, 0, int(character.UpdatePriority))
+				character.Etag = newCharacter.Etag
 
 				_, err = s.UpdateCharacter(ctx, character.ID, character)
 			case http.StatusOK:
@@ -189,9 +187,9 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				continue
 			}
 
-			s.logger.WithField("character_id", character.ID).Info("character successfully updated")
+			s.logger.WithField("character_id", character.ID).WithField("status_code", m.Code).Info("character successfully updated")
 		}
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Second * 15)
 
 	}
 

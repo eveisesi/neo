@@ -17,15 +17,17 @@ type CharacterRespository interface {
 }
 
 type Character struct {
-	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CorporationID uint64      `boil:"corporation_id" json:"corporation_id" toml:"corporation_id" yaml:"corporation_id"`
-	AllianceID    null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty" toml:"alliance_id" yaml:"alliance_id,omitempty"`
-	FactionID     null.Uint64 `boil:"faction_id" json:"faction_id,omitempty" toml:"faction_id" yaml:"faction_id,omitempty"`
-	Etag          string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil   time.Time   `boil:"cached_until" json:"cached_until" toml:"cached_until" yaml:"cached_until"`
-	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	UpdatedAt     time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	ID               uint64      `boil:"id" json:"id"`
+	Name             string      `boil:"name" json:"name"`
+	CorporationID    uint64      `boil:"corporation_id" json:"corporation_id"`
+	AllianceID       null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty"`
+	FactionID        null.Uint64 `boil:"faction_id" json:"faction_id,omitempty"`
+	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
+	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`
+	Etag             string      `boil:"etag" json:"etag"`
+	CachedUntil      time.Time   `boil:"cached_until" json:"cached_until"`
+	CreatedAt        time.Time   `boil:"created_at" json:"created_at"`
+	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at"`
 }
 
 func (c Character) IsExpired() bool {

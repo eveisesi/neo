@@ -467,3 +467,42 @@ func createTypeGroupsTable(db *sqlx.DB) error {
 	return err
 
 }
+
+func alterCharactersAddNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE characters
+			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER faction_id,
+			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
+	`
+
+	_, err := db.Exec(query)
+	return err
+
+}
+
+func alterCorporationsNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE corporations
+			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER alliance_id,
+			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
+	`
+
+	_, err := db.Exec(query)
+	return err
+
+}
+
+func alterAlliancesNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE alliances
+			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER is_closed,
+			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
+	`
+
+	_, err := db.Exec(query)
+	return err
+
+}

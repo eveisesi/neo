@@ -153,6 +153,24 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 		migration: createTokensTable,
 	})
 
+	// Register Alter Characters Add NoResponseCount And UpdatePriority Columns Table Migration
+	migrations = append(migrations, migration{
+		name:      "alter_characters_add_no_response_count_and_update_priority_columns",
+		migration: alterCharactersAddNoResponseCountAndUpdatePriorityColumns,
+	})
+
+	// Register Alter Corporations Add NoResponseCount And UpdatePriority Columns Table Migration
+	migrations = append(migrations, migration{
+		name:      "alter_ccorporations_add_no_response_count_and_update_priority_columns",
+		migration: alterCorporationsNoResponseCountAndUpdatePriorityColumns,
+	})
+
+	// Register Alter Alliances Add NoResponseCount And UpdatePriority Columns Table Migration
+	migrations = append(migrations, migration{
+		name:      "alter_alliances_add_no_response_count_and_update_priority_columns",
+		migration: alterAlliancesNoResponseCountAndUpdatePriorityColumns,
+	})
+
 	return &service{
 		db:         db,
 		logger:     logger,

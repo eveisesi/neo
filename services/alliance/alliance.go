@@ -180,7 +180,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			s.logger.WithField("alliance_id", alliance.ID).Info("alliance successfully updated")
 
 		}
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Second * 15)
 
 	}
 

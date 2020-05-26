@@ -156,8 +156,6 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, corporation := range expired {
 			s.tracker.GateKeeper()
-			// lets just play it safe. We've already gotten in trouble once for going to fast with these corporation updates
-			time.Sleep(time.Millisecond * 100)
 			newCorporation, m := s.esi.GetCorporationsCorporationID(corporation.ID, null.NewString(corporation.Etag, true))
 			if m.IsError() {
 				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
@@ -183,7 +181,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			s.logger.WithField("corporation_id", corporation.ID).Info("corporation successfully updated")
 		}
-		time.Sleep(time.Minute * 1)
+		time.Sleep(time.Second * 15)
 
 	}
 

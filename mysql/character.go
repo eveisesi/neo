@@ -75,7 +75,7 @@ func (r *characterRepository) UpdateCharacter(ctx context.Context, id uint64, ch
 
 	bCharacter.ID = id
 
-	_, err = bCharacter.Update(ctx, r.db, boil.Greylist("NoResponseCount", "UpdatePriority"))
+	_, err = bCharacter.Update(ctx, r.db, boil.Infer())
 	if err != nil {
 		return character, errors.Wrap(err, "unable to update character in db")
 	}

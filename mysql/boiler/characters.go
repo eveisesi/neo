@@ -24,40 +24,46 @@ import (
 
 // Character is an object representing the database table.
 type Character struct {
-	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CorporationID uint64      `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
-	AllianceID    null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
-	FactionID     null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
-	Etag          string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil   time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
-	CreatedAt     time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt     time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	CorporationID    uint64      `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
+	AllianceID       null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	FactionID        null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
+	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
+	Etag             string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	CachedUntil      time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt        time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt        time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *characterR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L characterL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CharacterColumns = struct {
-	ID            string
-	Name          string
-	CorporationID string
-	AllianceID    string
-	FactionID     string
-	Etag          string
-	CachedUntil   string
-	CreatedAt     string
-	UpdatedAt     string
+	ID               string
+	Name             string
+	CorporationID    string
+	AllianceID       string
+	FactionID        string
+	NotModifiedCount string
+	UpdatePriority   string
+	Etag             string
+	CachedUntil      string
+	CreatedAt        string
+	UpdatedAt        string
 }{
-	ID:            "id",
-	Name:          "name",
-	CorporationID: "corporation_id",
-	AllianceID:    "alliance_id",
-	FactionID:     "faction_id",
-	Etag:          "etag",
-	CachedUntil:   "cached_until",
-	CreatedAt:     "created_at",
-	UpdatedAt:     "updated_at",
+	ID:               "id",
+	Name:             "name",
+	CorporationID:    "corporation_id",
+	AllianceID:       "alliance_id",
+	FactionID:        "faction_id",
+	NotModifiedCount: "not_modified_count",
+	UpdatePriority:   "update_priority",
+	Etag:             "etag",
+	CachedUntil:      "cached_until",
+	CreatedAt:        "created_at",
+	UpdatedAt:        "updated_at",
 }
 
 // Generated where
@@ -86,25 +92,29 @@ func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
 }
 
 var CharacterWhere = struct {
-	ID            whereHelperuint64
-	Name          whereHelperstring
-	CorporationID whereHelperuint64
-	AllianceID    whereHelpernull_Uint64
-	FactionID     whereHelpernull_Uint64
-	Etag          whereHelperstring
-	CachedUntil   whereHelpertime_Time
-	CreatedAt     whereHelpertime_Time
-	UpdatedAt     whereHelpertime_Time
+	ID               whereHelperuint64
+	Name             whereHelperstring
+	CorporationID    whereHelperuint64
+	AllianceID       whereHelpernull_Uint64
+	FactionID        whereHelpernull_Uint64
+	NotModifiedCount whereHelperuint
+	UpdatePriority   whereHelperuint
+	Etag             whereHelperstring
+	CachedUntil      whereHelpertime_Time
+	CreatedAt        whereHelpertime_Time
+	UpdatedAt        whereHelpertime_Time
 }{
-	ID:            whereHelperuint64{field: "`characters`.`id`"},
-	Name:          whereHelperstring{field: "`characters`.`name`"},
-	CorporationID: whereHelperuint64{field: "`characters`.`corporation_id`"},
-	AllianceID:    whereHelpernull_Uint64{field: "`characters`.`alliance_id`"},
-	FactionID:     whereHelpernull_Uint64{field: "`characters`.`faction_id`"},
-	Etag:          whereHelperstring{field: "`characters`.`etag`"},
-	CachedUntil:   whereHelpertime_Time{field: "`characters`.`cached_until`"},
-	CreatedAt:     whereHelpertime_Time{field: "`characters`.`created_at`"},
-	UpdatedAt:     whereHelpertime_Time{field: "`characters`.`updated_at`"},
+	ID:               whereHelperuint64{field: "`characters`.`id`"},
+	Name:             whereHelperstring{field: "`characters`.`name`"},
+	CorporationID:    whereHelperuint64{field: "`characters`.`corporation_id`"},
+	AllianceID:       whereHelpernull_Uint64{field: "`characters`.`alliance_id`"},
+	FactionID:        whereHelpernull_Uint64{field: "`characters`.`faction_id`"},
+	NotModifiedCount: whereHelperuint{field: "`characters`.`not_modified_count`"},
+	UpdatePriority:   whereHelperuint{field: "`characters`.`update_priority`"},
+	Etag:             whereHelperstring{field: "`characters`.`etag`"},
+	CachedUntil:      whereHelpertime_Time{field: "`characters`.`cached_until`"},
+	CreatedAt:        whereHelpertime_Time{field: "`characters`.`created_at`"},
+	UpdatedAt:        whereHelpertime_Time{field: "`characters`.`updated_at`"},
 }
 
 // CharacterRels is where relationship names are stored.
@@ -124,9 +134,9 @@ func (*characterR) NewStruct() *characterR {
 type characterL struct{}
 
 var (
-	characterAllColumns            = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "etag", "cached_until", "created_at", "updated_at"}
+	characterAllColumns            = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
 	characterColumnsWithoutDefault = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "etag", "cached_until", "created_at", "updated_at"}
-	characterColumnsWithDefault    = []string{}
+	characterColumnsWithDefault    = []string{"not_modified_count", "update_priority"}
 	characterPrimaryKeyColumns     = []string{"id"}
 )
 

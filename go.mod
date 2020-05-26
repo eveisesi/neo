@@ -7,6 +7,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/RediSearch/redisearch-go v1.0.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0
 	github.com/friendsofgo/errors v0.9.2
