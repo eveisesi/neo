@@ -76,7 +76,7 @@ func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint64
 
 	bCorporation.ID = id
 
-	_, err = bCorporation.Update(ctx, r.db, boil.Greylist(boiler.CorporationColumns.NotModifiedCount, boiler.CorporationColumns.UpdatePriority))
+	_, err = bCorporation.Update(ctx, r.db, boil.Infer())
 	if err != nil {
 		return corporation, errors.Wrap(err, "unable to insert corporation in db")
 	}

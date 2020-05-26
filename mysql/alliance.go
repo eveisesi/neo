@@ -76,7 +76,7 @@ func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint64, alli
 
 	bAlliance.ID = id
 
-	_, err = bAlliance.Update(ctx, r.db, boil.Greylist(boiler.AllianceColumns.NotModifiedCount, boiler.AllianceColumns.UpdatePriority))
+	_, err = bAlliance.Update(ctx, r.db, boil.Infer())
 	if err != nil {
 		return alliance, errors.Wrap(err, "unable to insert alliance in db")
 	}
