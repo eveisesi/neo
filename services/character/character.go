@@ -166,8 +166,16 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			switch m.Code {
 			case http.StatusNotModified:
-				character.CachedUntil = newCharacter.CachedUntil
-				character.Etag = newCharacter.Etag
+
+				// character.NoResponseCount++
+
+				// if character.NoResponseCount >= 5 && character.UpdatePriority < 2 {
+				// 	character.NoResponseCount == 0
+				// 	character.UpdatePriority++
+				// }
+
+				// character.CachedUntil = newCharacter.CachedUntil.AddDate(0, 0, character.UpdatePriority)
+				// character.Etag = newCharacter.Etag
 
 				_, err = s.UpdateCharacter(ctx, character.ID, character)
 			case http.StatusOK:

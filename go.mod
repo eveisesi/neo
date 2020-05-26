@@ -42,6 +42,8 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/slack-go/slack v0.6.4
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cobra v1.0.0 // indirect
+	github.com/spf13/viper v1.7.0 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser v1.3.1
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect

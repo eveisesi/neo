@@ -144,7 +144,7 @@ func (s *service) request(r request) ([]byte, *Meta) {
 			return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, err)
 		}
 
-		if httpResponse.StatusCode < 400 {
+		if httpResponse.StatusCode < 500 {
 			break
 		}
 

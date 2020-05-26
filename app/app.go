@@ -18,6 +18,7 @@ import (
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
+	"github.com/eveisesi/neo/services/migration"
 	"github.com/eveisesi/neo/services/notifications"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/token"
@@ -51,6 +52,7 @@ type App struct {
 	Corporation  corporation.Service
 	Killmail     killmail.Service
 	Market       market.Service
+	Migration    migration.Service
 	Search       search.Service
 	Notification notifications.Service
 	Token        token.Service
@@ -93,8 +95,6 @@ func New() *App {
 		MaxRetries: 3,
 	})
 
-	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
-
 	logger.Info("pinging redis server")
 
 	pong, err := redisClient.Ping().Result()
@@ -103,6 +103,13 @@ func New() *App {
 	}
 
 	logger.WithField("pong", pong).Info("successfully pinged redis server")
+
+	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
+
+	migration := migration.NewService(
+		db,
+		logger,
+	)
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -227,6 +234,7 @@ func New() *App {
 		Corporation:  corporation,
 		Killmail:     killmail,
 		Market:       market,
+		Migration:    migration,
 		Notification: notifications,
 		Search:       search,
 		Token:        token,
