@@ -506,3 +506,57 @@ func alterAlliancesNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
 	return err
 
 }
+
+func alterCorporationsTableAddMemberCountColoumn(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE corporations
+			ADD COLUMN member_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER ticker;
+	`
+
+	_, err := db.Exec(query)
+	return err
+
+}
+
+func alterTablesMakeEtagNullable(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE characters
+			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
+	`
+	_, err := db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	query = `
+		ALTER TABLE corporations
+			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
+	`
+
+	_, err = db.Exec(query)
+	if err != nil {
+		return err
+	}
+
+	query = `
+		ALTER TABLE alliances
+			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
+	`
+
+	_, err = db.Exec(query)
+	return err
+
+}
+
+func updateCorporationsSetEtagNULL(db *sqlx.DB) error {
+
+	query := `
+		UPDATE corporations SET etag = NULL
+	`
+
+	_, err := db.Exec(query)
+	return err
+
+}

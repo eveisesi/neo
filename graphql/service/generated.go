@@ -79,10 +79,11 @@ type ComplexityRoot struct {
 	}
 
 	Corporation struct {
-		Alliance func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Name     func(childComplexity int) int
-		Ticker   func(childComplexity int) int
+		Alliance    func(childComplexity int) int
+		ID          func(childComplexity int) int
+		MemberCount func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Ticker      func(childComplexity int) int
 	}
 
 	Killmail struct {
@@ -406,6 +407,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Corporation.ID(childComplexity), true
+
+	case "Corporation.memberCount":
+		if e.complexity.Corporation.MemberCount == nil {
+			break
+		}
+
+		return e.complexity.Corporation.MemberCount(childComplexity), true
 
 	case "Corporation.name":
 		if e.complexity.Corporation.Name == nil {
@@ -1329,6 +1337,7 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     id: Int!
     name: String!
     ticker: String!
+    memberCount: Int!
 
     alliance: Alliance
 }
@@ -2260,6 +2269,43 @@ func (ec *executionContext) _Corporation_ticker(ctx context.Context, field graph
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Corporation_memberCount(ctx context.Context, field graphql.CollectedField, obj *neo.Corporation) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Corporation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MemberCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uint)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2uint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Corporation_alliance(ctx context.Context, field graphql.CollectedField, obj *neo.Corporation) (ret graphql.Marshaler) {
@@ -7759,6 +7805,11 @@ func (ec *executionContext) _Corporation(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "memberCount":
+			out.Values[i] = ec._Corporation_memberCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "alliance":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -9238,6 +9289,20 @@ func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
 	res := scalar.MarshalInt64(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2uint(ctx context.Context, v interface{}) (uint, error) {
+	return scalar.UnmarshalUint(v)
+}
+
+func (ec *executionContext) marshalNInt2uint(ctx context.Context, sel ast.SelectionSet, v uint) graphql.Marshaler {
+	res := scalar.MarshalUint(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

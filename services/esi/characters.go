@@ -50,7 +50,7 @@ func (s *service) GetCharactersCharacterID(id uint64, etag null.String) (*neo.Ch
 
 	}
 	character.CachedUntil = s.retrieveExpiresHeader(m.Headers, 0)
-	character.Etag = s.retrieveEtagHeader(m.Headers)
+	character.Etag.SetValid(s.retrieveEtagHeader(m.Headers))
 
 	return character, m
 }

@@ -24,7 +24,7 @@ type Character struct {
 	FactionID        null.Uint64 `boil:"faction_id" json:"faction_id,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
 	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`
-	Etag             string      `boil:"etag" json:"etag"`
+	Etag             null.String `boil:"etag" json:"etag"`
 	CachedUntil      time.Time   `boil:"cached_until" json:"cached_until"`
 	CreatedAt        time.Time   `boil:"created_at" json:"created_at"`
 	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at"`

@@ -50,7 +50,7 @@ func (s *service) GetCorporationsCorporationID(id uint64, etag null.String) (*ne
 
 	}
 	corporation.CachedUntil = s.retrieveExpiresHeader(m.Headers, 0)
-	corporation.Etag = s.retrieveEtagHeader(m.Headers)
+	corporation.Etag.SetValid(s.retrieveEtagHeader(m.Headers))
 
 	return corporation, m
 

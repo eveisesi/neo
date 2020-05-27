@@ -51,7 +51,7 @@ func (s *service) GetAlliancesAllianceID(id uint64, etag null.String) (*neo.Alli
 	}
 
 	alliance.CachedUntil = s.retrieveExpiresHeader(m.Headers, 0)
-	alliance.Etag = s.retrieveEtagHeader(m.Headers)
+	alliance.Etag.SetValid(s.retrieveEtagHeader(m.Headers))
 
 	return alliance, m
 }

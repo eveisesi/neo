@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null"
 	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/queries/qm"
@@ -23,17 +24,17 @@ import (
 
 // Alliance is an object representing the database table.
 type Alliance struct {
-	ID               uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name             string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Ticker           string    `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	MemberCount      uint64    `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
-	IsClosed         bool      `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
-	NotModifiedCount uint      `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
-	UpdatePriority   uint      `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
-	Etag             string    `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
-	CachedUntil      time.Time `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
-	CreatedAt        time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt        time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Ticker           string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
+	MemberCount      uint64      `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
+	IsClosed         bool        `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
+	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
+	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
+	Etag             null.String `boil:"etag" json:"etag,omitempty" toml:"etag" yaml:"etag,omitempty"`
+	CachedUntil      time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
+	CreatedAt        time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt        time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *allianceR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L allianceL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -110,6 +111,29 @@ func (w whereHelperuint) LTE(x uint) qm.QueryMod { return qmhelper.Where(w.field
 func (w whereHelperuint) GT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperuint) GTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 type whereHelpertime_Time struct{ field string }
 
 func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
@@ -139,7 +163,7 @@ var AllianceWhere = struct {
 	IsClosed         whereHelperbool
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
-	Etag             whereHelperstring
+	Etag             whereHelpernull_String
 	CachedUntil      whereHelpertime_Time
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
@@ -151,7 +175,7 @@ var AllianceWhere = struct {
 	IsClosed:         whereHelperbool{field: "`alliances`.`is_closed`"},
 	NotModifiedCount: whereHelperuint{field: "`alliances`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`alliances`.`update_priority`"},
-	Etag:             whereHelperstring{field: "`alliances`.`etag`"},
+	Etag:             whereHelpernull_String{field: "`alliances`.`etag`"},
 	CachedUntil:      whereHelpertime_Time{field: "`alliances`.`cached_until`"},
 	CreatedAt:        whereHelpertime_Time{field: "`alliances`.`created_at`"},
 	UpdatedAt:        whereHelpertime_Time{field: "`alliances`.`updated_at`"},

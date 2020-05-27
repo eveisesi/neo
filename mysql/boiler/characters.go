@@ -31,7 +31,7 @@ type Character struct {
 	FactionID        null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
 	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
-	Etag             string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	Etag             null.String `boil:"etag" json:"etag,omitempty" toml:"etag" yaml:"etag,omitempty"`
 	CachedUntil      time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
 	CreatedAt        time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt        time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
@@ -99,7 +99,7 @@ var CharacterWhere = struct {
 	FactionID        whereHelpernull_Uint64
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
-	Etag             whereHelperstring
+	Etag             whereHelpernull_String
 	CachedUntil      whereHelpertime_Time
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
@@ -111,7 +111,7 @@ var CharacterWhere = struct {
 	FactionID:        whereHelpernull_Uint64{field: "`characters`.`faction_id`"},
 	NotModifiedCount: whereHelperuint{field: "`characters`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`characters`.`update_priority`"},
-	Etag:             whereHelperstring{field: "`characters`.`etag`"},
+	Etag:             whereHelpernull_String{field: "`characters`.`etag`"},
 	CachedUntil:      whereHelpertime_Time{field: "`characters`.`cached_until`"},
 	CreatedAt:        whereHelpertime_Time{field: "`characters`.`created_at`"},
 	UpdatedAt:        whereHelpertime_Time{field: "`characters`.`updated_at`"},

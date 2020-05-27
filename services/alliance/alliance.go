@@ -155,7 +155,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, alliance := range expired {
 			s.tracker.GateKeeper()
-			newAlliance, m := s.esi.GetAlliancesAllianceID(alliance.ID, null.NewString(alliance.Etag, true))
+			newAlliance, m := s.esi.GetAlliancesAllianceID(alliance.ID, alliance.Etag)
 			if m.IsError() {
 				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
 				continue
@@ -163,7 +163,15 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			switch m.Code {
 			case http.StatusNotModified:
-				alliance.CachedUntil = newAlliance.CachedUntil.Add(time.Hour * 24)
+
+				alliance.NotModifiedCount++
+
+				if alliance.NotModifiedCount >= 5 && alliance.UpdatePriority < 2 {
+					alliance.NotModifiedCount = 0
+					alliance.UpdatePriority++
+				}
+
+				alliance.CachedUntil = newAlliance.CachedUntil.AddDate(0, 0, int(alliance.UpdatePriority))
 				alliance.Etag = newAlliance.Etag
 
 				_, err = s.UpdateAlliance(ctx, alliance.ID, alliance)
@@ -177,7 +185,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to update alliance")
 			}
 
-			s.logger.WithField("alliance_id", alliance.ID).Info("alliance successfully updated")
+			s.logger.WithField("alliance_id", alliance.ID).WithField("status_code", m.Code).Info("alliance successfully updated")
 
 		}
 		time.Sleep(time.Second * 15)

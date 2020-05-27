@@ -156,7 +156,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, corporation := range expired {
 			s.tracker.GateKeeper()
-			newCorporation, m := s.esi.GetCorporationsCorporationID(corporation.ID, null.NewString(corporation.Etag, true))
+			newCorporation, m := s.esi.GetCorporationsCorporationID(corporation.ID, corporation.Etag)
 			if m.IsError() {
 				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
 				continue
@@ -164,7 +164,15 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			switch m.Code {
 			case http.StatusNotModified:
-				corporation.CachedUntil = newCorporation.CachedUntil.Add(time.Hour * 24)
+
+				corporation.NotModifiedCount++
+
+				if corporation.NotModifiedCount >= 5 && corporation.UpdatePriority < 2 {
+					corporation.NotModifiedCount = 0
+					corporation.UpdatePriority++
+				}
+
+				corporation.CachedUntil = newCorporation.CachedUntil.AddDate(0, 0, int(corporation.UpdatePriority))
 				corporation.Etag = newCorporation.Etag
 
 				_, err = s.UpdateCorporation(ctx, corporation.ID, corporation)
@@ -179,7 +187,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				continue
 			}
 
-			s.logger.WithField("corporation_id", corporation.ID).Info("corporation successfully updated")
+			s.logger.WithField("corporation_id", corporation.ID).WithField("status_code", m.Code).Info("corporation successfully updated")
 		}
 		time.Sleep(time.Second * 15)
 

@@ -27,8 +27,10 @@ models:
     model:
       - github.com/99designs/gqlgen/graphql.Int
       - github.com/eveisesi/neo/graphql/scalar.Int64
+      - github.com/eveisesi/neo/graphql/scalar.Uint
       - github.com/eveisesi/neo/graphql/scalar.Uint64
       - github.com/eveisesi/neo/graphql/scalar/null.Int64
+      - github.com/eveisesi/neo/graphql/scalar/null.Uint
       - github.com/eveisesi/neo/graphql/scalar/null.Uint64
   Time:
     model:

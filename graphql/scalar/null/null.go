@@ -183,6 +183,59 @@ func UnmarshalTime(i interface{}) (null.Time, error) {
 
 }
 
+func MarshalUint(nu null.Uint) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		if !nu.Valid {
+			_, _ = io.WriteString(w, `null`)
+			return
+		}
+
+		_, _ = io.WriteString(w, strconv.FormatUint(uint64(nu.Uint), 10))
+	})
+}
+
+func UnmarshalUint(i interface{}) (null.Uint, error) {
+	switch v := i.(type) {
+	case string:
+		if v == "null" {
+			return null.NewUint(uint(0), false), nil
+		}
+
+		u, e := strconv.ParseUint(v, 10, 64)
+		if e != nil {
+			return null.NewUint(uint(0), false), e
+		}
+
+		return null.NewUint(uint(u), true), nil
+	case float32:
+		return null.NewUint(uint(v), true), nil
+	case float64:
+		return null.NewUint(uint(v), true), nil
+	case int:
+		return null.NewUint(uint(v), true), nil
+	case int8:
+		return null.NewUint(uint(v), true), nil
+	case int16:
+		return null.NewUint(uint(v), true), nil
+	case int32:
+		return null.NewUint(uint(v), true), nil
+	case int64:
+		return null.NewUint(uint(v), true), nil
+	case uint:
+		return null.NewUint(v, true), nil
+	case uint8:
+		return null.NewUint(uint(v), true), nil
+	case uint16:
+		return null.NewUint(uint(v), true), nil
+	case uint32:
+		return null.NewUint(uint(v), true), nil
+	case uint64:
+		return null.NewUint(uint(v), true), nil
+	default:
+		return null.NewUint(uint(0), false), fmt.Errorf("%v is not a valid int64", v)
+	}
+}
+
 func MarshalUint64(nu null.Uint64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if !nu.Valid {

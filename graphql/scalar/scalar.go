@@ -85,6 +85,20 @@ func UnmarshalTime(v interface{}) (time.Time, error) {
 	return time.Now(), fmt.Errorf("%v is not a time", v)
 }
 
+func MarshalUint(u uint) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		_, _ = io.WriteString(w, strconv.FormatUint(uint64(u), 10))
+	})
+}
+
+func UnmarshalUint(v interface{}) (uint, error) {
+	if i, ok := v.(uint); ok {
+		return uint(i), nil
+	}
+
+	return uint(0), fmt.Errorf("%v is not a uint64", v)
+}
+
 func MarshalUint64(u uint64) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		_, _ = io.WriteString(w, strconv.FormatUint(u, 10))

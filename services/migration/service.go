@@ -171,6 +171,21 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 		migration: alterAlliancesNoResponseCountAndUpdatePriorityColumns,
 	})
 
+	migrations = append(migrations, migration{
+		name:      "alter_corporations_table_add_member_count_column",
+		migration: alterCorporationsTableAddMemberCountColoumn,
+	})
+
+	migrations = append(migrations, migration{
+		name:      "alterTablesMakeEtagNullable",
+		migration: alterTablesMakeEtagNullable,
+	})
+
+	migrations = append(migrations, migration{
+		name:      "updateCorporationsSetEtagNULL",
+		migration: updateCorporationsSetEtagNULL,
+	})
+
 	return &service{
 		db:         db,
 		logger:     logger,
@@ -200,14 +215,12 @@ func (s *service) Run() {
 
 	for _, migration := range s.migrations {
 
-		s.logger.WithField("migration", migration.name).Info("checking migration")
 		run, err := s.hasMigrationRun(migration.name)
 		if err != nil {
 			s.logger.WithError(err).WithField("migration", migration.name).Error("unable to determine if migration has run")
 			return
 		}
 		if run {
-			s.logger.WithField("migration", migration.name).Info("skipping migration, already")
 
 			time.Sleep(time.Millisecond * 250)
 			continue

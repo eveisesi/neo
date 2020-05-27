@@ -156,7 +156,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, character := range expired {
 			s.tracker.GateKeeper()
-			newCharacter, m := s.esi.GetCharactersCharacterID(character.ID, null.NewString(character.Etag, true))
+			newCharacter, m := s.esi.GetCharactersCharacterID(character.ID, character.Etag)
 			if m.IsError() {
 				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to fetch character from esi")
 				continue

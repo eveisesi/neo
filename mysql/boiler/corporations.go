@@ -27,10 +27,11 @@ type Corporation struct {
 	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
+	MemberCount      uint        `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
 	AllianceID       null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
 	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
-	Etag             string      `boil:"etag" json:"etag" toml:"etag" yaml:"etag"`
+	Etag             null.String `boil:"etag" json:"etag,omitempty" toml:"etag" yaml:"etag,omitempty"`
 	CachedUntil      time.Time   `boil:"cached_until" json:"cachedUntil" toml:"cachedUntil" yaml:"cachedUntil"`
 	CreatedAt        time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt        time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
@@ -43,6 +44,7 @@ var CorporationColumns = struct {
 	ID               string
 	Name             string
 	Ticker           string
+	MemberCount      string
 	AllianceID       string
 	NotModifiedCount string
 	UpdatePriority   string
@@ -54,6 +56,7 @@ var CorporationColumns = struct {
 	ID:               "id",
 	Name:             "name",
 	Ticker:           "ticker",
+	MemberCount:      "member_count",
 	AllianceID:       "alliance_id",
 	NotModifiedCount: "not_modified_count",
 	UpdatePriority:   "update_priority",
@@ -69,10 +72,11 @@ var CorporationWhere = struct {
 	ID               whereHelperuint64
 	Name             whereHelperstring
 	Ticker           whereHelperstring
+	MemberCount      whereHelperuint
 	AllianceID       whereHelpernull_Uint64
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
-	Etag             whereHelperstring
+	Etag             whereHelpernull_String
 	CachedUntil      whereHelpertime_Time
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
@@ -80,10 +84,11 @@ var CorporationWhere = struct {
 	ID:               whereHelperuint64{field: "`corporations`.`id`"},
 	Name:             whereHelperstring{field: "`corporations`.`name`"},
 	Ticker:           whereHelperstring{field: "`corporations`.`ticker`"},
+	MemberCount:      whereHelperuint{field: "`corporations`.`member_count`"},
 	AllianceID:       whereHelpernull_Uint64{field: "`corporations`.`alliance_id`"},
 	NotModifiedCount: whereHelperuint{field: "`corporations`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`corporations`.`update_priority`"},
-	Etag:             whereHelperstring{field: "`corporations`.`etag`"},
+	Etag:             whereHelpernull_String{field: "`corporations`.`etag`"},
 	CachedUntil:      whereHelpertime_Time{field: "`corporations`.`cached_until`"},
 	CreatedAt:        whereHelpertime_Time{field: "`corporations`.`created_at`"},
 	UpdatedAt:        whereHelpertime_Time{field: "`corporations`.`updated_at`"},
@@ -106,9 +111,9 @@ func (*corporationR) NewStruct() *corporationR {
 type corporationL struct{}
 
 var (
-	corporationAllColumns            = []string{"id", "name", "ticker", "alliance_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
+	corporationAllColumns            = []string{"id", "name", "ticker", "member_count", "alliance_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
 	corporationColumnsWithoutDefault = []string{"id", "name", "ticker", "alliance_id", "etag", "cached_until", "created_at", "updated_at"}
-	corporationColumnsWithDefault    = []string{"not_modified_count", "update_priority"}
+	corporationColumnsWithDefault    = []string{"member_count", "not_modified_count", "update_priority"}
 	corporationPrimaryKeyColumns     = []string{"id"}
 )
 
