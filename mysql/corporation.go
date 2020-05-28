@@ -40,6 +40,7 @@ func (r *corporationRepository) Expired(ctx context.Context) ([]*neo.Corporation
 	var corporations = make([]*neo.Corporation, 0)
 	err := boiler.Corporations(
 		boiler.CorporationWhere.CachedUntil.LT(time.Now()),
+		qm.OrderBy(boiler.CorporationColumns.CachedUntil+" ASC"),
 		qm.Limit(1000),
 	).Bind(ctx, r.db, &corporations)
 

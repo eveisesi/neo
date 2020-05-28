@@ -40,6 +40,7 @@ func (r *allianceRepository) Expired(ctx context.Context) ([]*neo.Alliance, erro
 	var alliances = make([]*neo.Alliance, 0)
 	err := boiler.Alliances(
 		boiler.AllianceWhere.CachedUntil.LT(time.Now()),
+		qm.OrderBy(boiler.AllianceColumns.CachedUntil+" ASC"),
 		qm.Limit(1000),
 	).Bind(ctx, r.db, &alliances)
 

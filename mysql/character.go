@@ -41,6 +41,7 @@ func (r *characterRepository) Expired(ctx context.Context) ([]*neo.Character, er
 	err := boiler.Characters(
 		boiler.CharacterWhere.CachedUntil.LT(time.Now()),
 		qm.Limit(1000),
+		qm.OrderBy(boiler.CharacterColumns.CachedUntil+" ASC"),
 	).Bind(ctx, r.db, &characters)
 
 	return characters, err
