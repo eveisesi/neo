@@ -167,12 +167,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 				corporation.NotModifiedCount++
 
-				if corporation.NotModifiedCount >= 5 && corporation.UpdatePriority < 2 {
+				if corporation.NotModifiedCount >= 2 && corporation.UpdatePriority < 2 {
 					corporation.NotModifiedCount = 0
 					corporation.UpdatePriority++
 				}
 
-				corporation.CachedUntil = newCorporation.CachedUntil.AddDate(0, 0, int(corporation.UpdatePriority))
+				corporation.CachedUntil = newCorporation.CachedUntil.Add(time.Hour*24).AddDate(0, 0, int(corporation.UpdatePriority))
 				corporation.Etag = newCorporation.Etag
 
 				_, err = s.UpdateCorporation(ctx, corporation.ID, corporation)

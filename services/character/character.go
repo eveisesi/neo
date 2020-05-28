@@ -167,7 +167,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 				character.NotModifiedCount++
 
-				if character.NotModifiedCount >= 5 && character.UpdatePriority < 2 {
+				if character.NotModifiedCount >= 2 && character.UpdatePriority <= 3 {
 					character.NotModifiedCount = 0
 					character.UpdatePriority++
 				}

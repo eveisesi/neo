@@ -166,12 +166,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 				alliance.NotModifiedCount++
 
-				if alliance.NotModifiedCount >= 5 && alliance.UpdatePriority < 2 {
+				if alliance.NotModifiedCount >= 2 && alliance.UpdatePriority < 2 {
 					alliance.NotModifiedCount = 0
 					alliance.UpdatePriority++
 				}
 
-				alliance.CachedUntil = newAlliance.CachedUntil.AddDate(0, 0, int(alliance.UpdatePriority))
+				alliance.CachedUntil = newAlliance.CachedUntil.Add(time.Hour*24).AddDate(0, 0, int(alliance.UpdatePriority))
 				alliance.Etag = newAlliance.Etag
 
 				_, err = s.UpdateAlliance(ctx, alliance.ID, alliance)
