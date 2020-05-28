@@ -187,9 +187,13 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				continue
 			}
 
-			s.logger.WithField("character_id", character.ID).WithField("status_code", m.Code).Info("character successfully updated")
+			s.logger.WithField("character_id", character.ID).WithField("status_code", m.Code).Debug("character successfully updated")
+
+			time.Sleep(time.Millisecond * 25)
 		}
-		time.Sleep(time.Second * 15)
+		s.logger.WithField("count", len(expired)).Info("characters successfully updated")
+
+		time.Sleep(time.Second * 5)
 
 	}
 

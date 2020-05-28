@@ -185,10 +185,13 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to update alliance")
 			}
 
-			s.logger.WithField("alliance_id", alliance.ID).WithField("status_code", m.Code).Info("alliance successfully updated")
+			s.logger.WithField("alliance_id", alliance.ID).WithField("status_code", m.Code).Debug("alliance successfully updated")
 
+			time.Sleep(time.Millisecond * 25)
 		}
-		time.Sleep(time.Second * 15)
+		s.logger.WithField("count", len(expired)).Debug("alliances successfully updated")
+
+		time.Sleep(time.Second * 5)
 
 	}
 
