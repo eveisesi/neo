@@ -142,6 +142,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 				Search:      s.search,
 			},
 			Dataloader: CtxLoaders,
+			Logger:     s.logger,
 		},
 	})
 

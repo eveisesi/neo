@@ -560,3 +560,14 @@ func updateCorporationsSetEtagNULL(db *sqlx.DB) error {
 	return err
 
 }
+
+func addSecStatusColumnToCharactersTable(db *sqlx.DB) error {
+
+	query := `
+		ALTER TABLE characters
+			ADD COLUMN security_status DOUBLE NOT NULL DEFAULT '0.00' AFTER name;
+	`
+
+	_, err := db.Exec(query)
+	return err
+}

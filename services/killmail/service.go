@@ -32,6 +32,10 @@ type (
 		KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
 		KillmailsByAllianceID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
 		KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByShipGroupID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsBySystemID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByConstellationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByRegionID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
 
 		// Attackers
 		AttackersByKillmailID(ctx context.Context, id uint64, hash string) ([]*neo.KillmailAttacker, error)

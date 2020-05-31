@@ -186,6 +186,11 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 		migration: updateCorporationsSetEtagNULL,
 	})
 
+	migrations = append(migrations, migration{
+		name:      "addSecStatusColumnToCharactersTable",
+		migration: addSecStatusColumnToCharactersTable,
+	})
+
 	return &service{
 		db:         db,
 		logger:     logger,

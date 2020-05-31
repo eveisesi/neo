@@ -7,6 +7,7 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/service"
+	"github.com/sirupsen/logrus"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error) {
@@ -15,49 +16,55 @@ func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo
 
 func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
 
-	newPage := 1
-	if page != nil && *page > 0 {
-		newPage = *page
+	if *page > 10 {
+		*page = 10
 	}
+	return r.Services.Killmail.RecentKillmails(ctx, *page)
 
-	return r.Services.Killmail.RecentKillmails(ctx, newPage)
 }
 
-func (r *queryResolver) MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
+func (r *queryResolver) MvByEntityID(ctx context.Context, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
 
-	newID := uint64(0)
-	if id != nil {
-		newID = uint64(*id)
-	}
-	newAge := *age
-	newLimit := *limit
-
-	if newAge > 14 {
-		newAge = 14
+	if *age > 14 {
+		*age = 14
 	}
 
-	if newLimit > 14 {
-		newLimit = 14
+	if *limit > 14 {
+		*limit = 14
 	}
 
-	var killmails []*neo.Killmail
+	var mails []*neo.Killmail
 
-	switch entity {
-	case models.EntityAll:
-		killmails, err = r.Services.Killmail.MVKAll(ctx, newAge, newLimit)
-	case models.EntityCharacter:
-		killmails, err = r.Services.MVKByCharacterID(ctx, newID, newAge, newLimit)
-	case models.EntityCorporation:
-		killmails, err = r.Services.MVKByCorporationID(ctx, newID, newAge, newLimit)
-	case models.EntityAlliance:
-		killmails, err = r.Services.MVKByAllianceID(ctx, newID, newAge, newLimit)
-	case models.EntityShip:
-		killmails, err = r.Services.MVKByShipID(ctx, newID, newAge, newLimit)
+	switch classification {
+	case models.ClassificationAll, models.ClassificationKill:
+		switch entity {
+		case models.EntityAll:
+			mails, err = r.Services.Killmail.MVKAll(ctx, *age, *limit)
+		case models.EntityCharacter:
+			mails, err = r.Services.MVKByCharacterID(ctx, uint64(*id), *age, *limit)
+		case models.EntityCorporation:
+			mails, err = r.Services.MVKByCorporationID(ctx, uint64(*id), *age, *limit)
+		case models.EntityAlliance:
+			mails, err = r.Services.MVKByAllianceID(ctx, uint64(*id), *age, *limit)
+		case models.EntityShip:
+			mails, err = r.Services.MVKByShipID(ctx, uint64(*id), *age, *limit)
+		default:
+			return nil, errors.New("invalid entity")
+		}
+	case models.ClassificationLose:
+		return nil, errors.New("not yet supported")
 	default:
-		return nil, errors.New("invalid entity")
+		return nil, errors.New("invalid classification specified")
 	}
 
-	return killmails, err
+	r.Logger.WithFields(logrus.Fields{
+		"classification": classification.String(),
+		"entity":         entity.String(),
+		"id":             id,
+		"killmails":      len(mails),
+	}).Println()
+
+	return mails, err
 
 }
 
@@ -72,24 +79,38 @@ func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.E
 		*page = 0
 	}
 
-	var killmails []*neo.Killmail
+	var mails []*neo.Killmail
 
 	switch entity {
 	case models.EntityAll:
 		return nil, errors.New("All Type is not supported on this query")
 	case models.EntityCharacter:
-		killmails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), *page)
+		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), *page)
 	case models.EntityCorporation:
-		killmails, err = r.Services.KillmailsByCorporationID(ctx, uint64(id), *page)
+		mails, err = r.Services.KillmailsByCorporationID(ctx, uint64(id), *page)
 	case models.EntityAlliance:
-		killmails, err = r.Services.KillmailsByAllianceID(ctx, uint64(id), *page)
+		mails, err = r.Services.KillmailsByAllianceID(ctx, uint64(id), *page)
 	case models.EntityShip:
-		return nil, errors.New("comming soom(tm)")
+		mails, err = r.Services.KillmailsByShipID(ctx, uint64(id), *page)
+	case models.EntityShipGroup:
+		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint64(id), *page)
+	case models.EntitySystem:
+		mails, err = r.Services.KillmailsBySystemID(ctx, uint64(id), *page)
+	case models.EntityConstellation:
+		mails, err = r.Services.KillmailsByConstellationID(ctx, uint64(id), *page)
+	case models.EntityRegion:
+		mails, err = r.Services.KillmailsByRegionID(ctx, uint64(id), *page)
 	default:
 		return nil, errors.New("invalid entity")
 	}
 
-	return killmails, err
+	r.Logger.WithFields(logrus.Fields{
+		"entity": entity.String(),
+		"id":     id,
+		"mails":  len(mails),
+	}).Println()
+
+	return mails, err
 }
 
 func (r *Resolver) Killmail() service.KillmailResolver {

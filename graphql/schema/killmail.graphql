@@ -2,13 +2,20 @@ extend type Query {
     killmail(id: Int!, hash: String!): Killmail!
     killmailRecent(page: Int = 1): [Killmail]!
 
-    mvkByEntityID(
+    mvByEntityID(
+        classification: Classification!
         entity: Entity!
         id: Int
         age: Int = 7
-        limit: Int = 7
+        limit: Int = 6
     ): [Killmail]!
     killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+}
+
+enum Classification {
+    all
+    kill
+    lose
 }
 
 enum Entity {
@@ -17,6 +24,10 @@ enum Entity {
     corporation
     alliance
     ship
+    shipGroup
+    system
+    constellation
+    region
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {

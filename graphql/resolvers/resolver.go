@@ -8,6 +8,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/universe"
+	"github.com/sirupsen/logrus"
 
 	"github.com/eveisesi/neo/graphql/dataloaders"
 	"github.com/eveisesi/neo/graphql/service"
@@ -19,6 +20,7 @@ import (
 type Resolver struct {
 	Services   Services
 	Dataloader func(ctx context.Context) dataloaders.Loaders
+	Logger     *logrus.Logger
 }
 
 type Killmail killmail.Service

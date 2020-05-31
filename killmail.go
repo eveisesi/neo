@@ -13,7 +13,6 @@ type KillmailRepository interface {
 	CreateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
 	Update(ctx context.Context, id uint64, hash string, killmail *Killmail) error
 
-	GTID(ctx context.Context, id null.Uint64) ([]*Killmail, error)
 	Exists(ctx context.Context, id uint64, hash string) (bool, error)
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
 
@@ -22,6 +21,10 @@ type KillmailRepository interface {
 	ByCorporationID(ctx context.Context, id uint64) ([]*Killmail, error)
 	ByAllianceID(ctx context.Context, id uint64) ([]*Killmail, error)
 	ByShipID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByShipGroupID(ctx context.Context, id uint64) ([]*Killmail, error)
+	BySystemID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByConstellationID(ctx context.Context, id uint64) ([]*Killmail, error)
+	ByRegionID(ctx context.Context, id uint64) ([]*Killmail, error)
 }
 
 type MVRepository interface {
@@ -34,6 +37,11 @@ type MVRepository interface {
 	LossesByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
 	KillsByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
 	LossesByShipID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByShipGroupID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	LossesByShipGroupID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsBySystemID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByConstellationID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
+	KillsByRegionID(ctx context.Context, id uint64, limit, age int) ([]*Killmail, error)
 }
 
 type KillmailAttackerRepository interface {

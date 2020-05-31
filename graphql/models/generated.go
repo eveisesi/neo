@@ -8,14 +8,61 @@ import (
 	"strconv"
 )
 
+type Classification string
+
+const (
+	ClassificationAll  Classification = "all"
+	ClassificationKill Classification = "kill"
+	ClassificationLose Classification = "lose"
+)
+
+var AllClassification = []Classification{
+	ClassificationAll,
+	ClassificationKill,
+	ClassificationLose,
+}
+
+func (e Classification) IsValid() bool {
+	switch e {
+	case ClassificationAll, ClassificationKill, ClassificationLose:
+		return true
+	}
+	return false
+}
+
+func (e Classification) String() string {
+	return string(e)
+}
+
+func (e *Classification) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = Classification(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid Classification", str)
+	}
+	return nil
+}
+
+func (e Classification) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type Entity string
 
 const (
-	EntityAll         Entity = "all"
-	EntityCharacter   Entity = "character"
-	EntityCorporation Entity = "corporation"
-	EntityAlliance    Entity = "alliance"
-	EntityShip        Entity = "ship"
+	EntityAll           Entity = "all"
+	EntityCharacter     Entity = "character"
+	EntityCorporation   Entity = "corporation"
+	EntityAlliance      Entity = "alliance"
+	EntityShip          Entity = "ship"
+	EntityShipGroup     Entity = "shipGroup"
+	EntitySystem        Entity = "system"
+	EntityConstellation Entity = "constellation"
+	EntityRegion        Entity = "region"
 )
 
 var AllEntity = []Entity{
@@ -24,11 +71,15 @@ var AllEntity = []Entity{
 	EntityCorporation,
 	EntityAlliance,
 	EntityShip,
+	EntityShipGroup,
+	EntitySystem,
+	EntityConstellation,
+	EntityRegion,
 }
 
 func (e Entity) IsValid() bool {
 	switch e {
-	case EntityAll, EntityCharacter, EntityCorporation, EntityAlliance, EntityShip:
+	case EntityAll, EntityCharacter, EntityCorporation, EntityAlliance, EntityShip, EntityShipGroup, EntitySystem, EntityConstellation, EntityRegion:
 		return true
 	}
 	return false

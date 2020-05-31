@@ -177,7 +177,7 @@ type ComplexityRoot struct {
 		Killmail                   func(childComplexity int, id int, hash string) int
 		KillmailRecent             func(childComplexity int, page *int) int
 		KillmailsByEntityID        func(childComplexity int, entity models.Entity, id int, page *int) int
-		MvkByEntityID              func(childComplexity int, entity models.Entity, id *int, age *int, limit *int) int
+		MvByEntityID               func(childComplexity int, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) int
 		QueryPlaceholder           func(childComplexity int) int
 		Search                     func(childComplexity int, term string) int
 	}
@@ -287,7 +287,7 @@ type QueryResolver interface {
 	CorporationByCorporationID(ctx context.Context, id int) (*neo.Corporation, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
-	MvkByEntityID(ctx context.Context, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
+	MvByEntityID(ctx context.Context, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
 	Search(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
 }
@@ -963,17 +963,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.KillmailsByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int)), true
 
-	case "Query.mvkByEntityID":
-		if e.complexity.Query.MvkByEntityID == nil {
+	case "Query.mvByEntityID":
+		if e.complexity.Query.MvByEntityID == nil {
 			break
 		}
 
-		args, err := ec.field_Query_mvkByEntityID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_mvByEntityID_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.MvkByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int)), true
+		return e.complexity.Query.MvByEntityID(childComplexity, args["classification"].(models.Classification), args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int)), true
 
 	case "Query.queryPlaceholder":
 		if e.complexity.Query.QueryPlaceholder == nil {
@@ -1346,13 +1346,20 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     killmail(id: Int!, hash: String!): Killmail!
     killmailRecent(page: Int = 1): [Killmail]!
 
-    mvkByEntityID(
+    mvByEntityID(
+        classification: Classification!
         entity: Entity!
         id: Int
         age: Int = 7
-        limit: Int = 7
+        limit: Int = 6
     ): [Killmail]!
     killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+}
+
+enum Classification {
+    all
+    kill
+    lose
 }
 
 enum Entity {
@@ -1361,6 +1368,10 @@ enum Entity {
     corporation
     alliance
     ship
+    shipGroup
+    system
+    constellation
+    region
 }
 
 type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
@@ -1668,41 +1679,49 @@ func (ec *executionContext) field_Query_killmailsByEntityID_args(ctx context.Con
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_mvkByEntityID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_mvByEntityID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 models.Entity
+	var arg0 models.Classification
+	if tmp, ok := rawArgs["classification"]; ok {
+		arg0, err = ec.unmarshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["classification"] = arg0
+	var arg1 models.Entity
 	if tmp, ok := rawArgs["entity"]; ok {
-		arg0, err = ec.unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
+		arg1, err = ec.unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["entity"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["id"]; ok {
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg1
+	args["entity"] = arg1
 	var arg2 *int
-	if tmp, ok := rawArgs["age"]; ok {
+	if tmp, ok := rawArgs["id"]; ok {
 		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["age"] = arg2
+	args["id"] = arg2
 	var arg3 *int
-	if tmp, ok := rawArgs["limit"]; ok {
+	if tmp, ok := rawArgs["age"]; ok {
 		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["limit"] = arg3
+	args["age"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["limit"]; ok {
+		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["limit"] = arg4
 	return args, nil
 }
 
@@ -4954,7 +4973,7 @@ func (ec *executionContext) _Query_killmailRecent(ctx context.Context, field gra
 	return ec.marshalNKillmail2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_mvkByEntityID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_mvByEntityID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -4971,7 +4990,7 @@ func (ec *executionContext) _Query_mvkByEntityID(ctx context.Context, field grap
 	}
 	ctx = graphql.WithResolverContext(ctx, rctx)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_mvkByEntityID_args(ctx, rawArgs)
+	args, err := ec.field_Query_mvByEntityID_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -4980,7 +4999,7 @@ func (ec *executionContext) _Query_mvkByEntityID(ctx context.Context, field grap
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MvkByEntityID(rctx, args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int))
+		return ec.resolvers.Query().MvByEntityID(rctx, args["classification"].(models.Classification), args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8463,7 +8482,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "mvkByEntityID":
+		case "mvByEntityID":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -8471,7 +8490,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_mvkByEntityID(ctx, field)
+				res = ec._Query_mvByEntityID(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -9202,6 +9221,15 @@ func (ec *executionContext) marshalNCharacter2ᚖgithubᚗcomᚋeveisesiᚋneo�
 		return graphql.Null
 	}
 	return ec._Character(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx context.Context, v interface{}) (models.Classification, error) {
+	var res models.Classification
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx context.Context, sel ast.SelectionSet, v models.Classification) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNConstellation2githubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx context.Context, sel ast.SelectionSet, v neo.Constellation) graphql.Marshaler {

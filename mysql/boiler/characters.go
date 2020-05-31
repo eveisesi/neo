@@ -26,6 +26,7 @@ import (
 type Character struct {
 	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	SecurityStatus   float64     `boil:"security_status" json:"securityStatus" toml:"securityStatus" yaml:"securityStatus"`
 	CorporationID    uint64      `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
 	AllianceID       null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
 	FactionID        null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
@@ -43,6 +44,7 @@ type Character struct {
 var CharacterColumns = struct {
 	ID               string
 	Name             string
+	SecurityStatus   string
 	CorporationID    string
 	AllianceID       string
 	FactionID        string
@@ -55,6 +57,7 @@ var CharacterColumns = struct {
 }{
 	ID:               "id",
 	Name:             "name",
+	SecurityStatus:   "security_status",
 	CorporationID:    "corporation_id",
 	AllianceID:       "alliance_id",
 	FactionID:        "faction_id",
@@ -67,6 +70,21 @@ var CharacterColumns = struct {
 }
 
 // Generated where
+
+type whereHelperfloat64 struct{ field string }
+
+func (w whereHelperfloat64) EQ(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperfloat64) NEQ(x float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelperfloat64) LT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperfloat64) LTE(x float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelperfloat64) GT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
 
 type whereHelpernull_Uint64 struct{ field string }
 
@@ -94,6 +112,7 @@ func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
 var CharacterWhere = struct {
 	ID               whereHelperuint64
 	Name             whereHelperstring
+	SecurityStatus   whereHelperfloat64
 	CorporationID    whereHelperuint64
 	AllianceID       whereHelpernull_Uint64
 	FactionID        whereHelpernull_Uint64
@@ -106,6 +125,7 @@ var CharacterWhere = struct {
 }{
 	ID:               whereHelperuint64{field: "`characters`.`id`"},
 	Name:             whereHelperstring{field: "`characters`.`name`"},
+	SecurityStatus:   whereHelperfloat64{field: "`characters`.`security_status`"},
 	CorporationID:    whereHelperuint64{field: "`characters`.`corporation_id`"},
 	AllianceID:       whereHelpernull_Uint64{field: "`characters`.`alliance_id`"},
 	FactionID:        whereHelpernull_Uint64{field: "`characters`.`faction_id`"},
@@ -134,9 +154,9 @@ func (*characterR) NewStruct() *characterR {
 type characterL struct{}
 
 var (
-	characterAllColumns            = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
+	characterAllColumns            = []string{"id", "name", "security_status", "corporation_id", "alliance_id", "faction_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
 	characterColumnsWithoutDefault = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "etag", "cached_until", "created_at", "updated_at"}
-	characterColumnsWithDefault    = []string{"not_modified_count", "update_priority"}
+	characterColumnsWithDefault    = []string{"security_status", "not_modified_count", "update_priority"}
 	characterPrimaryKeyColumns     = []string{"id"}
 )
 

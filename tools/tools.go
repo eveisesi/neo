@@ -33,3 +33,13 @@ func SlotForFlagID(id uint64) string {
 	return ""
 
 }
+
+func IsGroupAllowed(id uint64) bool {
+	for _, v := range neo.ALLOWED_SHIP_GROUPS {
+		if v == id {
+			return true
+		}
+	}
+
+	return false
+}
