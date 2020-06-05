@@ -23,7 +23,7 @@ func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.K
 
 }
 
-func (r *queryResolver) MvByEntityID(ctx context.Context, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
+func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
 
 	if *age > 14 {
 		*age = 14
@@ -35,9 +35,9 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, classification models.
 
 	var mails []*neo.Killmail
 
-	switch classification {
-	case models.ClassificationAll, models.ClassificationKill:
-		switch entity {
+	switch *category {
+	case models.CategoryAll, models.CategoryKill:
+		switch *entity {
 		case models.EntityAll:
 			mails, err = r.Services.Killmail.MVKAll(ctx, *age, *limit)
 		case models.EntityCharacter:
@@ -51,17 +51,17 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, classification models.
 		default:
 			return nil, errors.New("invalid entity")
 		}
-	case models.ClassificationLose:
+	case models.CategoryLose:
 		return nil, errors.New("not yet supported")
 	default:
-		return nil, errors.New("invalid classification specified")
+		return nil, errors.New("invalid category specified")
 	}
 
 	r.Logger.WithFields(logrus.Fields{
-		"classification": classification.String(),
-		"entity":         entity.String(),
-		"id":             id,
-		"killmails":      len(mails),
+		"category":  category.String(),
+		"entity":    entity.String(),
+		"id":        id,
+		"killmails": len(mails),
 	}).Println()
 
 	return mails, err

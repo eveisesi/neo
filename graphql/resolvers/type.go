@@ -7,6 +7,10 @@ import (
 	"github.com/eveisesi/neo/graphql/service"
 )
 
+func (r *queryResolver) TypeByTypeID(ctx context.Context, id int) (*neo.Type, error) {
+	return r.Services.Universe.Type(ctx, uint64(id))
+}
+
 func (r *Resolver) Type() service.TypeResolver {
 	return &typeResolver{r}
 }

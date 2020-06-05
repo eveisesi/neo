@@ -313,7 +313,11 @@ func (r *mvRepository) LossesByShipID(ctx context.Context, id uint64, limit, age
 			killmails.total_value,
 			killmails.killmail_time
 		FROM (
-			SELECT DISTINCT(killmail_victim.killmail_id) FROM killmail_victim WHERE killmail_victim.ship_type_id = ?
+			SELECT 
+				DISTINCT(killmail_victim.killmail_id) 
+			FROM killmail_victim 
+			WHERE 
+				killmail_victim.ship_type_id = ?
 		) SELECTED_KMS
 		LEFT JOIN killmails ON killmails.id = SELECTED_KMS.killmail_id
 		WHERE

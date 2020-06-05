@@ -177,9 +177,10 @@ type ComplexityRoot struct {
 		Killmail                   func(childComplexity int, id int, hash string) int
 		KillmailRecent             func(childComplexity int, page *int) int
 		KillmailsByEntityID        func(childComplexity int, entity models.Entity, id int, page *int) int
-		MvByEntityID               func(childComplexity int, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) int
+		MvByEntityID               func(childComplexity int, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) int
 		QueryPlaceholder           func(childComplexity int) int
 		Search                     func(childComplexity int, term string) int
+		TypeByTypeID               func(childComplexity int, id int) int
 	}
 
 	Region struct {
@@ -287,9 +288,10 @@ type QueryResolver interface {
 	CorporationByCorporationID(ctx context.Context, id int) (*neo.Corporation, error)
 	Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
-	MvByEntityID(ctx context.Context, classification models.Classification, entity models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
+	MvByEntityID(ctx context.Context, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
 	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
 	Search(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
+	TypeByTypeID(ctx context.Context, id int) (*neo.Type, error)
 }
 type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
@@ -973,7 +975,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.MvByEntityID(childComplexity, args["classification"].(models.Classification), args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int)), true
+		return e.complexity.Query.MvByEntityID(childComplexity, args["category"].(*models.Category), args["entity"].(*models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int)), true
 
 	case "Query.queryPlaceholder":
 		if e.complexity.Query.QueryPlaceholder == nil {
@@ -993,6 +995,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Search(childComplexity, args["term"].(string)), true
+
+	case "Query.typeByTypeID":
+		if e.complexity.Query.TypeByTypeID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_typeByTypeID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.TypeByTypeID(childComplexity, args["id"].(int)), true
 
 	case "Region.id":
 		if e.complexity.Region.ID == nil {
@@ -1347,8 +1361,8 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     killmailRecent(page: Int = 1): [Killmail]!
 
     mvByEntityID(
-        classification: Classification!
-        entity: Entity!
+        category: Category = "all"
+        entity: Entity = "all"
         id: Int
         age: Int = 7
         limit: Int = 6
@@ -1356,7 +1370,7 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
 }
 
-enum Classification {
+enum Category {
     all
     kill
     lose
@@ -1486,7 +1500,11 @@ type SearchableEntity
     image: String!
 }
 `},
-	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
+	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `extend type Query {
+    typeByTypeID(id: Int!): Type!
+}
+
+type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
     id: Int!
     name: String!
     regionID: Int!
@@ -1682,17 +1700,17 @@ func (ec *executionContext) field_Query_killmailsByEntityID_args(ctx context.Con
 func (ec *executionContext) field_Query_mvByEntityID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 models.Classification
-	if tmp, ok := rawArgs["classification"]; ok {
-		arg0, err = ec.unmarshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx, tmp)
+	var arg0 *models.Category
+	if tmp, ok := rawArgs["category"]; ok {
+		arg0, err = ec.unmarshalOCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["classification"] = arg0
-	var arg1 models.Entity
+	args["category"] = arg0
+	var arg1 *models.Entity
 	if tmp, ok := rawArgs["entity"]; ok {
-		arg1, err = ec.unmarshalNEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
+		arg1, err = ec.unmarshalOEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1736,6 +1754,20 @@ func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs
 		}
 	}
 	args["term"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_typeByTypeID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -4999,7 +5031,7 @@ func (ec *executionContext) _Query_mvByEntityID(ctx context.Context, field graph
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MvByEntityID(rctx, args["classification"].(models.Classification), args["entity"].(models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int))
+		return ec.resolvers.Query().MvByEntityID(rctx, args["category"].(*models.Category), args["entity"].(*models.Entity), args["id"].(*int), args["age"].(*int), args["limit"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5103,6 +5135,50 @@ func (ec *executionContext) _Query_search(ctx context.Context, field graphql.Col
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNSearchableEntity2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_typeByTypeID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_typeByTypeID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().TypeByTypeID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Type)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -8524,6 +8600,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "typeByTypeID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_typeByTypeID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -9223,15 +9313,6 @@ func (ec *executionContext) marshalNCharacter2ᚖgithubᚗcomᚋeveisesiᚋneo�
 	return ec._Character(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx context.Context, v interface{}) (models.Classification, error) {
-	var res models.Classification
-	return res, res.UnmarshalGQL(v)
-}
-
-func (ec *executionContext) marshalNClassification2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐClassification(ctx context.Context, sel ast.SelectionSet, v models.Classification) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNConstellation2githubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx context.Context, sel ast.SelectionSet, v neo.Constellation) graphql.Marshaler {
 	return ec._Constellation(ctx, sel, &v)
 }
@@ -9585,6 +9666,20 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
+func (ec *executionContext) marshalNType2githubᚗcomᚋeveisesiᚋneoᚐType(ctx context.Context, sel ast.SelectionSet, v neo.Type) graphql.Marshaler {
+	return ec._Type(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType(ctx context.Context, sel ast.SelectionSet, v *neo.Type) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Type(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTypeAttribute2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeAttribute(ctx context.Context, sel ast.SelectionSet, v []*neo.TypeAttribute) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -9910,6 +10005,30 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOCategory2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx context.Context, v interface{}) (models.Category, error) {
+	var res models.Category
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOCategory2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v models.Category) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx context.Context, v interface{}) (*models.Category, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOCategory2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx context.Context, sel ast.SelectionSet, v *models.Category) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
+}
+
 func (ec *executionContext) marshalOCharacter2githubᚗcomᚋeveisesiᚋneoᚐCharacter(ctx context.Context, sel ast.SelectionSet, v neo.Character) graphql.Marshaler {
 	return ec._Character(ctx, sel, &v)
 }
@@ -9930,6 +10049,30 @@ func (ec *executionContext) marshalOCorporation2ᚖgithubᚗcomᚋeveisesiᚋneo
 		return graphql.Null
 	}
 	return ec._Corporation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, v interface{}) (models.Entity, error) {
+	var res models.Entity
+	return res, res.UnmarshalGQL(v)
+}
+
+func (ec *executionContext) marshalOEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, sel ast.SelectionSet, v models.Entity) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalOEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, v interface{}) (*models.Entity, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOEntity2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐEntity(ctx context.Context, sel ast.SelectionSet, v *models.Entity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) unmarshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, v interface{}) (null.Float64, error) {

@@ -8,46 +8,46 @@ import (
 	"strconv"
 )
 
-type Classification string
+type Category string
 
 const (
-	ClassificationAll  Classification = "all"
-	ClassificationKill Classification = "kill"
-	ClassificationLose Classification = "lose"
+	CategoryAll  Category = "all"
+	CategoryKill Category = "kill"
+	CategoryLose Category = "lose"
 )
 
-var AllClassification = []Classification{
-	ClassificationAll,
-	ClassificationKill,
-	ClassificationLose,
+var AllCategory = []Category{
+	CategoryAll,
+	CategoryKill,
+	CategoryLose,
 }
 
-func (e Classification) IsValid() bool {
+func (e Category) IsValid() bool {
 	switch e {
-	case ClassificationAll, ClassificationKill, ClassificationLose:
+	case CategoryAll, CategoryKill, CategoryLose:
 		return true
 	}
 	return false
 }
 
-func (e Classification) String() string {
+func (e Category) String() string {
 	return string(e)
 }
 
-func (e *Classification) UnmarshalGQL(v interface{}) error {
+func (e *Category) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = Classification(str)
+	*e = Category(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Classification", str)
+		return fmt.Errorf("%s is not a valid Category", str)
 	}
 	return nil
 }
 
-func (e Classification) MarshalGQL(w io.Writer) {
+func (e Category) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

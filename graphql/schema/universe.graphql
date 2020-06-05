@@ -1,3 +1,7 @@
+extend type Query {
+    typeByTypeID(id: Int!): Type!
+}
+
 type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
     id: Int!
     name: String!

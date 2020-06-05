@@ -3,8 +3,8 @@ extend type Query {
     killmailRecent(page: Int = 1): [Killmail]!
 
     mvByEntityID(
-        classification: Classification!
-        entity: Entity!
+        category: Category = "all"
+        entity: Entity = "all"
         id: Int
         age: Int = 7
         limit: Int = 6
@@ -12,7 +12,7 @@ extend type Query {
     killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
 }
 
-enum Classification {
+enum Category {
     all
     kill
     lose
