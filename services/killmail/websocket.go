@@ -35,7 +35,7 @@ func (s *service) Websocket() error {
 				if err, ok := err.(*websocket.CloseError); ok {
 					if err.Code == 1000 {
 						s.logger.Info("gracefully closing connection with websocket")
-						return nil
+						break
 					}
 
 					s.logger.WithError(err).Error("error enconnected. Attempting to disconnect and reconnect")
