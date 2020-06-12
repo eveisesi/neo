@@ -91,8 +91,11 @@ func New() *App {
 	logger.Info("successfully pinged db server")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:       cfg.RedisAddr,
-		MaxRetries: 3,
+		Addr:               cfg.RedisAddr,
+		MaxRetries:         3,
+		ReadTimeout:        time.Second * 5,
+		IdleTimeout:        time.Minute * 1,
+		IdleCheckFrequency: time.Second * 30,
 	})
 
 	logger.Info("pinging redis server")
