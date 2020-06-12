@@ -1,9 +1,12 @@
 package notifications
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/dustin/go-humanize"
 
@@ -15,7 +18,6 @@ import (
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis"
 	"github.com/sirupsen/logrus"
-	"github.com/slack-go/slack"
 	goslack "github.com/slack-go/slack"
 )
 
@@ -196,14 +198,30 @@ func (s *service) processMessage(msg Message) {
 	killmailDetailSectionBlock := goslack.NewSectionBlock(
 		nil,
 		[]*goslack.TextBlockObject{
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*Ship*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackShipString(killmail.Victim.Ship), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*System*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackSystemString(killmail.System), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*Killtime*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, killmail.KillmailTime.Format("2006-01-02 15:04:05"), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*Damage Taken*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, humanize.Comma(int64(killmail.Victim.DamageTaken)), false, false),
+			goslack.NewTextBlockObject(
+				goslack.MarkdownType,
+				fmt.Sprintf(
+					"%s\n%s\n%s\n%s",
+					"*Ship*",
+					"*System*",
+					"*Killtime*",
+					"*Damage Taken*",
+				),
+				false,
+				false,
+			),
+			goslack.NewTextBlockObject(
+				goslack.MarkdownType,
+				fmt.Sprintf(
+					"%s\n%s\n%s\n%s",
+					s.buildSlackShipString(killmail.Victim.Ship),
+					s.buildSlackSystemString(killmail.System),
+					killmail.KillmailTime.Format("2006-01-02 15:04:05"),
+					humanize.Comma(int64(killmail.Victim.DamageTaken)),
+				),
+				false,
+				false,
+			),
 		},
 		goslack.NewAccessory(
 			goslack.NewImageBlockElement(
@@ -226,16 +244,39 @@ func (s *service) processMessage(msg Message) {
 	victimDetailSectionBlock := goslack.NewSectionBlock(
 		nil,
 		[]*goslack.TextBlockObject{
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*Victim*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackVictimString(killmail.Victim), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*ValueDropped*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", humanize.Comma(int64(killmail.DroppedValue))), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*ValueDestroyed*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", humanize.Comma(int64(killmail.DestroyedValue))), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*Total Value*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", humanize.Comma(int64(killmail.TotalValue))), false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, "*AWOX, Solo, Gank?*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackKilltypeString(killmail), false, false),
+			goslack.NewTextBlockObject(
+				goslack.MarkdownType,
+				fmt.Sprintf(
+					"%s\n%s\n%s\n%s",
+					"*Victim*",
+					"*ValueDropped*",
+					"*ValueDestroyed*",
+					"*Total Value*",
+				),
+				false,
+				false,
+			),
+			goslack.NewTextBlockObject(
+				goslack.MarkdownType,
+				fmt.Sprintf(
+					"%s\n%s\n%s\n%s",
+					s.buildSlackVictimString(killmail.Victim),
+					fmt.Sprintf(
+						"%s ISK",
+						humanize.Comma(int64(killmail.DroppedValue)),
+					),
+					fmt.Sprintf(
+						"%s ISK",
+						humanize.Comma(int64(killmail.DestroyedValue)),
+					),
+					fmt.Sprintf(
+						"%s ISK",
+						humanize.Comma(int64(killmail.TotalValue)),
+					),
+				),
+				false,
+				false,
+			),
 		},
 		goslack.NewAccessory(
 			goslack.NewImageBlockElement(
@@ -288,13 +329,23 @@ func (s *service) processMessage(msg Message) {
 		},
 	}
 
-	webhookMessage := goslack.WebhookMessage{
-		Attachments: []goslack.Attachment{attachment},
+	b, err := json.Marshal(attachment)
+	if err != nil {
+		loggerFunc(err, msg).Error("failed to build payload for webhook")
+		return
 	}
 
-	err = slack.PostWebhookContext(ctx, s.config.SlackNotifierWebhookURL, &webhookMessage)
+	body := bytes.NewBuffer(b)
+
+	response, err := http.Post(s.config.SlackNotifierWebhookURL, "application/json", body)
 	if err != nil {
-		s.logger.WithError(err).Error("encountered error posting message to webhook")
+		loggerFunc(err, msg).Error("failed to make request to slack webhook")
+		return
+	}
+
+	if response.StatusCode > 200 {
+		data, _ := ioutil.ReadAll(response.Body)
+		loggerFunc(err, msg).WithField("data", data).Error("webhook request to slack failed")
 	}
 
 }
@@ -358,20 +409,4 @@ func (s *service) buildSlackVictimImageString(victim *neo.KillmailVictim) string
 	}
 
 	return fmt.Sprintf(format, "corporations", victim.CorporationID.Uint64, "logo", 128)
-}
-
-func (s *service) buildSlackKilltypeString(killmail *neo.Killmail) string {
-
-	if killmail.IsAwox {
-		return "AWOX"
-	}
-	if killmail.IsSolo {
-		return "Solo"
-	}
-	if killmail.IsNPC {
-		return "NPC"
-	}
-
-	return "N/A"
-
 }
