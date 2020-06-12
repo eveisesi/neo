@@ -20,6 +20,7 @@ func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Ki
 
 	result, err := s.redis.Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		s.logger.WithError(err).WithField("key", key).Error("failed to fetch km from redis")
 		return nil, err
 	}
 
