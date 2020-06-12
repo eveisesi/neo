@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/oauth2"
 )

@@ -13,7 +13,7 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/volatiletech/null"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/pkg/errors"
 )
 
@@ -250,15 +250,15 @@ func (s *service) trackESICallStatusCode(code int) {
 
 	switch n := code; {
 	case n == http.StatusOK:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_OK, input)
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_OK, &input)
 	case n == http.StatusNotModified:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, input)
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, &input)
 	case n == 420:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, input)
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
 	case n >= 400 && n < 500:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_4XX, input)
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_4XX, &input)
 	case n > 500:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_5XX, input)
+		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_5XX, &input)
 	}
 
 }

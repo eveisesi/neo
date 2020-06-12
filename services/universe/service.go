@@ -5,7 +5,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/esi"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 )
 
 type Service interface {

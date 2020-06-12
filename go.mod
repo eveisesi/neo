@@ -14,6 +14,7 @@ require (
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/go-openapi/strfmt v0.19.5 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible
+	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/protobuf v1.3.2 // indirect

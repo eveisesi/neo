@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -152,7 +152,7 @@ func (s *service) handleHashes(hashes map[string]string) {
 	// Start the dispatch iterator
 	dispatched := 0
 
-	members := make([]redis.Z, 0)
+	members := make([]*redis.Z, 0)
 
 	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
@@ -171,7 +171,7 @@ func (s *service) handleHashes(hashes map[string]string) {
 
 		dispatched++
 
-		members = append(members, redis.Z{Score: 1, Member: msg})
+		members = append(members, &redis.Z{Score: 1, Member: msg})
 		if len(members) >= 250 {
 			_, err := s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 			if err != nil {
@@ -180,7 +180,7 @@ func (s *service) handleHashes(hashes map[string]string) {
 				// Sleep for a second to see if this helps
 				time.Sleep(time.Second)
 			}
-			members = make([]redis.Z, 0)
+			members = make([]*redis.Z, 0)
 		}
 
 	}

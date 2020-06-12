@@ -6,7 +6,7 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/tracker"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
 )
 

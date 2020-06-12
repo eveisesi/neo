@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/99designs/gqlgen/handler"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/inancgumus/screen"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/pkg/errors"

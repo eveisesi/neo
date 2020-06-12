@@ -12,7 +12,7 @@ import (
 	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )

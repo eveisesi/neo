@@ -16,7 +16,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/universe"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
 	goslack "github.com/slack-go/slack"
 )

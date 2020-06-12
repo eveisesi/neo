@@ -8,7 +8,7 @@ import (
 
 	"github.com/eveisesi/neo"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -77,7 +77,7 @@ func (s *service) handleWSSPayload(msg []byte) {
 		return
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 1, Member: string(payload)}).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 1, Member: string(payload)}).Result()
 	if err != nil {
 		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
 		return

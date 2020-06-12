@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/korovkin/limiter"
 	"github.com/sirupsen/logrus"
 )
@@ -85,7 +85,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 0, Member: message})
 		return
 	}
 
@@ -95,7 +95,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).WithError(err).Error("unexpected response code from esi")
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 0, Member: message})
 		return
 	}
 

@@ -29,7 +29,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/eveisesi/neo/mysql"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v7"
 	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
@@ -91,11 +91,8 @@ func New() *App {
 	logger.Info("successfully pinged db server")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:               cfg.RedisAddr,
-		MaxRetries:         3,
-		ReadTimeout:        time.Second * 5,
-		IdleTimeout:        time.Minute * 1,
-		IdleCheckFrequency: time.Second * 30,
+		Addr:       cfg.RedisAddr,
+		MaxRetries: 3,
 	})
 
 	logger.Info("pinging redis server")
