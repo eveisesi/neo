@@ -571,3 +571,13 @@ func addSecStatusColumnToCharactersTable(db *sqlx.DB) error {
 	_, err := db.Exec(query)
 	return err
 }
+
+func dropMemberCountColumnFromAlliancesTable(db *sqlx.DB) error {
+	query := `
+		ALTER TABLE alliances
+			DROP COLUMN member_count;
+	`
+
+	_, err := db.Exec(query)
+	return err
+}

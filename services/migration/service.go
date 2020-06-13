@@ -191,6 +191,11 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 		migration: addSecStatusColumnToCharactersTable,
 	})
 
+	migrations = append(migrations, migration{
+		name:      "dropMemberCountColumnFromAlliancesTable",
+		migration: dropMemberCountColumnFromAlliancesTable,
+	})
+
 	return &service{
 		db:         db,
 		logger:     logger,
@@ -226,8 +231,7 @@ func (s *service) Run() {
 			return
 		}
 		if run {
-
-			time.Sleep(time.Millisecond * 250)
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
 
