@@ -40,6 +40,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Alliance() AllianceResolver
 	Character() CharacterResolver
 	Constellation() ConstellationResolver
 	Corporation() CorporationResolver
@@ -59,15 +60,17 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Alliance struct {
-		ID     func(childComplexity int) int
-		Name   func(childComplexity int) int
-		Ticker func(childComplexity int) int
+		ID          func(childComplexity int) int
+		MemberCount func(childComplexity int) int
+		Name        func(childComplexity int) int
+		Ticker      func(childComplexity int) int
 	}
 
 	Character struct {
-		Corporation func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
+		Corporation    func(childComplexity int) int
+		ID             func(childComplexity int) int
+		Name           func(childComplexity int) int
+		SecurityStatus func(childComplexity int) int
 	}
 
 	Constellation struct {
@@ -171,16 +174,21 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AllianceByAllianceID       func(childComplexity int, id int) int
-		CharacterByCharacterID     func(childComplexity int, id int) int
-		CorporationByCorporationID func(childComplexity int, id int) int
-		Killmail                   func(childComplexity int, id int, hash string) int
-		KillmailRecent             func(childComplexity int, page *int) int
-		KillmailsByEntityID        func(childComplexity int, entity models.Entity, id int, page *int) int
-		MvByEntityID               func(childComplexity int, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) int
-		QueryPlaceholder           func(childComplexity int) int
-		Search                     func(childComplexity int, term string) int
-		TypeByTypeID               func(childComplexity int, id int) int
+		AllianceByAllianceID           func(childComplexity int, id int) int
+		CategoryByGroupID              func(childComplexity int, id int) int
+		CharacterByCharacterID         func(childComplexity int, id int) int
+		ConstellationByConstellationID func(childComplexity int, id int) int
+		CorporationByCorporationID     func(childComplexity int, id int) int
+		GroupByGroupID                 func(childComplexity int, id int) int
+		Killmail                       func(childComplexity int, id int, hash string) int
+		KillmailRecent                 func(childComplexity int, page *int) int
+		KillmailsByEntityID            func(childComplexity int, entity models.Entity, id int, page *int) int
+		MvByEntityID                   func(childComplexity int, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) int
+		QueryPlaceholder               func(childComplexity int) int
+		RegionByRegionID               func(childComplexity int, id int) int
+		Search                         func(childComplexity int, term string) int
+		SolarSystemBySolarSystemID     func(childComplexity int, id int) int
+		TypeByTypeID                   func(childComplexity int, id int) int
 	}
 
 	Region struct {
@@ -244,6 +252,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type AllianceResolver interface {
+	MemberCount(ctx context.Context, obj *neo.Alliance) (int, error)
+}
 type CharacterResolver interface {
 	Corporation(ctx context.Context, obj *neo.Character) (*neo.Corporation, error)
 }
@@ -292,6 +303,11 @@ type QueryResolver interface {
 	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
 	Search(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
 	TypeByTypeID(ctx context.Context, id int) (*neo.Type, error)
+	GroupByGroupID(ctx context.Context, id int) (*neo.TypeGroup, error)
+	CategoryByGroupID(ctx context.Context, id int) (*neo.TypeCategory, error)
+	SolarSystemBySolarSystemID(ctx context.Context, id int) (*neo.SolarSystem, error)
+	ConstellationByConstellationID(ctx context.Context, id int) (*neo.Constellation, error)
+	RegionByRegionID(ctx context.Context, id int) (*neo.Region, error)
 }
 type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
@@ -325,6 +341,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Alliance.ID(childComplexity), true
+
+	case "Alliance.memberCount":
+		if e.complexity.Alliance.MemberCount == nil {
+			break
+		}
+
+		return e.complexity.Alliance.MemberCount(childComplexity), true
 
 	case "Alliance.name":
 		if e.complexity.Alliance.Name == nil {
@@ -360,6 +383,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Character.Name(childComplexity), true
+
+	case "Character.securityStatus":
+		if e.complexity.Character.SecurityStatus == nil {
+			break
+		}
+
+		return e.complexity.Character.SecurityStatus(childComplexity), true
 
 	case "Constellation.factionID":
 		if e.complexity.Constellation.FactionID == nil {
@@ -905,6 +935,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.AllianceByAllianceID(childComplexity, args["id"].(int)), true
 
+	case "Query.categoryByGroupID":
+		if e.complexity.Query.CategoryByGroupID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_categoryByGroupID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.CategoryByGroupID(childComplexity, args["id"].(int)), true
+
 	case "Query.characterByCharacterID":
 		if e.complexity.Query.CharacterByCharacterID == nil {
 			break
@@ -917,6 +959,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.CharacterByCharacterID(childComplexity, args["id"].(int)), true
 
+	case "Query.constellationByConstellationID":
+		if e.complexity.Query.ConstellationByConstellationID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_constellationByConstellationID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ConstellationByConstellationID(childComplexity, args["id"].(int)), true
+
 	case "Query.corporationByCorporationID":
 		if e.complexity.Query.CorporationByCorporationID == nil {
 			break
@@ -928,6 +982,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.CorporationByCorporationID(childComplexity, args["id"].(int)), true
+
+	case "Query.groupByGroupID":
+		if e.complexity.Query.GroupByGroupID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_groupByGroupID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GroupByGroupID(childComplexity, args["id"].(int)), true
 
 	case "Query.killmail":
 		if e.complexity.Query.Killmail == nil {
@@ -984,6 +1050,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.QueryPlaceholder(childComplexity), true
 
+	case "Query.regionByRegionID":
+		if e.complexity.Query.RegionByRegionID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_regionByRegionID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RegionByRegionID(childComplexity, args["id"].(int)), true
+
 	case "Query.search":
 		if e.complexity.Query.Search == nil {
 			break
@@ -995,6 +1073,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Search(childComplexity, args["term"].(string)), true
+
+	case "Query.solarSystemBySolarSystemID":
+		if e.complexity.Query.SolarSystemBySolarSystemID == nil {
+			break
+		}
+
+		args, err := ec.field_Query_solarSystemBySolarSystemID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.SolarSystemBySolarSystemID(childComplexity, args["id"].(int)), true
 
 	case "Query.typeByTypeID":
 		if e.complexity.Query.TypeByTypeID == nil {
@@ -1330,6 +1420,7 @@ type Alliance @goModel(model: "github.com/eveisesi/neo.Alliance") {
     id: Int!
     name: String!
     ticker: String!
+    memberCount: Int!
 }
 `},
 	&ast.Source{Name: "graphql/schema/character.graphql", Input: `extend type Query {
@@ -1339,6 +1430,8 @@ type Alliance @goModel(model: "github.com/eveisesi/neo.Alliance") {
 type Character @goModel(model: "github.com/eveisesi/neo.Character") {
     id: Int!
     name: String!
+    securityStatus: Float!
+        @goField(forceResolver: false, name: "security_status")
 
     corporation: Corporation!
 }
@@ -1476,7 +1569,7 @@ type KillmailPosition
 `},
 	&ast.Source{Name: "graphql/schema/schema.graphql", Input: `directive @goModel(model: String) on OBJECT | INPUT_OBJECT
 
-directive @goField(forceResolver: Boolean) on FIELD_DEFINITION
+directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION
 
 type Query {
     queryPlaceholder: Boolean!
@@ -1502,6 +1595,11 @@ type SearchableEntity
 `},
 	&ast.Source{Name: "graphql/schema/universe.graphql", Input: `extend type Query {
     typeByTypeID(id: Int!): Type!
+    groupByGroupID(id: Int!): TypeGroup!
+    categoryByGroupID(id: Int!): TypeCategory!
+    solarSystemBySolarSystemID(id: Int!): SolarSystem!
+    constellationByConstellationID(id: Int!): Constellation!
+    regionByRegionID(id: Int!): Region!
 }
 
 type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
@@ -1603,6 +1701,20 @@ func (ec *executionContext) field_Query_allianceByAllianceID_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_categoryByGroupID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_characterByCharacterID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1617,7 +1729,35 @@ func (ec *executionContext) field_Query_characterByCharacterID_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_constellationByConstellationID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_corporationByCorporationID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_groupByGroupID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
@@ -1743,6 +1883,20 @@ func (ec *executionContext) field_Query_mvByEntityID_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_regionByRegionID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -1754,6 +1908,20 @@ func (ec *executionContext) field_Query_search_args(ctx context.Context, rawArgs
 		}
 	}
 	args["term"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_solarSystemBySolarSystemID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1918,6 +2086,43 @@ func (ec *executionContext) _Alliance_ticker(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Alliance_memberCount(ctx context.Context, field graphql.CollectedField, obj *neo.Alliance) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Alliance",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Alliance().MemberCount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Character_id(ctx context.Context, field graphql.CollectedField, obj *neo.Character) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -1990,6 +2195,43 @@ func (ec *executionContext) _Character_name(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Character_securityStatus(ctx context.Context, field graphql.CollectedField, obj *neo.Character) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Character",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SecurityStatus, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(float64)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFloat2float64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Character_corporation(ctx context.Context, field graphql.CollectedField, obj *neo.Character) (ret graphql.Marshaler) {
@@ -5181,6 +5423,226 @@ func (ec *executionContext) _Query_typeByTypeID(ctx context.Context, field graph
 	return ec.marshalNType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_groupByGroupID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_groupByGroupID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GroupByGroupID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.TypeGroup)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTypeGroup2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeGroup(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_categoryByGroupID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_categoryByGroupID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().CategoryByGroupID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.TypeCategory)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNTypeCategory2ᚖgithubᚗcomᚋeveisesiᚋneoᚐTypeCategory(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_solarSystemBySolarSystemID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_solarSystemBySolarSystemID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().SolarSystemBySolarSystemID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.SolarSystem)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNSolarSystem2ᚖgithubᚗcomᚋeveisesiᚋneoᚐSolarSystem(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_constellationByConstellationID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_constellationByConstellationID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().ConstellationByConstellationID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Constellation)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNConstellation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_regionByRegionID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_regionByRegionID_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RegionByRegionID(rctx, args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*neo.Region)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNRegion2ᚖgithubᚗcomᚋeveisesiᚋneoᚐRegion(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -7752,18 +8214,32 @@ func (ec *executionContext) _Alliance(ctx context.Context, sel ast.SelectionSet,
 		case "id":
 			out.Values[i] = ec._Alliance_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			out.Values[i] = ec._Alliance_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "ticker":
 			out.Values[i] = ec._Alliance_ticker(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "memberCount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Alliance_memberCount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -7793,6 +8269,11 @@ func (ec *executionContext) _Character(ctx context.Context, sel ast.SelectionSet
 			}
 		case "name":
 			out.Values[i] = ec._Character_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "securityStatus":
+			out.Values[i] = ec._Character_securityStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -8609,6 +9090,76 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_typeByTypeID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "groupByGroupID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_groupByGroupID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "categoryByGroupID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_categoryByGroupID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "solarSystemBySolarSystemID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_solarSystemBySolarSystemID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "constellationByConstellationID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_constellationByConstellationID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "regionByRegionID":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_regionByRegionID(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

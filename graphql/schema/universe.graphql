@@ -1,5 +1,10 @@
 extend type Query {
     typeByTypeID(id: Int!): Type!
+    groupByGroupID(id: Int!): TypeGroup!
+    categoryByGroupID(id: Int!): TypeCategory!
+    solarSystemBySolarSystemID(id: Int!): SolarSystem!
+    constellationByConstellationID(id: Int!): Constellation!
+    regionByRegionID(id: Int!): Region!
 }
 
 type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {

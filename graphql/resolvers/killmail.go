@@ -48,6 +48,14 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 			mails, err = r.Services.MVKByAllianceID(ctx, uint64(*id), *age, *limit)
 		case models.EntityShip:
 			mails, err = r.Services.MVKByShipID(ctx, uint64(*id), *age, *limit)
+		case models.EntityShipGroup:
+			mails, err = r.Services.MVKByShipGroupID(ctx, uint64(*id), *age, *limit)
+		case models.EntitySystem:
+			mails, err = r.Services.MVKBySystemID(ctx, uint64(*id), *age, *limit)
+		case models.EntityConstellation:
+			mails, err = r.Services.MVKByConstellationID(ctx, uint64(*id), *age, *limit)
+		case models.EntityRegion:
+			mails, err = r.Services.MVKByRegionID(ctx, uint64(*id), *age, *limit)
 		default:
 			return nil, errors.New("invalid entity")
 		}

@@ -56,8 +56,14 @@ type (
 		MVKByCorporationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 		MVLByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 		MVKByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 		MVLByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVLByShipGroupID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByShipGroupID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+
+		MVKBySystemID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByConstellationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKByRegionID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 	}
 
 	Message struct {
