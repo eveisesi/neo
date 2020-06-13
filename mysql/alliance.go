@@ -103,3 +103,16 @@ func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []u
 
 	return alliances, err
 }
+
+func (r *allianceRepository) MemberCountByAllianceID(ctx context.Context, id uint64) (int, error) {
+
+	query := `
+		SELECT SUM(member_count) as count FROM corporations where alliance_id = ?
+	`
+
+	var count int
+	err := r.db.GetContext(ctx, &count, query, id)
+
+	return count, err
+
+}

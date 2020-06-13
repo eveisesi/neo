@@ -15,6 +15,7 @@ type Service interface {
 	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Alliance, error)
 
 	UpdateExpired(ctx context.Context)
+	MemberCountByAllianceID(ctx context.Context, id uint64) (int, error)
 }
 
 type service struct {

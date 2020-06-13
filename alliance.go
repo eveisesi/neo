@@ -14,6 +14,7 @@ type AllianceRespository interface {
 	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*Alliance, error)
 
 	Expired(ctx context.Context) ([]*Alliance, error)
+	MemberCountByAllianceID(ctx context.Context, id uint64) (int, error)
 }
 
 // Alliance is an object representing the database table.
@@ -21,7 +22,6 @@ type Alliance struct {
 	ID               uint64      `boil:"id" json:"id"`
 	Name             string      `boil:"name" json:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker"`
-	MemberCount      uint64      `boil:"member_count" json:"member_count"`
 	IsClosed         bool        `boil:"is_closed" json:"is_closed"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
 	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`

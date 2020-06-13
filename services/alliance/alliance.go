@@ -196,3 +196,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 	}
 
 }
+
+func (s *service) MemberCountByAllianceID(ctx context.Context, id uint64) (int, error) {
+	return s.AllianceRespository.MemberCountByAllianceID(ctx, id)
+}
