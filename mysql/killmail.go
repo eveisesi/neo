@@ -165,7 +165,6 @@ func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*ne
 			k.total_value,
 			k.killmail_time
 		FROM killmails k
-		LEFT JOIN killmail_victim kv ON (k.id = kv.killmail_id)
 		WHERE 
 			(k.destroyed_value + k.dropped_value) != k.total_value
 		LIMIT ?
