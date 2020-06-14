@@ -41,7 +41,6 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	logFields["remote_addr"] = r.RemoteAddr
 
 	logFields["request_uri"] = r.URL.String()
-	logFields["request_query"] = r.URL.Query().Encode()
 
 	// data, err := ioutil.ReadAll(r.Body)
 	// if err != nil {

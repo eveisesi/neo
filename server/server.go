@@ -149,6 +149,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 	r.Handle("/query", handler.GraphQL(
 		schema,
 		handler.IntrospectionEnabled(true),
+		handler.EnablePersistedQueryCache(&GQLCache{s.redis, 30 * time.Minute}),
 	))
 
 	r.Handle("/query/playground", handler.Playground(

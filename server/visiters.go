@@ -40,7 +40,7 @@ func (s *Server) RateLimiter(next http.Handler) http.Handler {
 }
 
 func addVisitor(ip string) *rate.Limiter {
-	limiter := rate.NewLimiter(2, 5)
+	limiter := rate.NewLimiter(5, 10)
 	mtx.Lock()
 	visitors[ip] = &visitor{limiter, time.Now()}
 	mtx.Unlock()
