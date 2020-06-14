@@ -11,7 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/99designs/gqlgen/handler"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/go-redis/redis/v7"
 
 	core "github.com/eveisesi/neo/app"
@@ -146,16 +149,34 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		},
 	})
 
-	r.Handle("/query", handler.GraphQL(
-		schema,
-		handler.IntrospectionEnabled(true),
-		handler.EnablePersistedQueryCache(&GQLCache{s.redis, 30 * time.Minute}),
-	))
+	gqlhandler := handler.New(schema)
+	gqlhandler.AddTransport(transport.GET{})
+	gqlhandler.AddTransport(transport.POST{})
+	gqlhandler.AddTransport(transport.Websocket{})
+	gqlhandler.Use(extension.Introspection{})
+	gqlhandler.Use(extension.AutomaticPersistedQuery{
+		Cache: &GQLCache{client: s.redis, ttl: time.Hour * 24},
+	})
 
-	r.Handle("/query/playground", handler.Playground(
-		"GraphQL Playground",
-		"/query",
-	))
+	gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		opCtx := graphql.GetOperationContext(ctx)
+
+		entry := s.logger.WithField("operationName", opCtx.Operation.Name)
+		for i, v := range opCtx.Variables {
+			entry = entry.WithField(fmt.Sprintf("var.%s", i), v)
+		}
+
+		entry.Println()
+
+		return next(ctx)
+	})
+
+	r.Handle("/query", gqlhandler)
+
+	// r.Handle("/query/playground", handler.Playground(
+	// 	"GraphQL Playground",
+	// 	"/query",
+	// ))
 
 	r.Get("/auth/state", s.handleGetState)
 	r.Post("/auth/token", s.handlePostCode)

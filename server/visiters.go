@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/vektah/gqlparser/gqlerror"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"golang.org/x/time/rate"
 )
 

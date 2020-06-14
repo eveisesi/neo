@@ -14,11 +14,11 @@ type GQLCache struct {
 	ttl    time.Duration
 }
 
-func (c *GQLCache) Add(ctx context.Context, hash string, query string) {
+func (c *GQLCache) Add(ctx context.Context, hash string, query interface{}) {
 	c.client.Set(fmt.Sprintf("%s:%s", neo.REDIS_GRAPHQL_APQ_CACHE, hash), query, c.ttl)
 }
 
-func (c *GQLCache) Get(ctx context.Context, hash string) (string, bool) {
+func (c *GQLCache) Get(ctx context.Context, hash string) (interface{}, bool) {
 
 	s, err := c.client.Get(hash).Result()
 	if err != nil {
