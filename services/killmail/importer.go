@@ -175,9 +175,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 				subItem.ParentID.SetValid(item.ID)
 				subItemValue := float64(0)
 				if item.Singleton != 2 {
-					subItemValue = 0.01
-				} else {
 					subItemValue = s.market.FetchTypePrice(item.ItemTypeID, date)
+				} else {
+					subItemValue = 0.01
 				}
 				itemTotal := subItemValue * float64(subItem.QuantityDestroyed.Uint64+subItem.QuantityDropped.Uint64)
 				totalValue = append(totalValue, itemTotal)
