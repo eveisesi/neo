@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/dustin/go-humanize"
+	"github.com/eveisesi/neo/tools"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
@@ -217,7 +217,7 @@ func (s *service) processMessage(msg Message) {
 					s.buildSlackShipString(killmail.Victim.Ship),
 					s.buildSlackSystemString(killmail.System),
 					killmail.KillmailTime.Format("2006-01-02 15:04:05"),
-					humanize.Comma(int64(killmail.Victim.DamageTaken)),
+					tools.AbbreviateNumber(float64(killmail.Victim.DamageTaken)),
 				),
 				false,
 				false,
@@ -263,15 +263,15 @@ func (s *service) processMessage(msg Message) {
 					s.buildSlackVictimString(killmail.Victim),
 					fmt.Sprintf(
 						"%s ISK",
-						humanize.Comma(int64(killmail.DroppedValue)),
+						tools.AbbreviateNumber(float64(killmail.DroppedValue)),
 					),
 					fmt.Sprintf(
 						"%s ISK",
-						humanize.Comma(int64(killmail.DestroyedValue)),
+						tools.AbbreviateNumber(float64(killmail.DestroyedValue)),
 					),
 					fmt.Sprintf(
 						"%s ISK",
-						humanize.Comma(int64(killmail.TotalValue)),
+						tools.AbbreviateNumber(float64(killmail.TotalValue)),
 					),
 				),
 				false,
@@ -301,11 +301,11 @@ func (s *service) processMessage(msg Message) {
 	}
 
 	systemActionButton := goslack.NewButtonBlockElement("view_system", "View System", goslack.NewTextBlockObject(goslack.PlainTextType, "View System", false, false))
-	systemActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/system/%d", killmail.SolarSystemID)
+	systemActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/systems/%d", killmail.SolarSystemID)
 	blockElementSlc = append(blockElementSlc, systemActionButton)
 
 	shipActionButton := goslack.NewButtonBlockElement("view_ship", "View Ship", goslack.NewTextBlockObject(goslack.PlainTextType, "View Ship", false, false))
-	shipActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/ship/%d", killmail.Victim.ShipTypeID)
+	shipActionButton.URL = fmt.Sprintf("https://neo.eveisesi.space/ships/%d", killmail.Victim.ShipTypeID)
 	blockElementSlc = append(blockElementSlc, shipActionButton)
 
 	actionSectionBlock := goslack.NewActionBlock(

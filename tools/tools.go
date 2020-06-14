@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -42,4 +43,16 @@ func IsGroupAllowed(id uint64) bool {
 	}
 
 	return false
+}
+
+func AbbreviateNumber(v float64) string {
+	suffix := []string{"", "K", "M", "B", "T"}
+	pos := 0
+
+	for v > 999 {
+		pos++
+		v = v / 1000
+	}
+
+	return fmt.Sprintf("%.2f%s\n", v, suffix[pos])
 }
