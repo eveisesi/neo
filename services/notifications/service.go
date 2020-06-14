@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/eveisesi/neo/tools"
 
@@ -198,30 +199,14 @@ func (s *service) processMessage(msg Message) {
 	killmailDetailSectionBlock := goslack.NewSectionBlock(
 		nil,
 		[]*goslack.TextBlockObject{
-			goslack.NewTextBlockObject(
-				goslack.MarkdownType,
-				fmt.Sprintf(
-					"%s\n%s\n%s\n%s",
-					"*Ship*",
-					"*System*",
-					"*Killtime*",
-					"*Damage Taken*",
-				),
-				false,
-				false,
-			),
-			goslack.NewTextBlockObject(
-				goslack.MarkdownType,
-				fmt.Sprintf(
-					"%s\n%s\n%s\n%s",
-					s.buildSlackShipString(killmail.Victim.Ship),
-					s.buildSlackSystemString(killmail.System),
-					killmail.KillmailTime.Format("2006-01-02 15:04:05"),
-					tools.AbbreviateNumber(float64(killmail.Victim.DamageTaken)),
-				),
-				false,
-				false,
-			),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*Ship*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackShipString(killmail.Victim.Ship), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*System*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackSystemString(killmail.System), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*Killtime*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, killmail.KillmailTime.Format("2006-01-02 15:04:05"), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*Damage Taken*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, strconv.FormatUint(killmail.Victim.DamageTaken, 10), false, false),
 		},
 		goslack.NewAccessory(
 			goslack.NewImageBlockElement(
@@ -244,39 +229,14 @@ func (s *service) processMessage(msg Message) {
 	victimDetailSectionBlock := goslack.NewSectionBlock(
 		nil,
 		[]*goslack.TextBlockObject{
-			goslack.NewTextBlockObject(
-				goslack.MarkdownType,
-				fmt.Sprintf(
-					"%s\n%s\n%s\n%s",
-					"*Victim*",
-					"*ValueDropped*",
-					"*ValueDestroyed*",
-					"*Total Value*",
-				),
-				false,
-				false,
-			),
-			goslack.NewTextBlockObject(
-				goslack.MarkdownType,
-				fmt.Sprintf(
-					"%s\n%s\n%s\n%s",
-					s.buildSlackVictimString(killmail.Victim),
-					fmt.Sprintf(
-						"%s ISK",
-						tools.AbbreviateNumber(float64(killmail.DroppedValue)),
-					),
-					fmt.Sprintf(
-						"%s ISK",
-						tools.AbbreviateNumber(float64(killmail.DestroyedValue)),
-					),
-					fmt.Sprintf(
-						"%s ISK",
-						tools.AbbreviateNumber(float64(killmail.TotalValue)),
-					),
-				),
-				false,
-				false,
-			),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*Victim*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, s.buildSlackVictimString(killmail.Victim), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*ValueDropped*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", tools.AbbreviateNumber(float64(killmail.DroppedValue))), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*ValueDestroyed*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", tools.AbbreviateNumber(float64(killmail.DestroyedValue))), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, "*Total Value*", false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, fmt.Sprintf("%s ISK", tools.AbbreviateNumber(float64(killmail.TotalValue))), false, false),
 		},
 		goslack.NewAccessory(
 			goslack.NewImageBlockElement(

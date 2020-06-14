@@ -171,12 +171,15 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		return next(ctx)
 	})
 
-	r.Handle("/query", gqlhandler)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
 
-	// r.Handle("/query/playground", handler.Playground(
-	// 	"GraphQL Playground",
-	// 	"/query",
-	// ))
+			next.ServeHTTP(w, r)
+		})
+	})
+
+	r.Handle("/query", gqlhandler)
 
 	r.Get("/auth/state", s.handleGetState)
 	r.Post("/auth/token", s.handlePostCode)
