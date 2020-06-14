@@ -179,7 +179,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				_, err = s.UpdateCharacter(ctx, character.ID, newCharacter)
 			default:
-				s.logger.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
+				s.logger.WithField("status_code", m.Code).WithField("character_id", character.ID).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {

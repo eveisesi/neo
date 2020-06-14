@@ -178,7 +178,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				_, err = s.UpdateAlliance(ctx, alliance.ID, newAlliance)
 			default:
-				s.logger.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
+				s.logger.WithField("status_code", m.Code).WithField("alliance_id", alliance.ID).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {
