@@ -319,7 +319,7 @@ func init() {
 			Action: func(c *cli.Context) error {
 				app := core.New()
 
-				app.Killmail.RecalculatorDispatcher(10000, 2000)
+				app.Killmail.RecalculatorDispatcher(20000, 5000)
 
 				return nil
 			},
