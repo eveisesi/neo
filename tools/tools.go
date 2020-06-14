@@ -54,5 +54,5 @@ func AbbreviateNumber(v float64) string {
 		v = v / 1000
 	}
 
-	return fmt.Sprintf("%.2f%s\n", v, suffix[pos])
+	return fmt.Sprintf("%.2f%s", v, suffix[pos])
 }
