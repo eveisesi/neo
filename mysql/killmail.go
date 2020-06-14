@@ -109,6 +109,22 @@ func (r *killmailRepository) Update(ctx context.Context, id uint64, hash string,
 
 }
 
+func (r *killmailRepository) UpdateWithTxn(ctx context.Context, txn neo.Transactioner, killmail *neo.Killmail) error {
+	var t = txn.(*transaction)
+	var bKillmail = new(boiler.Killmail)
+	err := copier.Copy(bKillmail, killmail)
+	if err != nil {
+		return errors.Wrap(err, "unable to copy killmail to orm")
+	}
+
+	_, err = bKillmail.Update(ctx, t, boil.Infer())
+	if err != nil {
+		return errors.Wrap(err, "unable to update killmail in db")
+	}
+
+	return errors.Wrap(err, "unable to copy orm to killmail")
+}
+
 func (r *killmailRepository) Exists(ctx context.Context, id uint64, hash string) (bool, error) {
 	return boiler.KillmailExists(ctx, r.db, id, hash)
 }
@@ -126,6 +142,38 @@ func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*
 			),
 		),
 	).Bind(ctx, r.db, &killmails)
+
+	return killmails, err
+
+}
+
+func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*neo.Killmail, error) {
+
+	query := `
+		SELECT 
+			k.id,
+			k.hash,
+			k.moon_id,
+			k.solar_system_id,
+			k.war_id,
+			k.is_npc,
+			k.is_awox,
+			k.is_solo,
+			k.dropped_value,
+			k.destroyed_value,
+			k.fitted_value,
+			k.total_value,
+			k.killmail_time
+		FROM killmails k
+		LEFT JOIN killmail_victim kv ON (k.id = kv.killmail_id)
+		WHERE 
+			(k.destroyed_value + k.dropped_value) != k.total_value
+		LIMIT ?
+	`
+
+	var killmails = make([]*neo.Killmail, 0)
+
+	err := r.db.SelectContext(ctx, &killmails, query, limit)
 
 	return killmails, err
 

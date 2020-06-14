@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/volatiletech/null"
@@ -71,13 +72,15 @@ func (d *Date) MarshalJSON() ([]byte, error) {
 }
 
 func (d *Date) Scan(v interface{}) error {
-
 	if v == nil {
 		*d = Date{time.Now()}
 		return nil
 	}
 
 	switch v := v.(type) {
+	case time.Time:
+		*d = Date{v}
+		return nil
 	case string:
 		t, e := time.Parse("2006-01-02", v)
 		if e != nil {
@@ -93,5 +96,6 @@ func (d *Date) Scan(v interface{}) error {
 }
 
 func (d *Date) Value() (driver.Value, error) {
+	fmt.Println("Value() called")
 	return d.Format("2006-01-02"), nil
 }

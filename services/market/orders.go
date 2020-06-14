@@ -19,7 +19,7 @@ var region = uint64(10000002)
 
 func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 
-	var price float64
+	var price float64 = 0.01
 
 	invType, err := s.universe.Type(context.Background(), id)
 	if err != nil {
@@ -50,30 +50,41 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 		return price
 	}
 
+	if !invType.Published {
+		return price
+	}
+
 	history, err := s.MarketRepository.HistoricalRecord(context.Background(), id, date, null.NewInt(33, true))
 	if err != nil {
 		return 0.00
 	}
 
+	// We need 33 records at least to do this correctly
 	neededData := 33
 	priceList := make([]*neo.HistoricalRecord, 0)
+	// We have more than enough
 	if len(history) >= neededData {
 		priceList = history
+		// Ok, do we don't have 33. Lets take what we can get
 	} else if len(history) > 0 {
 		priceList = history[0 : len(history)-1]
+		// Son of a bitch. Alright, let just make shit up then
 	} else {
 		priceList = append(priceList, &neo.HistoricalRecord{Price: 0.01})
 	}
 
+	// Sort it if it is sortable
 	if len(priceList) >= 2 {
 		sort.Slice(priceList, func(i, j int) bool {
 			return priceList[i].Price > priceList[j].Price
 		})
 	}
 
+	// Lets try to get rid of gouging and low cuts
 	if len(priceList) == neededData {
 		priceList = priceList[2:]
 		priceList = priceList[:len(priceList)-1]
+		// Fuck that, just take what we can get
 	} else if len(priceList) > 6 {
 		priceList = priceList[:len(priceList)-2]
 	}
@@ -83,14 +94,19 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 		total += v.Price
 	}
 
+	// Average it all up
 	avgPrice := total / float64(len(priceList))
 
+	// Is the average worthless?
 	if avgPrice <= 0.01 {
 		avgPrice = s.getBuildPrice(id, date)
 	}
 
+	// Is the average on this day in history greater than what we calculated
 	dateRecord := getPriceFromHistorySlice(history, date)
 	if dateRecord != nil && dateRecord.Price > avgPrice {
+
+		// Yes, well than take that instead of our calculated average
 		avgPrice = dateRecord.Price
 	}
 

@@ -24,6 +24,8 @@ type (
 		HistoryExporter(mindate, maxdate string) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
+		Recalculator(gLimit int64)
+		RecalculatorDispatcher(limit int64, otherlimit int64)
 
 		// Killmails
 		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)

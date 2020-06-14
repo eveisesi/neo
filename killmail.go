@@ -12,9 +12,11 @@ type KillmailRepository interface {
 	Create(ctx context.Context, killmail *Killmail) (*Killmail, error)
 	CreateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
 	Update(ctx context.Context, id uint64, hash string, killmail *Killmail) error
+	UpdateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) error
 
 	Exists(ctx context.Context, id uint64, hash string) (bool, error)
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
+	Recalculable(ctx context.Context, limit int) ([]*Killmail, error)
 
 	ByIDs(ctx context.Context, ids []uint64) ([]*Killmail, error)
 	ByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)

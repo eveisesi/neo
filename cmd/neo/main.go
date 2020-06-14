@@ -304,6 +304,26 @@ func init() {
 				return nil
 			},
 		},
+		cli.Command{
+			Name: "recalculate",
+			Action: func(c *cli.Context) error {
+				app := core.New()
+
+				app.Killmail.Recalculator(25)
+
+				return nil
+			},
+		},
+		cli.Command{
+			Name: "recalculable",
+			Action: func(c *cli.Context) error {
+				app := core.New()
+
+				app.Killmail.RecalculatorDispatcher(10000, 2000)
+
+				return nil
+			},
+		},
 	}
 }
 
