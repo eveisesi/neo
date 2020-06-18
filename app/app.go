@@ -256,8 +256,8 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 		Addr:         cfg.DBHost,
 		DBName:       cfg.DBName,
 		Timeout:      time.Second * 2,
-		ReadTimeout:  time.Second * 30,
-		WriteTimeout: time.Second * 30,
+		ReadTimeout:  time.Second * time.Duration(cfg.DBReadTimeout),
+		WriteTimeout: time.Second * time.Duration(cfg.DBWriteTimeout),
 		ParseTime:    true,
 
 		// Defaults

@@ -2,10 +2,12 @@ package neo
 
 type Config struct {
 	// db configuration
-	DBUser string `required:"true"`
-	DBPass string `required:"true"`
-	DBHost string `required:"true"`
-	DBName string `required:"true"`
+	DBUser         string `required:"true"`
+	DBPass         string `required:"true"`
+	DBHost         string `required:"true"`
+	DBName         string `required:"true"`
+	DBReadTimeout  int    `default:"30"`
+	DBWriteTimeout int    `default:"30"`
 
 	// logger configuration
 	LogLevel string `required:"true"`

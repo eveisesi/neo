@@ -149,30 +149,21 @@ func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*
 
 func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*neo.Killmail, error) {
 
-	query := `
-		SELECT 
-			k.id,
-			k.hash,
-			k.moon_id,
-			k.solar_system_id,
-			k.war_id,
-			k.is_npc,
-			k.is_awox,
-			k.is_solo,
-			k.dropped_value,
-			k.destroyed_value,
-			k.fitted_value,
-			k.total_value,
-			k.killmail_time
-		FROM killmails k
-		WHERE 
-			(k.destroyed_value + k.dropped_value) != k.total_value
-		LIMIT ?
-	`
+	mods := []qm.QueryMod{}
+	mods = append(mods,
+		qm.Where(
+			fmt.Sprintf(
+				"(%s + %s) != %s",
+				boiler.KillmailColumns.DestroyedValue,
+				boiler.KillmailColumns.DroppedValue,
+				boiler.KillmailColumns.TotalValue,
+			),
+		),
+	)
+	mods = append(mods, qm.Limit(1000))
 
 	var killmails = make([]*neo.Killmail, 0)
-
-	err := r.db.SelectContext(ctx, &killmails, query, limit)
+	err := boiler.Killmails(mods...).Bind(ctx, r.db, &killmails)
 
 	return killmails, err
 

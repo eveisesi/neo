@@ -3,6 +3,7 @@ package tools
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -55,4 +56,13 @@ func AbbreviateNumber(v float64) string {
 	}
 
 	return fmt.Sprintf("%.2f%s", v, suffix[pos])
+}
+
+func ToFixed(num float64, precision int) float64 {
+	b, e := strconv.ParseFloat(fmt.Sprintf(fmt.Sprintf("%%.%df", precision), num), 64)
+	if e != nil {
+		return 0.00
+	}
+
+	return b
 }

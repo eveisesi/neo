@@ -20,7 +20,8 @@ type service struct {
 
 type migration struct {
 	name      string
-	migration func(db *sqlx.DB) error
+	migration func() string
+	skip      bool
 }
 
 func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
@@ -29,171 +30,267 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 
 	// Register Alliances Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_alliances_table",
+		name:      "createAllianceTable",
 		migration: createAllianceTable,
+		skip:      true,
 	})
 
 	// Register Characters Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_characters_table",
+		name:      "createCharactersTable",
 		migration: createCharactersTable,
+		skip:      true,
 	})
 
 	// Register Corporations Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_corporations_table",
+		name:      "createCorporationsTable",
 		migration: createCorporationsTable,
+		skip:      true,
 	})
 
 	// Register Factions Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_factions_table",
+		name:      "createFactionsTable",
 		migration: createFactionsTable,
+		skip:      true,
 	})
 
 	// Register Blueprint Materials Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_blueprint_materials_table",
+		name:      "createBlueprintMaterialsTable",
 		migration: createBlueprintMaterialsTable,
+		skip:      true,
 	})
 
 	// Register Blueprint Products Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_blueprint_products_table",
+		name:      "createBlueprintProductsTable",
 		migration: createBlueprintProductsTable,
+		skip:      true,
 	})
 
 	// Register Regions Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_regions_table",
+		name:      "createRegionsTable",
 		migration: createRegionsTable,
+		skip:      true,
 	})
 
 	// Register Constellations Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_constellations_table",
+		name:      "createConstellationsTable",
 		migration: createConstellationsTable,
+		skip:      true,
 	})
 
 	// Register Solar Systems Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_solar_systems_table",
+		name:      "createSolarSystemsTable",
 		migration: createSolarSystemsTable,
+		skip:      true,
 	})
 
 	// Register Types Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_types_table",
+		name:      "createTypesTable",
 		migration: createTypesTable,
+		skip:      true,
 	})
 
 	// Register Type Attributes Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_type_attributes_table",
+		name:      "createTypeAttributesTable",
 		migration: createTypeAttributesTable,
+		skip:      true,
 	})
 
 	// Register Type Categories Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_type_categories_table",
+		name:      "createTypeCategoriesTable",
 		migration: createTypeCategoriesTable,
+		skip:      true,
 	})
 
 	// Register Type Flags Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_type_flags_table",
+		name:      "createTypeFlagsTable",
 		migration: createTypeFlagsTable,
+		skip:      true,
 	})
 
 	// Register Type Groups Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_type_groups_table",
+		name:      "createTypeGroupsTable",
 		migration: createTypeGroupsTable,
+		skip:      true,
 	})
 
 	// Register Killmails Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_killmails_table",
+		name:      "createKillmailsTable",
 		migration: createKillmailsTable,
+		skip:      true,
 	})
 
 	// Register Killmail Attackers Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_killmail_attackers_table",
+		name:      "createKillmailAttackersTable",
 		migration: createKillmailAttackersTable,
+		skip:      true,
 	})
 
 	// Register Killmail Items Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_killmail_items_table",
+		name:      "createKillmailItemsTable",
 		migration: createKillmailItemsTable,
+		skip:      true,
 	})
 
 	// Register Killmail Victim Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_killmail_victim_table",
+		name:      "createKillmailVictimTable",
 		migration: createKillmailVictimTable,
+		skip:      true,
 	})
 
 	// Register Prices Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_prices_table",
+		name:      "createPricesTable",
 		migration: createPricesTable,
+		skip:      true,
 	})
 
 	// Register Prices Built Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_prices_built_table",
+		name:      "createPricesBuiltTable",
 		migration: createPricesBuiltTable,
+		skip:      true,
 	})
 
 	// Register Tokens Table Migration
 	migrations = append(migrations, migration{
-		name:      "create_tokens_table",
+		name:      "createTokensTable",
 		migration: createTokensTable,
+		skip:      true,
 	})
 
 	// Register Alter Characters Add NoResponseCount And UpdatePriority Columns Table Migration
 	migrations = append(migrations, migration{
-		name:      "alter_characters_add_no_response_count_and_update_priority_columns",
+		name:      "alterCharactersAddNoResponseCountAndUpdatePriorityColumns",
 		migration: alterCharactersAddNoResponseCountAndUpdatePriorityColumns,
+		skip:      true,
 	})
 
 	// Register Alter Corporations Add NoResponseCount And UpdatePriority Columns Table Migration
 	migrations = append(migrations, migration{
-		name:      "alter_ccorporations_add_no_response_count_and_update_priority_columns",
+		name:      "alterCorporationsNoResponseCountAndUpdatePriorityColumns",
 		migration: alterCorporationsNoResponseCountAndUpdatePriorityColumns,
+		skip:      true,
 	})
 
 	// Register Alter Alliances Add NoResponseCount And UpdatePriority Columns Table Migration
 	migrations = append(migrations, migration{
-		name:      "alter_alliances_add_no_response_count_and_update_priority_columns",
+		name:      "alterAlliancesNoResponseCountAndUpdatePriorityColumns",
 		migration: alterAlliancesNoResponseCountAndUpdatePriorityColumns,
+		skip:      true,
 	})
 
 	migrations = append(migrations, migration{
-		name:      "alter_corporations_table_add_member_count_column",
+		name:      "alterCorporationsTableAddMemberCountColoumn",
 		migration: alterCorporationsTableAddMemberCountColoumn,
+		skip:      true,
 	})
 
 	migrations = append(migrations, migration{
-		name:      "alterTablesMakeEtagNullable",
-		migration: alterTablesMakeEtagNullable,
+		name:      "alterTableCharactersMakeEtagNullable",
+		migration: alterTableCharactersMakeEtagNullable,
+		skip:      true,
+	})
+
+	migrations = append(migrations, migration{
+		name:      "alterTableCorporationsMakeEtagNullable",
+		migration: alterTableCorporationsMakeEtagNullable,
+		skip:      true,
+	})
+
+	migrations = append(migrations, migration{
+		name:      "alterTableAlliancesMakeEtagNullable",
+		migration: alterTableAlliancesMakeEtagNullable,
+		skip:      true,
 	})
 
 	migrations = append(migrations, migration{
 		name:      "updateCorporationsSetEtagNULL",
 		migration: updateCorporationsSetEtagNULL,
+		skip:      true,
 	})
 
 	migrations = append(migrations, migration{
 		name:      "addSecStatusColumnToCharactersTable",
 		migration: addSecStatusColumnToCharactersTable,
+		skip:      true,
 	})
 
 	migrations = append(migrations, migration{
 		name:      "dropMemberCountColumnFromAlliancesTable",
 		migration: dropMemberCountColumnFromAlliancesTable,
+		skip:      true,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterPricesDropPriceDefault",
+		migration: alterPricesDropPriceDefault,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterPricesChangePricePercision",
+		migration: alterPricesChangePricePercision,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailsDropColumnDefaults",
+		migration: alterKillmailsDropColumnDefaults,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailsChangeValuePercision",
+		migration: alterKillmailsChangeValuePercision,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailAttackersDropColumnDefaults",
+		migration: alterKillmailAttackersDropColumnDefaults,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailAttackersChangeSecurityStatusPercision",
+		migration: alterKillmailAttackersChangeSecurityStatusPercision,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailItemsDropColumnDefaults",
+		migration: alterKillmailItemsDropColumnDefaults,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailItemsChangeItemValuePercision",
+		migration: alterKillmailItemsChangeItemValuePercision,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailVictimDropColumnDefaults",
+		migration: alterKillmailVictimDropColumnDefaults,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterKillmailVictimChangeShipValuePercision",
+		migration: alterKillmailVictimChangeShipValuePercision,
+		skip:      false,
+	})
+	migrations = append(migrations, migration{
+		name:      "alterCharacterChangeSecurityStatusToDecimal",
+		migration: alterCharacterChangeSecurityStatusToDecimal,
+		skip:      false,
 	})
 
 	return &service{
@@ -235,12 +332,14 @@ func (s *service) Run() {
 			continue
 		}
 
-		s.logger.WithField("migration", migration.name).Info("executing migration")
-		err = migration.migration(s.db)
-		if err != nil {
-			s.logger.WithError(err).WithField("migration", migration.name).Fatal("encountered error execution migration")
+		if !migration.skip {
+			s.logger.WithField("migration", migration.name).Info("executing migration")
+			_, err = s.db.Exec(migration.migration())
+			if err != nil {
+				s.logger.WithError(err).WithField("migration", migration.name).Fatal("encountered error execution migration")
+			}
+			s.logger.WithField("migration", migration.name).Info("migration executed successfully")
 		}
-		s.logger.WithField("migration", migration.name).Info("migration executed successfully")
 
 		s.logger.WithField("migration", migration.name).Info("registering migration")
 		err = s.registerMigration(migration.name)

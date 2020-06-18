@@ -129,7 +129,6 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	date := killmail.KillmailTime
 
-	var totalValue = make([]float64, 0)
 	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, date)
 	killmail.Victim.ShipValue = shipValue
 
@@ -207,20 +206,16 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		}
 	}
 
-	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
-	fittedValue += shipValue
-	totalValue = append(totalValue, shipValue)
-
-	sum := float64(0)
-	for _, v := range totalValue {
-		sum += v
-	}
-
 	err = txn.Commit()
 	if err != nil {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to commit transaction")
 		return
 	}
+
+	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
+	fittedValue += shipValue
+	destroyedValue += shipValue
+	sum := droppedValue + destroyedValue
 
 	killmail.IsAwox = s.calcIsAwox(ctx, killmail)
 	killmail.IsNPC = s.calcIsNPC(ctx, killmail)
@@ -405,7 +400,6 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		return
 	}
 
-	var totalValue = make([]float64, 0)
 	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, killmail.KillmailTime)
 	killmail.Victim.ShipValue = shipValue
 
@@ -492,10 +486,7 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
 	fittedValue += shipValue
 	destroyedValue += shipValue
-	sum := float64(0)
-	for _, v := range totalValue {
-		sum += v
-	}
+	sum := droppedValue + destroyedValue
 
 	killmail.DestroyedValue = destroyedValue
 	killmail.DroppedValue = droppedValue

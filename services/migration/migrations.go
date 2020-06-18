@@ -1,10 +1,7 @@
 package migration
 
-import "github.com/jmoiron/sqlx"
-
-func createAllianceTable(db *sqlx.DB) error {
-
-	query := `
+func createAllianceTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS alliances (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(255) NOT NULL,
@@ -19,15 +16,10 @@ func createAllianceTable(db *sqlx.DB) error {
 			KEY alliances_cached_until (cached_until)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createBlueprintMaterialsTable(db *sqlx.DB) error {
-
-	query := `
+func createBlueprintMaterialsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS blueprint_materials (
 			type_id bigint(20) unsigned NOT NULL,
 			activity_id bigint(20) unsigned NOT NULL,
@@ -40,13 +32,10 @@ func createBlueprintMaterialsTable(db *sqlx.DB) error {
 			KEY blueprint_materials_material_type_id (material_type_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
 }
 
-func createBlueprintProductsTable(db *sqlx.DB) error {
-	query := `
+func createBlueprintProductsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS blueprint_products (
 			type_id bigint(20) unsigned NOT NULL,
 			activity_id bigint(20) unsigned NOT NULL,
@@ -59,13 +48,10 @@ func createBlueprintProductsTable(db *sqlx.DB) error {
 			KEY blueprint_products_product_type_id (product_type_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
 }
 
-func createCharactersTable(db *sqlx.DB) error {
-	query := `
+func createCharactersTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS characters (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(255) NOT NULL,
@@ -80,14 +66,10 @@ func createCharactersTable(db *sqlx.DB) error {
 			INDEX characters_cached_until (cached_until)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
 }
 
-func createConstellationsTable(db *sqlx.DB) error {
-
-	query := `
+func createConstellationsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS constellations (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(100) NOT NULL,
@@ -101,15 +83,10 @@ func createConstellationsTable(db *sqlx.DB) error {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createCorporationsTable(db *sqlx.DB) error {
-
-	query := `
+func createCorporationsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS corporations (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(255) NOT NULL,
@@ -123,15 +100,10 @@ func createCorporationsTable(db *sqlx.DB) error {
 			KEY corporations_cached_until (cached_until)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createFactionsTable(db *sqlx.DB) error {
-
-	query := `
+func createFactionsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS factions (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(100) NOT NULL,
@@ -144,15 +116,10 @@ func createFactionsTable(db *sqlx.DB) error {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createKillmailsTable(db *sqlx.DB) error {
-
-	query := `
+func createKillmailsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS killmails (
 			id bigint(20) unsigned NOT NULL,
 			hash varchar(255) NOT NULL,
@@ -175,15 +142,11 @@ func createKillmailsTable(db *sqlx.DB) error {
 			KEY solar_system_id (solar_system_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createKillmailAttackersTable(db *sqlx.DB) error {
+func createKillmailAttackersTable() string {
 
-	query := `
+	return `
 		CREATE TABLE IF NOT EXISTS killmail_attackers (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			killmail_id bigint(20) unsigned NOT NULL,
@@ -207,14 +170,10 @@ func createKillmailAttackersTable(db *sqlx.DB) error {
 			CONSTRAINT killmail_attackers_killmail_id_killmails_id_foreign_key FOREIGN KEY (killmail_id) REFERENCES killmails (id) ON DELETE CASCADE ON UPDATE CASCADE
 		) ENGINE=InnoDB AUTO_INCREMENT=5552301 DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createKillmailItemsTable(db *sqlx.DB) error {
-	query := `
+func createKillmailItemsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS killmail_items (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			parent_id bigint(20) unsigned DEFAULT NULL,
@@ -236,14 +195,10 @@ func createKillmailItemsTable(db *sqlx.DB) error {
 			CONSTRAINT killmail_items_killmail_id_killmails_id_foreign_key FOREIGN KEY (killmail_id) REFERENCES killmails (id) ON DELETE CASCADE ON UPDATE CASCADE
 		) ENGINE=InnoDB AUTO_INCREMENT=17910512 DEFAULT CHARSET=utf8;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createKillmailVictimTable(db *sqlx.DB) error {
-	query := `
+func createKillmailVictimTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS killmail_victim (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			killmail_id bigint(20) unsigned NOT NULL,
@@ -267,14 +222,10 @@ func createKillmailVictimTable(db *sqlx.DB) error {
 			CONSTRAINT killmail_victim_killmail_id_killmails_id_foreign_key FOREIGN KEY (killmail_id) REFERENCES killmails (id) ON DELETE CASCADE ON UPDATE CASCADE
 		) ENGINE=InnoDB AUTO_INCREMENT=1337219 DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createPricesTable(db *sqlx.DB) error {
-	query := `
+func createPricesTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS prices (
 			type_id bigint(20) unsigned NOT NULL,
 			date date NOT NULL,
@@ -285,14 +236,10 @@ func createPricesTable(db *sqlx.DB) error {
 			KEY date (date)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createPricesBuiltTable(db *sqlx.DB) error {
-	query := `
+func createPricesBuiltTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS prices_built (
 			type_id bigint(20) unsigned NOT NULL,
 			date date NOT NULL,
@@ -302,14 +249,10 @@ func createPricesBuiltTable(db *sqlx.DB) error {
 			PRIMARY KEY (type_id,date)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createRegionsTable(db *sqlx.DB) error {
-	query := `
+func createRegionsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS regions (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(100) NOT NULL,
@@ -322,14 +265,10 @@ func createRegionsTable(db *sqlx.DB) error {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createSolarSystemsTable(db *sqlx.DB) error {
-	query := `	
+func createSolarSystemsTable() string {
+	return `	
 		CREATE TABLE IF NOT EXISTS solar_systems (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(100) NOT NULL,
@@ -347,14 +286,10 @@ func createSolarSystemsTable(db *sqlx.DB) error {
 			KEY ix_mapSolarSystems_security (security)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTokensTable(db *sqlx.DB) error {
-	query := `
+func createTokensTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS tokens (
 			id bigint(20) unsigned NOT NULL,
 			main bigint(20) unsigned NOT NULL,
@@ -370,14 +305,10 @@ func createTokensTable(db *sqlx.DB) error {
 			KEY disabled (disabled)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTypesTable(db *sqlx.DB) error {
-	query := `	
+func createTypesTable() string {
+	return `	
 		CREATE TABLE IF NOT EXISTS types (
 			id bigint(20) unsigned NOT NULL,
 			group_id bigint(20) unsigned NOT NULL,
@@ -392,14 +323,10 @@ func createTypesTable(db *sqlx.DB) error {
 			KEY market_group_id (market_group_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTypeAttributesTable(db *sqlx.DB) error {
-	query := `	
+func createTypeAttributesTable() string {
+	return `	
 		CREATE TABLE IF NOT EXISTS type_attributes (
 			type_id bigint(20) unsigned NOT NULL,
 			attribute_id bigint(20) unsigned NOT NULL,
@@ -409,14 +336,10 @@ func createTypeAttributesTable(db *sqlx.DB) error {
 			PRIMARY KEY (type_id,attribute_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTypeCategoriesTable(db *sqlx.DB) error {
-	query := `	
+func createTypeCategoriesTable() string {
+	return `	
 		CREATE TABLE IF NOT EXISTS type_categories (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(255) NOT NULL,
@@ -426,14 +349,10 @@ func createTypeCategoriesTable(db *sqlx.DB) error {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTypeFlagsTable(db *sqlx.DB) error {
-	query := `
+func createTypeFlagsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS type_flags (
 			id bigint(20) unsigned NOT NULL,
 			name varchar(200) NOT NULL,
@@ -443,14 +362,10 @@ func createTypeFlagsTable(db *sqlx.DB) error {
 			PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func createTypeGroupsTable(db *sqlx.DB) error {
-	query := `
+func createTypeGroupsTable() string {
+	return `
 		CREATE TABLE IF NOT EXISTS type_groups (
 			id bigint(20) unsigned NOT NULL,
 			category_id bigint(20) unsigned NOT NULL,
@@ -462,122 +377,160 @@ func createTypeGroupsTable(db *sqlx.DB) error {
 			KEY ix_invGroups_categoryID (category_id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 	  `
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func alterCharactersAddNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
-
-	query := `
+func alterCharactersAddNoResponseCountAndUpdatePriorityColumns() string {
+	return `
 		ALTER TABLE characters
 			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER faction_id,
 			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func alterCorporationsNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
-
-	query := `
+func alterCorporationsNoResponseCountAndUpdatePriorityColumns() string {
+	return `
 		ALTER TABLE corporations
 			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER alliance_id,
 			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func alterAlliancesNoResponseCountAndUpdatePriorityColumns(db *sqlx.DB) error {
-
-	query := `
+func alterAlliancesNoResponseCountAndUpdatePriorityColumns() string {
+	return `
 		ALTER TABLE alliances
 			ADD COLUMN not_modified_count INT UNSIGNED NOT NULL DEFAULT '0' AFTER is_closed,
 			ADD COLUMN update_priority INT UNSIGNED NOT NULL DEFAULT '0' AFTER not_modified_count;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func alterCorporationsTableAddMemberCountColoumn(db *sqlx.DB) error {
-
-	query := `
+func alterCorporationsTableAddMemberCountColoumn() string {
+	return `
 		ALTER TABLE corporations
 			ADD COLUMN member_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER ticker;
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func alterTablesMakeEtagNullable(db *sqlx.DB) error {
-
-	query := `
+func alterTableCharactersMakeEtagNullable() string {
+	return `
 		ALTER TABLE characters
 			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
 	`
-	_, err := db.Exec(query)
-	if err != nil {
-		return err
-	}
+}
 
-	query = `
+func alterTableCorporationsMakeEtagNullable() string {
+	return `
 		ALTER TABLE corporations
 			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
 	`
+}
 
-	_, err = db.Exec(query)
-	if err != nil {
-		return err
-	}
-
-	query = `
+func alterTableAlliancesMakeEtagNullable() string {
+	return `
 		ALTER TABLE alliances
 			CHANGE COLUMN etag etag VARCHAR(255) NULL AFTER update_priority;
 	`
-
-	_, err = db.Exec(query)
-	return err
-
 }
 
-func updateCorporationsSetEtagNULL(db *sqlx.DB) error {
-
-	query := `
+func updateCorporationsSetEtagNULL() string {
+	return `
 		UPDATE corporations SET etag = NULL
 	`
-
-	_, err := db.Exec(query)
-	return err
-
 }
 
-func addSecStatusColumnToCharactersTable(db *sqlx.DB) error {
-
-	query := `
+func addSecStatusColumnToCharactersTable() string {
+	return `
 		ALTER TABLE characters
 			ADD COLUMN security_status DOUBLE NOT NULL DEFAULT '0.00' AFTER name;
 	`
-
-	_, err := db.Exec(query)
-	return err
 }
 
-func dropMemberCountColumnFromAlliancesTable(db *sqlx.DB) error {
-	query := `
+func dropMemberCountColumnFromAlliancesTable() string {
+	return `
 		ALTER TABLE alliances
 			DROP COLUMN member_count;
 	`
+}
 
-	_, err := db.Exec(query)
-	return err
+func alterPricesDropPriceDefault() string {
+	return `
+		ALTER TABLE prices
+			ALTER price DROP DEFAULT;
+	`
+}
+
+func alterPricesChangePricePercision() string {
+	return `
+		ALTER TABLE prices
+			CHANGE COLUMN price price DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT 0.00 AFTER date;
+			
+	`
+}
+
+func alterKillmailsDropColumnDefaults() string {
+	return `
+		ALTER TABLE killmails
+			ALTER dropped_value DROP DEFAULT,
+			ALTER destroyed_value DROP DEFAULT,
+			ALTER fitted_value DROP DEFAULT,
+			ALTER total_value DROP DEFAULT;
+	`
+}
+
+func alterKillmailsChangeValuePercision() string {
+	return `
+		ALTER TABLE killmails
+			CHANGE COLUMN dropped_value dropped_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER is_solo,
+			CHANGE COLUMN destroyed_value destroyed_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER dropped_value,
+			CHANGE COLUMN fitted_value fitted_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER destroyed_value,
+			CHANGE COLUMN total_value total_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER fitted_value;
+	`
+}
+
+func alterKillmailAttackersDropColumnDefaults() string {
+	return `
+		ALTER TABLE killmail_attackers
+			ALTER security_status DROP DEFAULT;
+	`
+}
+
+func alterKillmailAttackersChangeSecurityStatusPercision() string {
+	return `
+		ALTER TABLE killmail_attackers
+			CHANGE COLUMN security_status security_status DECIMAL(4,2) NOT NULL AFTER final_blow;
+	`
+}
+
+func alterKillmailItemsDropColumnDefaults() string {
+	return `
+		ALTER TABLE killmail_items
+			ALTER item_value DROP DEFAULT;
+	`
+}
+
+func alterKillmailItemsChangeItemValuePercision() string {
+	return `
+		ALTER TABLE killmail_items
+			CHANGE COLUMN item_value item_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER quantity_dropped;
+	`
+}
+
+func alterKillmailVictimDropColumnDefaults() string {
+	return `
+		ALTER TABLE killmail_victim
+			ALTER ship_value DROP DEFAULT;
+	`
+}
+
+func alterKillmailVictimChangeShipValuePercision() string {
+	return `
+		ALTER TABLE killmail_victim
+			CHANGE COLUMN ship_value ship_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER ship_type_id;
+	`
+}
+
+func alterCharacterChangeSecurityStatusToDecimal() string {
+	return `
+		ALTER TABLE characters
+			CHANGE COLUMN security_status security_status DECIMAL(4,2) NOT NULL DEFAULT '0' AFTER name;
+	`
 }

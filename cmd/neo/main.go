@@ -309,19 +309,44 @@ func init() {
 			Action: func(c *cli.Context) error {
 				app := core.New()
 
-				app.Killmail.Recalculator(25)
+				workers := c.Int64("workers")
+
+				app.Killmail.Recalculator(workers)
 
 				return nil
+			},
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "workers",
+					Usage: "Number of Go Routines to that should be used to process messages.",
+					Value: 10,
+				},
 			},
 		},
 		cli.Command{
 			Name: "recalculable",
 			Action: func(c *cli.Context) error {
+
 				app := core.New()
 
-				app.Killmail.RecalculatorDispatcher(20000, 5000)
+				limit := c.Int64("limit")
+				trigger := c.Int64("trigger")
+
+				app.Killmail.RecalculatorDispatcher(limit, trigger)
 
 				return nil
+			},
+			Flags: []cli.Flag{
+				cli.IntFlag{
+					Name:  "limit",
+					Usage: "number of records to fetch from the db",
+					Value: 10000,
+				},
+				cli.IntFlag{
+					Name:  "trigger",
+					Usage: "this number of less must remain on the queue before triggering another pull from the db",
+					Value: 2500,
+				},
 			},
 		},
 	}
