@@ -466,65 +466,10 @@ func alterPricesChangePricePercision() string {
 	`
 }
 
-func alterKillmailsDropColumnDefaults() string {
-	return `
-		ALTER TABLE killmails
-			ALTER dropped_value DROP DEFAULT,
-			ALTER destroyed_value DROP DEFAULT,
-			ALTER fitted_value DROP DEFAULT,
-			ALTER total_value DROP DEFAULT;
-	`
-}
-
-func alterKillmailsChangeValuePercision() string {
-	return `
-		ALTER TABLE killmails
-			CHANGE COLUMN dropped_value dropped_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER is_solo,
-			CHANGE COLUMN destroyed_value destroyed_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER dropped_value,
-			CHANGE COLUMN fitted_value fitted_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER destroyed_value,
-			CHANGE COLUMN total_value total_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER fitted_value;
-	`
-}
-
-func alterKillmailAttackersDropColumnDefaults() string {
-	return `
-		ALTER TABLE killmail_attackers
-			ALTER security_status DROP DEFAULT;
-	`
-}
-
 func alterKillmailAttackersChangeSecurityStatusPercision() string {
 	return `
 		ALTER TABLE killmail_attackers
 			CHANGE COLUMN security_status security_status DECIMAL(4,2) NOT NULL AFTER final_blow;
-	`
-}
-
-func alterKillmailItemsDropColumnDefaults() string {
-	return `
-		ALTER TABLE killmail_items
-			ALTER item_value DROP DEFAULT;
-	`
-}
-
-func alterKillmailItemsChangeItemValuePercision() string {
-	return `
-		ALTER TABLE killmail_items
-			CHANGE COLUMN item_value item_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER quantity_dropped;
-	`
-}
-
-func alterKillmailVictimDropColumnDefaults() string {
-	return `
-		ALTER TABLE killmail_victim
-			ALTER ship_value DROP DEFAULT;
-	`
-}
-
-func alterKillmailVictimChangeShipValuePercision() string {
-	return `
-		ALTER TABLE killmail_victim
-			CHANGE COLUMN ship_value ship_value DECIMAL(18,2) UNSIGNED NOT NULL DEFAULT '0.00' AFTER ship_type_id;
 	`
 }
 

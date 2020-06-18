@@ -237,56 +237,25 @@ func NewService(db *sqlx.DB, logger *logrus.Logger) Service {
 		migration: dropMemberCountColumnFromAlliancesTable,
 		skip:      true,
 	})
+
 	migrations = append(migrations, migration{
 		name:      "alterPricesDropPriceDefault",
 		migration: alterPricesDropPriceDefault,
-		skip:      false,
+		skip:      true,
 	})
+
 	migrations = append(migrations, migration{
 		name:      "alterPricesChangePricePercision",
 		migration: alterPricesChangePricePercision,
-		skip:      false,
+		skip:      true,
 	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailsDropColumnDefaults",
-		migration: alterKillmailsDropColumnDefaults,
-		skip:      false,
-	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailsChangeValuePercision",
-		migration: alterKillmailsChangeValuePercision,
-		skip:      false,
-	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailAttackersDropColumnDefaults",
-		migration: alterKillmailAttackersDropColumnDefaults,
-		skip:      false,
-	})
+
 	migrations = append(migrations, migration{
 		name:      "alterKillmailAttackersChangeSecurityStatusPercision",
 		migration: alterKillmailAttackersChangeSecurityStatusPercision,
 		skip:      false,
 	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailItemsDropColumnDefaults",
-		migration: alterKillmailItemsDropColumnDefaults,
-		skip:      false,
-	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailItemsChangeItemValuePercision",
-		migration: alterKillmailItemsChangeItemValuePercision,
-		skip:      false,
-	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailVictimDropColumnDefaults",
-		migration: alterKillmailVictimDropColumnDefaults,
-		skip:      false,
-	})
-	migrations = append(migrations, migration{
-		name:      "alterKillmailVictimChangeShipValuePercision",
-		migration: alterKillmailVictimChangeShipValuePercision,
-		skip:      false,
-	})
+
 	migrations = append(migrations, migration{
 		name:      "alterCharacterChangeSecurityStatusToDecimal",
 		migration: alterCharacterChangeSecurityStatusToDecimal,
