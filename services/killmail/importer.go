@@ -146,6 +146,9 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail attackers into db")
 	}
 
+	destroyedValue := float64(0)
+	droppedValue := float64(0)
+
 	for _, item := range killmail.Victim.Items {
 		item.KillmailID = killmail.ID
 		itemValue := float64(0)
@@ -155,19 +158,19 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			itemValue = 0.01
 		}
 
-		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
-		totalValue = append(totalValue, itemValue*float64(quantity))
-
 		item.ItemValue = itemValue
+		if item.QuantityDestroyed.Uint64 > 0 {
+			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint64)
+		}
+		if item.QuantityDropped.Uint64 > 0 {
+			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
+		}
 	}
 
 	_, err = s.items.CreateBulkWithTxn(ctx, txn, killmail.Victim.Items)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to insert items into db")
 	}
-
-	destroyedValue := float64(0)
-	droppedValue := float64(0)
 
 	for _, item := range killmail.Victim.Items {
 		if len(item.Items) > 0 {
@@ -180,16 +183,13 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 				} else {
 					subItemValue = 0.01
 				}
-				quantity := subItem.QuantityDestroyed.Uint64 + subItem.QuantityDropped.Uint64
-				itemTotal := subItemValue * float64(quantity)
-				totalValue = append(totalValue, itemTotal)
 				subItem.ItemValue = subItemValue
 
 				if subItem.QuantityDestroyed.Uint64 > 0 {
-					destroyedValue += itemTotal
+					destroyedValue += subItemValue * float64(subItem.QuantityDestroyed.Uint64)
 				}
 				if subItem.QuantityDropped.Uint64 > 0 {
-					droppedValue += itemTotal
+					droppedValue += subItemValue * float64(subItem.QuantityDropped.Uint64)
 				}
 			}
 
@@ -197,12 +197,6 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			if err != nil {
 				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered insert sub items")
 			}
-		}
-		if item.QuantityDestroyed.Uint64 > 0 {
-			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint64)
-		}
-		if item.QuantityDropped.Uint64 > 0 {
-			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
 		}
 	}
 
@@ -412,7 +406,6 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		entry.WithError(err).Error("failed to update killmail victim")
 		return
 	}
-	totalValue = append(totalValue, shipValue)
 
 	destroyedValue := float64(0)
 	droppedValue := float64(0)
@@ -426,8 +419,6 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 			itemValue = 0.01
 		}
 
-		quantity := item.QuantityDestroyed.Uint64 + item.QuantityDropped.Uint64
-		totalValue = append(totalValue, itemValue*float64(quantity))
 		if item.QuantityDestroyed.Uint64 > 0 {
 			destroyedValue += itemValue * float64(item.QuantityDestroyed.Uint64)
 		}
@@ -458,16 +449,13 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 					subItemValue = 0.01
 				}
 
-				quantity := subItem.QuantityDestroyed.Uint64 + subItem.QuantityDropped.Uint64
-				itemTotal := subItemValue * float64(quantity)
-				totalValue = append(totalValue, itemTotal)
 				subItem.ItemValue = subItemValue
 
 				if subItem.QuantityDestroyed.Uint64 > 0 {
-					destroyedValue += itemTotal
+					destroyedValue += subItemValue * float64(subItem.QuantityDestroyed.Uint64)
 				}
 				if subItem.QuantityDropped.Uint64 > 0 {
-					droppedValue += itemTotal
+					droppedValue += subItemValue * float64(subItem.QuantityDropped.Uint64)
 				}
 			}
 
