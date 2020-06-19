@@ -11,12 +11,12 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
-  recaldispatcher:
+  recalculable:
     image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
     network_mode: "host"
     command: ./neo recalculable --limit ${RECAL_QUEUE_LIMIT} --trigger ${RECAL_QUEUE_MINIMUM}
-    container_name: recalcuable
-    hostname: recalcuable
+    container_name: recalculable
+    hostname: recalculable
     env_file:
       - .env
     volumes:
@@ -25,8 +25,8 @@ services:
     image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
     network_mode: "host"
     command: ./neo recalculate --worker ${RECAL_NUM_WORKERS}
-    container_name: migration
-    hostname: migration
+    container_name: recalulator
+    hostname: recalulator
     env_file:
       - .env
     volumes:
