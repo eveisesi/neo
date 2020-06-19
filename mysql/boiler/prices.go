@@ -81,8 +81,8 @@ type priceL struct{}
 
 var (
 	priceAllColumns            = []string{"type_id", "date", "price", "created_at", "updated_at"}
-	priceColumnsWithoutDefault = []string{"type_id", "date", "price", "created_at", "updated_at"}
-	priceColumnsWithDefault    = []string{}
+	priceColumnsWithoutDefault = []string{"type_id", "date", "created_at", "updated_at"}
+	priceColumnsWithDefault    = []string{"price"}
 	pricePrimaryKeyColumns     = []string{"type_id", "date"}
 )
 
