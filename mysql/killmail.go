@@ -147,7 +147,7 @@ func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*
 
 }
 
-func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*neo.Killmail, error) {
+func (r *killmailRepository) Recalculable(ctx context.Context, limit int, after uint64) ([]*neo.Killmail, error) {
 
 	mods := []qm.QueryMod{}
 	mods = append(mods,
@@ -159,6 +159,8 @@ func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*ne
 				boiler.KillmailColumns.TotalValue,
 			),
 		),
+		boiler.KillmailWhere.ID.GT(after),
+		qm.OrderBy(fmt.Sprintf("%s ASC", boiler.KillmailColumns.ID)),
 	)
 	mods = append(mods, qm.Limit(limit))
 

@@ -336,6 +336,10 @@ func makeLogger(logLevel string) (*logrus.Logger, error) {
 		FullTimestamp: true,
 	})
 
+	// logger.SetFormatter(&logrus.JSONFormatter{
+	// 	PrettyPrint: true,
+	// })
+
 	return logger, err
 }
 

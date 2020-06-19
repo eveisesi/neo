@@ -4,10 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/tools"
 	"github.com/go-redis/redis/v7"
 	"github.com/korovkin/limiter"
 	"github.com/pkg/errors"
@@ -247,7 +249,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 
-func (s *service) RecalculatorDispatcher(limit int64, trigger int64) {
+func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 
 	for {
 
@@ -258,14 +260,14 @@ func (s *service) RecalculatorDispatcher(limit int64, trigger int64) {
 			continue
 		}
 
-		if count > trigger {
+		if count >= trigger {
 			time.Sleep(time.Second * 10)
 			continue
 		}
 
 		s.logger.Info("fetching killmail to recalculate")
 
-		killmails, err := s.killmails.Recalculable(context.Background(), int(limit))
+		killmails, err := s.killmails.Recalculable(context.Background(), int(limit), after)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			s.logger.WithError(err).Error("failed to fetch killmails")
 			return
@@ -278,10 +280,9 @@ func (s *service) RecalculatorDispatcher(limit int64, trigger int64) {
 
 		s.logger.WithField("killmails", len(killmails)).Info("killmails retrieved successfully")
 
-		for i, killmail := range killmails {
-			if i%100 == 0 {
-				s.logger.WithField("killmail_id", killmail.ID).Info("killmail id logging")
-			}
+		after = killmails[len(killmails)-1].ID
+
+		for _, killmail := range killmails {
 
 			msg := Message{
 				ID:   strconv.FormatUint(killmail.ID, 10),
@@ -301,7 +302,7 @@ func (s *service) RecalculatorDispatcher(limit int64, trigger int64) {
 			}
 		}
 
-		s.logger.Info("killmails dispatched successfully")
+		s.logger.WithField("after", after).Info("killmails dispatched successfully")
 	}
 
 }
@@ -477,12 +478,26 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
 	fittedValue += shipValue
 	destroyedValue += shipValue
-	sum := droppedValue + destroyedValue
+	sum := tools.ToFixed(droppedValue, 2) + tools.ToFixed(destroyedValue, 2)
+
+	entry.WithFields(logrus.Fields{
+		"old.Destroyed": fmt.Sprintf("%f", tools.ToFixed(killmail.DestroyedValue, 2)),
+		"old.Dropped":   fmt.Sprintf("%f", tools.ToFixed(killmail.DroppedValue, 2)),
+		"old.Fitted":    fmt.Sprintf("%f", tools.ToFixed(killmail.FittedValue, 2)),
+		"old.Total":     fmt.Sprintf("%f", tools.ToFixed(killmail.TotalValue, 2)),
+	}).Debug()
 
 	killmail.DestroyedValue = destroyedValue
 	killmail.DroppedValue = droppedValue
 	killmail.FittedValue = fittedValue
 	killmail.TotalValue = sum
+
+	entry.WithFields(logrus.Fields{
+		"new.Destroyed": fmt.Sprintf("%f", tools.ToFixed(killmail.DestroyedValue, 2)),
+		"new.Dropped":   fmt.Sprintf("%f", tools.ToFixed(killmail.DroppedValue, 2)),
+		"new.Fitted":    fmt.Sprintf("%f", tools.ToFixed(killmail.FittedValue, 2)),
+		"new.Total":     fmt.Sprintf("%f", tools.ToFixed(killmail.TotalValue, 2)),
+	}).Debug()
 
 	err = s.killmails.UpdateWithTxn(ctx, txn, killmail)
 	if err != nil {

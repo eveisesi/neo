@@ -305,7 +305,8 @@ func init() {
 			},
 		},
 		cli.Command{
-			Name: "recalculate",
+			Name:  "recalculate",
+			Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
 			Action: func(c *cli.Context) error {
 				app := core.New()
 
@@ -324,15 +325,17 @@ func init() {
 			},
 		},
 		cli.Command{
-			Name: "recalculable",
+			Name:  "recalculable",
+			Usage: "Finds Killmails where the DestroyedValue and the DroppedValue do not equal the TotalValue and dispatches them to a queue to have these properties recalculated",
 			Action: func(c *cli.Context) error {
 
 				app := core.New()
 
 				limit := c.Int64("limit")
 				trigger := c.Int64("trigger")
+				after := c.Uint64("after")
 
-				app.Killmail.RecalculatorDispatcher(limit, trigger)
+				app.Killmail.RecalculatorDispatcher(limit, trigger, after)
 
 				return nil
 			},
@@ -346,6 +349,11 @@ func init() {
 					Name:  "trigger",
 					Usage: "this number of less must remain on the queue before triggering another pull from the db",
 					Value: 2500,
+				},
+				cli.Int64Flag{
+					Name:  "after",
+					Usage: "Start at a specific killmail id",
+					Value: 0,
 				},
 			},
 		},

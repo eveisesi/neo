@@ -16,7 +16,7 @@ type KillmailRepository interface {
 
 	Exists(ctx context.Context, id uint64, hash string) (bool, error)
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
-	Recalculable(ctx context.Context, limit int) ([]*Killmail, error)
+	Recalculable(ctx context.Context, limit int, after uint64) ([]*Killmail, error)
 
 	ByIDs(ctx context.Context, ids []uint64) ([]*Killmail, error)
 	ByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
