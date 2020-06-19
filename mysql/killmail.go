@@ -160,7 +160,7 @@ func (r *killmailRepository) Recalculable(ctx context.Context, limit int) ([]*ne
 			),
 		),
 	)
-	mods = append(mods, qm.Limit(1000))
+	mods = append(mods, qm.Limit(limit))
 
 	var killmails = make([]*neo.Killmail, 0)
 	err := boiler.Killmails(mods...).Bind(ctx, r.db, &killmails)

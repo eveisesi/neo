@@ -247,7 +247,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 
-func (s *service) RecalculatorDispatcher(limit int64, otherlimit int64) {
+func (s *service) RecalculatorDispatcher(limit int64, trigger int64) {
 
 	for {
 
@@ -258,7 +258,7 @@ func (s *service) RecalculatorDispatcher(limit int64, otherlimit int64) {
 			continue
 		}
 
-		if count > otherlimit {
+		if count > trigger {
 			time.Sleep(time.Second * 10)
 			continue
 		}
@@ -278,7 +278,10 @@ func (s *service) RecalculatorDispatcher(limit int64, otherlimit int64) {
 
 		s.logger.WithField("killmails", len(killmails)).Info("killmails retrieved successfully")
 
-		for _, killmail := range killmails {
+		for i, killmail := range killmails {
+			if i%100 == 0 {
+				s.logger.WithField("killmail_id", killmail.ID).Info("killmail id logging")
+			}
 
 			msg := Message{
 				ID:   strconv.FormatUint(killmail.ID, 10),
@@ -318,7 +321,7 @@ func (s *service) Recalculator(gLimit int64) {
 
 		if count == 0 {
 			attempts++
-			if attempts >= 10 {
+			if attempts >= 100 {
 				s.logger.Info("done with recalculation")
 				break
 			}
@@ -729,21 +732,3 @@ func (s *service) calculatedFittedValue(items []*neo.KillmailItem) float64 {
 
 	return total
 }
-
-// func (s *service) Something() {
-
-// 	query := "
-// 	SELECT
-// 		k.id,
-// 		k.hash,
-// 		k.destroyed_value,
-// 		k.dropped_value,
-// 		kv.ship_value,
-// 		(k.destroyed_value + k.dropped_value + kv.ship_value) as calculated_value,
-// 		k.total_value
-// 	FROM killmails k
-// 	LEFT JOIN killmail_victim kv ON (k.id = kv.killmail_id)
-// 	WHERE total_value != 0 LIMIT 1000
-// 	"
-
-// }
