@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql/driver"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/volatiletech/null"
@@ -96,6 +95,5 @@ func (d *Date) Scan(v interface{}) error {
 }
 
 func (d *Date) Value() (driver.Value, error) {
-	fmt.Println("Value() called")
 	return d.Format("2006-01-02"), nil
 }
