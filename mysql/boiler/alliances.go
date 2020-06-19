@@ -27,7 +27,6 @@ type Alliance struct {
 	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
-	MemberCount      uint64      `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
 	IsClosed         bool        `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
 	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
@@ -44,7 +43,6 @@ var AllianceColumns = struct {
 	ID               string
 	Name             string
 	Ticker           string
-	MemberCount      string
 	IsClosed         string
 	NotModifiedCount string
 	UpdatePriority   string
@@ -56,7 +54,6 @@ var AllianceColumns = struct {
 	ID:               "id",
 	Name:             "name",
 	Ticker:           "ticker",
-	MemberCount:      "member_count",
 	IsClosed:         "is_closed",
 	NotModifiedCount: "not_modified_count",
 	UpdatePriority:   "update_priority",
@@ -159,7 +156,6 @@ var AllianceWhere = struct {
 	ID               whereHelperuint64
 	Name             whereHelperstring
 	Ticker           whereHelperstring
-	MemberCount      whereHelperuint64
 	IsClosed         whereHelperbool
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
@@ -171,7 +167,6 @@ var AllianceWhere = struct {
 	ID:               whereHelperuint64{field: "`alliances`.`id`"},
 	Name:             whereHelperstring{field: "`alliances`.`name`"},
 	Ticker:           whereHelperstring{field: "`alliances`.`ticker`"},
-	MemberCount:      whereHelperuint64{field: "`alliances`.`member_count`"},
 	IsClosed:         whereHelperbool{field: "`alliances`.`is_closed`"},
 	NotModifiedCount: whereHelperuint{field: "`alliances`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`alliances`.`update_priority`"},
@@ -198,9 +193,9 @@ func (*allianceR) NewStruct() *allianceR {
 type allianceL struct{}
 
 var (
-	allianceAllColumns            = []string{"id", "name", "ticker", "member_count", "is_closed", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
+	allianceAllColumns            = []string{"id", "name", "ticker", "is_closed", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
 	allianceColumnsWithoutDefault = []string{"id", "name", "ticker", "etag", "cached_until", "created_at", "updated_at"}
-	allianceColumnsWithDefault    = []string{"member_count", "is_closed", "not_modified_count", "update_priority"}
+	allianceColumnsWithDefault    = []string{"is_closed", "not_modified_count", "update_priority"}
 	alliancePrimaryKeyColumns     = []string{"id"}
 )
 
