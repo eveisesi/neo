@@ -63,8 +63,10 @@ func init() {
 				app := core.New()
 				maxdate := c.String("maxdate")
 				mindate := c.String("mindate")
+				threshold := c.Int64("threshold")
+				datehold := c.Bool("datehold")
 
-				err := app.Killmail.HistoryExporter(mindate, maxdate)
+				err := app.Killmail.HistoryExporter(mindate, maxdate, datehold, threshold)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
@@ -81,6 +83,14 @@ func init() {
 					Name:     "mindate",
 					Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
 					Required: true,
+				},
+				cli.BoolFlag{
+					Name:  "datehold",
+					Usage: "Hold after each date until the processing queue has reached a threshold. Threshold must be defined, else this command will be ignored",
+				},
+				cli.IntFlag{
+					Name:  "threshold",
+					Usage: "Threshold that the queue must be below process processing the next date",
 				},
 			},
 		},

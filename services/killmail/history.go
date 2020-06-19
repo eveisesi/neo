@@ -13,7 +13,8 @@ import (
 	"github.com/urfave/cli"
 )
 
-func (s *service) HistoryExporter(min, max string) error {
+func (s *service) HistoryExporter(min, max string, datehold bool, threshold int64) error {
+
 	// Attempt to fetch Current Date from Redis
 	current, err := s.redis.Get(neo.ZKB_HISTORY_DATE).Result()
 	if err != nil && err.Error() != "redis: nil" {
@@ -128,6 +129,21 @@ func (s *service) HistoryExporter(min, max string) error {
 		if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
 			s.redis.Del(neo.ZKB_HISTORY_DATE)
 			return nil
+		}
+
+		if datehold && threshold > 0 {
+			for {
+				count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+				if err != nil {
+					s.logger.WithError(err).Fatal("unable to get count of redis zset")
+				}
+
+				if count < threshold {
+					break
+				}
+
+				time.Sleep(time.Second)
+			}
 		}
 
 		time.Sleep(time.Millisecond * 500)

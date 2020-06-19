@@ -20,7 +20,7 @@ import (
 type (
 	Service interface {
 		// Business Appliances
-		HistoryExporter(mindate, maxdate string) error
+		HistoryExporter(mindate, maxdate string, datehold bool, threshold int64) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
 		Recalculator(gLimit int64)
