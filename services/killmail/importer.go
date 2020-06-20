@@ -57,6 +57,11 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		return
 	}
 
+	// Killmails we already know about an have processed come back as nil from the processor
+	if killmail == nil {
+		return
+	}
+
 	entry := s.logger.WithFields(logrus.Fields{
 		"id":     killmail.ID,
 		"hash":   killmail.Hash,
