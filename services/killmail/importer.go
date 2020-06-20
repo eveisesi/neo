@@ -126,17 +126,15 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		"hash": payload.Hash,
 	})
 
-	killmail, err := s.killmails.Killmail(ctx, payload.ID, payload.Hash)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	_, err = s.killmails.Killmail(ctx, payload.ID, payload.Hash)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			entry.Info("skipping existing killmail")
+			return nil, nil
+		}
 		entry.WithError(err).
 			Error("error encountered checking if killmail exists")
 		return nil, err
-
-	}
-
-	if killmail != nil {
-		entry.Info("skipping existing killmail")
-		return nil, nil
 	}
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
