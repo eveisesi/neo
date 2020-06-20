@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -150,6 +151,11 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("unexpected response code from esi")
+
+		if m.Code == http.StatusUnprocessableEntity {
+			s.redis.ZAdd(neo.ZKB_INVALID_HASH, &redis.Z{Score: float64(payload.ID), Member: message})
+			return nil, err
+		}
 		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return nil, err
 	}

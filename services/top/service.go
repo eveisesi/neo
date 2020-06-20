@@ -53,6 +53,9 @@ func (s *service) Run() error {
 
 		BackupQueue     int64
 		PrevBackupQueue int64
+
+		InvalidQueue     int64
+		PrevInvalidQueue int64
 	}{}
 	for {
 
@@ -100,6 +103,11 @@ func (s *service) Run() error {
 			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
 		}
 
+		params.InvalidQueue, err = s.redis.ZCount(neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch invalid hashes count"), 1)
+		}
+
 		tw.AppendRows(
 			[]table.Row{
 				table.Row{
@@ -139,7 +147,11 @@ func (s *service) Run() error {
 					),
 				},
 				table.Row{
-					"",
+					fmt.Sprintf(
+						"%d: Queue Invalid Hashes (%d)",
+						params.InvalidQueue,
+						params.InvalidQueue-params.PrevInvalidQueue,
+					),
 					fmt.Sprintf(
 						"%d: ESI HTTP 4XXs in last 5 minutes (%d)",
 						params.ESI4XX,
@@ -159,8 +171,6 @@ func (s *service) Run() error {
 
 		fmt.Println(tw.Render())
 
-		time.Sleep(time.Second * 2)
-
 		params.PrevESI200 = params.ESI200
 		params.PrevESI304 = params.ESI304
 		params.PrevESI420 = params.ESI420
@@ -169,5 +179,9 @@ func (s *service) Run() error {
 		params.PrevProcessingQueue = params.ProcessingQueue
 		params.PrevRecalculatingQueue = params.RecalculatingQueue
 		params.PrevBackupQueue = params.BackupQueue
+		params.PrevInvalidQueue = params.InvalidQueue
+
+		time.Sleep(time.Second * 2)
+
 	}
 }

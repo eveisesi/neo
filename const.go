@@ -44,6 +44,7 @@ const TQ_VIP_MODE = "esi:tq:vip"
 
 // ZKB_HISTORY_DATE Const
 const ZKB_HISTORY_DATE = "zkb:history:date"
+const ZKB_INVALID_HASH = "zkb:invalid" // zkb:invalid
 
 // Actual NEO keys now lol
 const REDIS_ALLIANCE = "neo:alliance:%d"
