@@ -103,4 +103,6 @@ func (s *service) uploadMessage(message []byte, workerID int, sleep int64) {
 
 	s.logger.WithFields(logrus.Fields{"id": envelope.ID, "hash": envelope.Hash}).Info("killmail successfully uploaded")
 
+	time.Sleep(time.Millisecond * time.Duration(sleep))
+
 }

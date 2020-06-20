@@ -47,6 +47,12 @@ func (s *service) Run() error {
 
 		ProcessingQueue     int64
 		PrevProcessingQueue int64
+
+		RecalculatingQueue     int64
+		PrevRecalculatingQueue int64
+
+		BackupQueue     int64
+		PrevBackupQueue int64
 	}{}
 	for {
 
@@ -84,6 +90,16 @@ func (s *service) Run() error {
 			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
 		}
 
+		params.RecalculatingQueue, err = s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+		}
+
+		params.BackupQueue, err = s.redis.ZCount(neo.QUEUES_KILLMAIL_BACKUP, "-inf", "+inf").Result()
+		if err != nil {
+			return cli.NewExitError(errors.Wrap(err, "failed to fetch failed esi calls"), 1)
+		}
+
 		tw.AppendRows(
 			[]table.Row{
 				table.Row{
@@ -99,7 +115,11 @@ func (s *service) Run() error {
 					),
 				},
 				table.Row{
-					"",
+					fmt.Sprintf(
+						"%d: Queue Recalculating (%d)",
+						params.RecalculatingQueue,
+						params.RecalculatingQueue-params.PrevRecalculatingQueue,
+					),
 					fmt.Sprintf(
 						"%d: ESI HTTP 304s in last 5 minutes (%d)",
 						params.ESI304,
@@ -107,7 +127,11 @@ func (s *service) Run() error {
 					),
 				},
 				table.Row{
-					"",
+					fmt.Sprintf(
+						"%d: Queue Backup (%d)",
+						params.BackupQueue,
+						params.BackupQueue-params.PrevBackupQueue,
+					),
 					fmt.Sprintf(
 						"%d: ESI HTTP 420s in last 5 minutes (%d)",
 						params.ESI420,
