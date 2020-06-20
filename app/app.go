@@ -9,10 +9,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+
 	"github.com/RediSearch/redisearch-go/redisearch"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
+	"github.com/eveisesi/neo/services/backup"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
@@ -48,6 +54,7 @@ type App struct {
 
 	ESI          esi.Service
 	Alliance     alliance.Service
+	Backup       backup.Service
 	Character    character.Service
 	Corporation  corporation.Service
 	Killmail     killmail.Service
@@ -223,6 +230,24 @@ func New() *App {
 		killmail,
 	)
 
+	spacesSession, e := session.NewSession(
+		&aws.Config{
+			Credentials: credentials.NewStaticCredentials(cfg.SpacesKey, cfg.SpacesSecret, ""),
+			Endpoint:    aws.String(cfg.SpacesEndpoint),
+			Region:      aws.String("us-east-1"),
+		},
+	)
+	if e != nil {
+		logger.WithError(err).Fatal("failed to create spaces session")
+	}
+
+	backup := backup.NewService(
+		cfg.SpacesBucket,
+		s3.New(spacesSession),
+		redisClient,
+		logger,
+	)
+
 	return &App{
 		Logger: logger,
 		DB:     db,
@@ -232,6 +257,7 @@ func New() *App {
 		Config: cfg,
 
 		Alliance:     alliance,
+		Backup:       backup,
 		Character:    character,
 		Corporation:  corporation,
 		Killmail:     killmail,

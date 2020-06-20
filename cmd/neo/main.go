@@ -57,6 +57,28 @@ func init() {
 			},
 		},
 		cli.Command{
+			Name:  "backup",
+			Usage: "Monitors a redis sorted set. As full kms populate the queue, backup pulls them off and pushes them to a DO space",
+			Action: func(c *cli.Context) error {
+
+				core.New().Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
+
+				return nil
+			},
+			Flags: []cli.Flag{
+				cli.Int64Flag{
+					Name:     "gLimit",
+					Usage:    "gLimit is the number of goroutines that the limiter should allow to be in flight at any one time",
+					Required: true,
+				},
+				cli.Int64Flag{
+					Name:     "gSleep",
+					Usage:    "gSleep is the number of milliseconds the limiter will sleep between launching go routines when a slot is available",
+					Required: true,
+				},
+			},
+		},
+		cli.Command{
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {

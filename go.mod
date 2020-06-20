@@ -6,6 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.11.3
 	github.com/DATA-DOG/go-sqlmock v1.4.1 // indirect
 	github.com/RediSearch/redisearch-go v1.0.0
+	github.com/aws/aws-sdk-go v1.32.6
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/friendsofgo/errors v0.9.2
@@ -39,8 +40,6 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/slack-go/slack v0.6.4
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v1.0.0 // indirect
-	github.com/spf13/viper v1.7.0 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect

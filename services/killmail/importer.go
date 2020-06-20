@@ -239,6 +239,26 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		}
 	}
 
+	if s.config.SpacesEnabled {
+		x, e := json.Marshal(killmail)
+		if e != nil {
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to marshal killmail for backup")
+			return
+		}
+
+		y, e := json.Marshal(neo.Envelope{
+			ID:       killmail.ID,
+			Hash:     killmail.Hash,
+			Killmail: x,
+		})
+		if e != nil {
+			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to marshal envelope for queue")
+			return
+		}
+
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
+	}
+
 	time.Sleep(time.Millisecond * time.Duration(sleep))
 }
 
@@ -246,7 +266,7 @@ func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 
 	for {
 
-		count, err := s.redis.ZCount(neo.QUEUE_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
 		if err != nil {
 			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
 			time.Sleep(time.Second * 2)
@@ -288,7 +308,7 @@ func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 				continue
 			}
 
-			_, err = s.redis.ZAdd(neo.QUEUE_KILLMAIL_RECALCULATE, &redis.Z{Score: float64(killmail.ID), Member: string(payload)}).Result()
+			_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_RECALCULATE, &redis.Z{Score: float64(killmail.ID), Member: string(payload)}).Result()
 			if err != nil {
 				s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to recalculating queue")
 				return
@@ -306,7 +326,7 @@ func (s *service) Recalculator(gLimit int64) {
 
 	attempts := 0
 	for {
-		count, err := s.redis.ZCount(neo.QUEUE_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
 		if err != nil {
 			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
 			time.Sleep(time.Second * 2)
@@ -326,7 +346,7 @@ func (s *service) Recalculator(gLimit int64) {
 
 		s.logger.WithField("messages", count).Info("processing recalculable messages")
 
-		results, err := s.redis.ZPopMax(neo.QUEUE_KILLMAIL_RECALCULATE, 1000).Result()
+		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_RECALCULATE, 1000).Result()
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
