@@ -106,8 +106,6 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
 	}
 
-	time.Sleep(time.Millisecond * time.Duration(sleep))
-
 }
 
 func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
@@ -126,15 +124,16 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		"hash": payload.Hash,
 	})
 
-	_, err = s.killmails.Killmail(ctx, payload.ID, payload.Hash)
+	exists, err := s.killmails.Exists(ctx, payload.ID, payload.Hash)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			entry.Info("skipping existing killmail")
-			return nil, nil
-		}
 		entry.WithError(err).
 			Error("error encountered checking if killmail exists")
 		return nil, err
+	}
+
+	if exists {
+		entry.Info("skipping existing killmail")
+		return nil, nil
 	}
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
