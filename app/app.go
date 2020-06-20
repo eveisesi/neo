@@ -51,6 +51,7 @@ type App struct {
 	Redis  *redis.Client
 	Client *http.Client
 	Config *neo.Config
+	Spaces *session.Session
 
 	ESI          esi.Service
 	Alliance     alliance.Service
@@ -255,6 +256,7 @@ func New() *App {
 		Client: client,
 		ESI:    esiClient,
 		Config: cfg,
+		Spaces: spacesSession,
 
 		Alliance:     alliance,
 		Backup:       backup,

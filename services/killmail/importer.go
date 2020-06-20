@@ -42,76 +42,134 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 			s.tracker.GateKeeper()
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
-				s.processMessage([]byte(message), workerID, gSleep)
+				s.handleMessage([]byte(message), workerID, gSleep)
 			})
 		}
 	}
 }
 
-func (s *service) processMessage(message []byte, workerID int, sleep int64) {
+func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
+
+	killmail, err := s.ProcessMessage(message)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to handle message")
+		return
+	}
+
+	entry := s.logger.WithFields(logrus.Fields{
+		"id":     killmail.ID,
+		"hash":   killmail.Hash,
+		"worker": workerID,
+	})
+
+	if s.config.SlackNotifierEnabled {
+		threshold := s.config.SlackNotifierValueThreshold * 1000000
+		if killmail.TotalValue >= float64(threshold) {
+			bytes, _ := json.Marshal(struct {
+				ID   uint64 `json:"id"`
+				Hash string `json:"hash"`
+			}{
+				ID:   killmail.ID,
+				Hash: killmail.Hash,
+			})
+
+			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
+			if err != nil {
+				entry.WithError(err).Error("failed to publish message")
+			}
+		}
+	}
+
+	if s.config.SpacesEnabled {
+		x, err := json.Marshal(killmail)
+		if err != nil {
+			entry.WithError(err).Error("failed to marshal killmail for backup")
+			return
+		}
+
+		y, err := json.Marshal(neo.Envelope{
+			ID:       killmail.ID,
+			Hash:     killmail.Hash,
+			Killmail: x,
+		})
+		if err != nil {
+			entry.WithError(err).Error("failed to marshal envelope for queue")
+			return
+		}
+
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
+	}
+
+	time.Sleep(time.Millisecond * time.Duration(sleep))
+
+}
+
+func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 
 	var ctx = context.Background()
 
 	var payload Message
 	err := json.Unmarshal(message, &payload)
 	if err != nil {
-		s.logger.WithField("message", string(message)).Fatal("failed to unmarhal message into message struct")
+		s.logger.WithField("message", string(message)).Error("failed to unmarhal message into message struct")
+		return nil, err
 	}
 
-	killmailLoggerFields := logrus.Fields{
-		"id":     payload.ID,
-		"hash":   payload.Hash,
-		"worker": workerID,
+	entry := s.logger.WithFields(logrus.Fields{
+		"id":   payload.ID,
+		"hash": payload.Hash,
+	})
+
+	killmail, err := s.killmails.Killmail(ctx, payload.ID, payload.Hash)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		entry.WithError(err).
+			Error("error encountered checking if killmail exists")
+		return nil, err
+
 	}
 
-	exists, err := s.killmails.Exists(ctx, payload.ID, payload.Hash)
-	if err != nil {
-		s.logger.WithError(err).
-			WithFields(killmailLoggerFields).Error("error encountered checking if killmail exists")
-	}
-
-	if exists {
-		s.logger.WithFields(killmailLoggerFields).Info("skipping existing killmail")
-		return
+	if killmail != nil {
+		entry.Info("skipping existing killmail")
+		return nil, nil
 	}
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
 	if m.IsError() {
-		s.logger.WithError(m.Msg).WithFields(killmailLoggerFields).WithFields(logrus.Fields{
+		entry.WithError(m.Msg).WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
 		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
-		return
+		return nil, err
 	}
 
 	if m.Code != 200 {
-		s.logger.WithFields(killmailLoggerFields).WithFields(logrus.Fields{
+		entry.WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
 			"query": m.Query,
-		}).WithError(err).Error("unexpected response code from esi")
+		}).Error("unexpected response code from esi")
 		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
-		return
+		return nil, err
 	}
 
-	killmailLoggerFields["killTime"] = killmail.KillmailTime.Format("2006-01-02 15:04:05")
+	entry = entry.WithField("killmail", killmail.KillmailTime.Format("2006-01-02 15:04:05"))
 
 	killmail.Hash = payload.Hash
 
-	s.primeKillmailNodes(ctx, killmail, killmailLoggerFields)
+	s.primeKillmailNodes(ctx, killmail, entry)
 
 	txn, err := s.txn.Begin()
 	if err != nil {
 		s.logger.WithError(err).Error("failed to start transaction")
-		return
+		return nil, err
 	}
 
 	_, err = s.killmails.CreateWithTxn(ctx, txn, killmail)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail into db")
-		return
+		entry.WithError(err).Error("error encountered inserting killmail into db")
+		return nil, err
 	}
 
 	killmail.Victim.KillmailID = killmail.ID
@@ -129,7 +187,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	_, err = s.victim.CreateWithTxn(ctx, txn, killmail.Victim)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail victim into db")
+		entry.WithError(err).Error("error encountered inserting killmail victim into db")
 	}
 
 	for _, attacker := range killmail.Attackers {
@@ -138,7 +196,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	_, err = s.attackers.CreateBulkWithTxn(ctx, txn, killmail.Attackers)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail attackers into db")
+		entry.WithError(err).Error("error encountered inserting killmail attackers into db")
 	}
 
 	destroyedValue := float64(0)
@@ -190,15 +248,15 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 			_, err = s.items.CreateBulkWithTxn(ctx, txn, item.Items)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered insert sub items")
+				entry.WithError(err).Error("error encountered insert sub items")
 			}
 		}
 	}
 
 	err = txn.Commit()
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to commit transaction")
-		return
+		entry.WithError(err).Error("failed to commit transaction")
+		return nil, err
 	}
 
 	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
@@ -216,50 +274,13 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 
 	err = s.killmails.Update(ctx, killmail.ID, killmail.Hash, killmail)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("error encountered inserting killmail victim into db")
+		entry.WithError(err).Error("error encountered inserting killmail victim into db")
+		return nil, err
 	}
 
-	s.logger.WithFields(killmailLoggerFields).Info("killmail successfully imported")
+	entry.Info("killmail successfully imported")
 
-	if s.config.SlackNotifierEnabled {
-		threshold := s.config.SlackNotifierValueThreshold * 1000000
-		if killmail.TotalValue >= float64(threshold) {
-			bytes, _ := json.Marshal(struct {
-				ID   uint64 `json:"id"`
-				Hash string `json:"hash"`
-			}{
-				ID:   killmail.ID,
-				Hash: killmail.Hash,
-			})
-
-			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
-			if err != nil {
-				s.logger.WithError(err).Error("failed to publish message")
-			}
-		}
-	}
-
-	if s.config.SpacesEnabled {
-		x, e := json.Marshal(killmail)
-		if e != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to marshal killmail for backup")
-			return
-		}
-
-		y, e := json.Marshal(neo.Envelope{
-			ID:       killmail.ID,
-			Hash:     killmail.Hash,
-			Killmail: x,
-		})
-		if e != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to marshal envelope for queue")
-			return
-		}
-
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
-	}
-
-	time.Sleep(time.Millisecond * time.Duration(sleep))
+	return killmail, nil
 }
 
 func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
@@ -397,7 +418,7 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		return
 	}
 
-	s.primeKillmailNodes(ctx, killmail, logrus.Fields{})
+	s.primeKillmailNodes(ctx, killmail, entry)
 
 	txn, err := s.txn.Begin()
 	if err != nil {
@@ -631,10 +652,10 @@ func (s *service) calcIsSolo(ctx context.Context, killmail *neo.Killmail) bool {
 
 }
 
-func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail, killmailLoggerFields logrus.Fields) {
+func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail, entry *logrus.Entry) {
 	_, err = s.universe.SolarSystem(ctx, killmail.SolarSystemID)
 	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime solar system")
+		entry.WithError(err).Error("failed to prime solar system")
 	}
 
 	victim := killmail.Victim
@@ -643,27 +664,27 @@ func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail
 		if victim.AllianceID.Valid {
 			_, err := s.alliance.Alliance(ctx, victim.AllianceID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim alliance")
+				entry.WithError(err).Error("failed to prime victim alliance")
 			}
 		}
 
 		if victim.CorporationID.Valid {
 			_, err := s.corporation.Corporation(ctx, victim.CorporationID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
+				entry.WithError(err).Error("failed to prime victim character")
 			}
 		}
 
 		if victim.CharacterID.Valid {
 			_, err := s.character.Character(ctx, victim.CharacterID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim character")
+				entry.WithError(err).Error("failed to prime victim character")
 			}
 		}
 
 		_, err = s.universe.Type(ctx, victim.ShipTypeID)
 		if err != nil {
-			s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime victim ship type")
+			entry.WithError(err).Error("failed to prime victim ship type")
 		}
 	}
 
@@ -671,35 +692,35 @@ func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail
 		if attacker.AllianceID.Valid {
 			_, err := s.alliance.Alliance(ctx, attacker.AllianceID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker alliance")
+				entry.WithError(err).Error("failed to prime attacker alliance")
 			}
 		}
 
 		if attacker.CorporationID.Valid {
 			_, err := s.corporation.Corporation(ctx, attacker.CorporationID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
+				entry.WithError(err).Error("failed to prime attacker character")
 			}
 		}
 
 		if attacker.CharacterID.Valid {
 			_, err := s.character.Character(ctx, attacker.CharacterID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker character")
+				entry.WithError(err).Error("failed to prime attacker character")
 			}
 		}
 
 		if attacker.ShipTypeID.Valid {
 			_, err = s.universe.Type(ctx, attacker.ShipTypeID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
+				entry.WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
 
 		if attacker.WeaponTypeID.Valid {
 			_, err = s.universe.Type(ctx, attacker.WeaponTypeID.Uint64)
 			if err != nil {
-				s.logger.WithFields(killmailLoggerFields).WithError(err).Error("failed to prime attacker ship type")
+				entry.WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
 	}
