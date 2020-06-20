@@ -82,7 +82,7 @@ services:
         image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
-        command: ./neo backup
+        command: ./neo backup --gLimit ${BACKUP_PROCESS_LIMIT} --gSleep ${BACKUP_PROCESS_SLEEP}
         container_name: backup
         hostname: backup
         env_file:
