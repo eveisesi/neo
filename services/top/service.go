@@ -167,5 +167,7 @@ func (s *service) Run() error {
 		params.PrevESI4XX = params.ESI4XX
 		params.PrevESI5XX = params.ESI5XX
 		params.PrevProcessingQueue = params.ProcessingQueue
+		params.PrevRecalculatingQueue = params.RecalculatingQueue
+		params.PrevBackupQueue = params.BackupQueue
 	}
 }
