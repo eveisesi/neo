@@ -78,3 +78,14 @@ services:
             - .env
         volumes:
             - ./logs:/app/logs
+    backup:
+        image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo backup
+        container_name: backup
+        hostname: backup
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs

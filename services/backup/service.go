@@ -92,6 +92,7 @@ func (s *service) uploadMessage(message []byte, workerID int, sleep int64) {
 		Body:          body,
 		ACL:           aws.String("public-read"),
 		ContentLength: aws.Int64(body.Size()),
+		ContentType:   aws.String("application/json"),
 	}
 
 	_, err = s.client.PutObject(&object)
