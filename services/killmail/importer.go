@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -34,7 +33,7 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 			continue
 		}
 
-		results, err := s.redis.ZPopMin(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
+		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
@@ -65,13 +64,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 		"worker": workerID,
 	}
 
-	killmailID, err := strconv.ParseUint(payload.ID, 10, 64)
-	if err != nil {
-		s.logger.WithFields(killmailLoggerFields).Error("unable to parse killmail id to uint")
-		return
-	}
-
-	exists, err := s.killmails.Exists(ctx, killmailID, payload.Hash)
+	exists, err := s.killmails.Exists(ctx, payload.ID, payload.Hash)
 	if err != nil {
 		s.logger.WithError(err).
 			WithFields(killmailLoggerFields).Error("error encountered checking if killmail exists")
@@ -89,7 +82,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return
 	}
 
@@ -99,7 +92,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 			"path":  m.Path,
 			"query": m.Query,
 		}).WithError(err).Error("unexpected response code from esi")
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 0, Member: message})
+		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return
 	}
 
@@ -140,7 +133,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	}
 
 	for _, attacker := range killmail.Attackers {
-		attacker.KillmailID = killmailID
+		attacker.KillmailID = killmail.ID
 	}
 
 	_, err = s.attackers.CreateBulkWithTxn(ctx, txn, killmail.Attackers)
@@ -177,7 +170,7 @@ func (s *service) processMessage(message []byte, workerID int, sleep int64) {
 	for _, item := range killmail.Victim.Items {
 		if len(item.Items) > 0 {
 			for _, subItem := range item.Items {
-				subItem.KillmailID = killmailID
+				subItem.KillmailID = killmail.ID
 				subItem.ParentID.SetValid(item.ID)
 				subItemValue := float64(0)
 				if subItem.Singleton != 2 {
@@ -285,7 +278,7 @@ func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 		for _, killmail := range killmails {
 
 			msg := Message{
-				ID:   strconv.FormatUint(killmail.ID, 10),
+				ID:   killmail.ID,
 				Hash: killmail.Hash,
 			}
 
@@ -295,7 +288,7 @@ func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 				continue
 			}
 
-			_, err = s.redis.ZAdd(neo.QUEUE_KILLMAIL_RECALCULATE, &redis.Z{Score: 1, Member: string(payload)}).Result()
+			_, err = s.redis.ZAdd(neo.QUEUE_KILLMAIL_RECALCULATE, &redis.Z{Score: float64(killmail.ID), Member: string(payload)}).Result()
 			if err != nil {
 				s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to recalculating queue")
 				return
@@ -333,7 +326,7 @@ func (s *service) Recalculator(gLimit int64) {
 
 		s.logger.WithField("messages", count).Info("processing recalculable messages")
 
-		results, err := s.redis.ZPopMin(neo.QUEUE_KILLMAIL_RECALCULATE, 1000).Result()
+		results, err := s.redis.ZPopMax(neo.QUEUE_KILLMAIL_RECALCULATE, 1000).Result()
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
@@ -366,13 +359,7 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		"hash": payload.Hash,
 	})
 
-	killmailID, err := strconv.ParseUint(payload.ID, 10, 64)
-	if err != nil {
-		entry.WithError(err).Error("unable to parse killmail id to uint")
-		return
-	}
-
-	killmail, err := s.killmails.Killmail(ctx, killmailID, payload.Hash)
+	killmail, err := s.killmails.Killmail(ctx, payload.ID, payload.Hash)
 	if err != nil {
 		entry.WithError(err).Error("unable to retreive killmail from db")
 		return

@@ -3,7 +3,6 @@ package killmail
 import (
 	"encoding/json"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -30,7 +29,7 @@ func (s *service) Websocket() error {
 		}
 
 		for {
-			_, message, err := conn.ReadMessage()
+			_, msg, err := conn.ReadMessage()
 			if err != nil {
 				if err, ok := err.(*websocket.CloseError); ok {
 					if err.Code == 1000 {
@@ -48,6 +47,13 @@ func (s *service) Websocket() error {
 				}
 				break
 			}
+
+			var message WSPayload
+			err = json.Unmarshal(msg, &message)
+			if err != nil {
+				s.logger.WithError(err).WithField("msg", string(msg)).Error("failed to unmarhal message into message struct")
+			}
+
 			go s.handleWSSPayload(message)
 		}
 
@@ -57,35 +63,26 @@ func (s *service) Websocket() error {
 
 }
 
-func (s *service) handleWSSPayload(msg []byte) {
+func (s *service) handleWSSPayload(msg WSPayload) {
 
-	var message WSPayload
-	err := json.Unmarshal(msg, &message)
-	if err != nil {
-		s.logger.WithError(err).WithField("msg", string(msg)).Error("failed to unmarhal message into message struct")
-	}
-
-	payload, err := json.Marshal(struct {
-		ID   string `json:"id"`
-		Hash string `json:"hash"`
-	}{
-		ID:   strconv.FormatUint(uint64(message.KillID), 10),
-		Hash: message.Hash,
+	payload, err := json.Marshal(Message{
+		ID:   msg.KillID,
+		Hash: msg.Hash,
 	})
 	if err != nil {
 		s.logger.WithError(err).Error("unable to marshal WSSPayload")
 		return
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: 1, Member: string(payload)}).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(msg.KillID), Member: string(payload)}).Result()
 	if err != nil {
 		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
 		return
 	}
 
 	s.logger.WithFields(logrus.Fields{
-		"id":   message.KillID,
-		"hash": message.Hash,
+		"id":   msg.KillID,
+		"hash": msg.Hash,
 	}).Info("message received and queued successfully")
 }
 

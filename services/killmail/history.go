@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -173,8 +174,14 @@ func (s *service) handleHashes(hashes map[string]string) {
 	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
 
+		killmailID, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			s.logger.WithFields(logrus.Fields{"id": id, "hash": hash}).Error("unable to parse killmail id to uint")
+			return
+		}
+
 		msg, err := json.Marshal(Message{
-			ID:   id,
+			ID:   killmailID,
 			Hash: hash,
 		})
 		if err != nil {
@@ -187,7 +194,7 @@ func (s *service) handleHashes(hashes map[string]string) {
 
 		dispatched++
 
-		members = append(members, &redis.Z{Score: 1, Member: msg})
+		members = append(members, &redis.Z{Score: float64(killmailID), Member: msg})
 		if len(members) >= 250 {
 			_, err := s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 			if err != nil {

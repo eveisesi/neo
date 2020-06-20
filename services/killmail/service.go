@@ -68,17 +68,17 @@ type (
 	}
 
 	Message struct {
-		ID   string `json:"id"`
+		ID   uint64 `json:"id"`
 		Hash string `json:"hash"`
 	}
 
 	WSPayload struct {
 		Action        string `json:"action"`
-		KillID        uint   `json:"killID"`
+		KillID        uint64 `json:"killID"`
 		CharacterID   uint64 `json:"character_id"`
-		CorporationID uint   `json:"corporation_id"`
-		AllianceID    uint   `json:"alliance_id"`
-		ShipTypeID    uint   `json:"ship_type_id"`
+		CorporationID uint64 `json:"corporation_id"`
+		AllianceID    uint64 `json:"alliance_id"`
+		ShipTypeID    uint64 `json:"ship_type_id"`
 		URL           string `json:"url"`
 		Hash          string `json:"hash"`
 	}

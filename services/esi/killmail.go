@@ -4,15 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetKillmailsKillmailIDKillmailHash(id, hash string) (*neo.Killmail, *Meta) {
+func (s *service) GetKillmailsKillmailIDKillmailHash(id uint64, hash string) (*neo.Killmail, *Meta) {
 
-	path := fmt.Sprintf("/v1/killmails/%s/%s/", id, hash)
+	path := fmt.Sprintf("/v1/killmails/%d/%s/", id, hash)
 
 	request := request{
 		method: http.MethodGet,
@@ -32,9 +31,7 @@ func (s *service) GetKillmailsKillmailIDKillmailHash(id, hash string) (*neo.Kill
 		return nil, m
 	}
 
-	u, _ := strconv.ParseUint(id, 10, 64)
-
-	killmail.ID = uint64(u)
+	killmail.ID = id
 
 	return killmail, m
 }

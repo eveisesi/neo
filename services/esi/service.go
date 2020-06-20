@@ -34,7 +34,7 @@ type (
 		GetCorporationsCorporationID(id uint64, etag null.String) (*neo.Corporation, *Meta)
 
 		// Killmails
-		GetKillmailsKillmailIDKillmailHash(id, hash string) (*neo.Killmail, *Meta)
+		GetKillmailsKillmailIDKillmailHash(id uint64, hash string) (*neo.Killmail, *Meta)
 
 		// Market
 		HeadMarketsRegionIDTypes(regionID uint64) *Meta
