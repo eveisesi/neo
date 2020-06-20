@@ -31,3 +31,13 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
+  history:
+    image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
+    network_mode: "host"
+    command: ./neo history --maxdate ${HISTORY_MAX} --mindate ${HISTORY_MIN} --datehold ${HISTORY_DATEHOLD} --threshold ${HISTORY_THRESHOLD}
+    container_name: recalulator
+    hostname: recalulator
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
