@@ -106,6 +106,8 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
 	}
 
+	time.Sleep(time.Millisecond * time.Duration(sleep))
+
 }
 
 func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
