@@ -276,7 +276,23 @@ func init() {
 		cli.Command{
 			Name: "top",
 			Action: func(c *cli.Context) error {
-				return core.New().Top.Run()
+
+				switch c.String("service") {
+				case "table":
+					return core.New().Top.Run()
+				// case "server":
+				// 	return core.New().Top.Serve()
+				default:
+					core.New().Logger.Fatal("invalid service specified. Valid services are: table, server")
+				}
+				return nil
+			},
+			Flags: []cli.Flag{
+				cli.StringFlag{
+					Name:     "service",
+					Usage:    "Top has two services, a table render and an http server.",
+					Required: true,
+				},
 			},
 		},
 		cli.Command{

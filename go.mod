@@ -35,6 +35,7 @@ require (
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pkg/errors v0.9.1
+	github.com/prometheus/client_golang v1.7.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirkon/go-format v0.1.2
 	github.com/sirupsen/logrus v1.5.0
@@ -47,7 +48,6 @@ require (
 	github.com/volatiletech/sqlboiler v3.6.1+incompatible
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
-	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4
 	golang.org/x/tools v0.0.0-20200328031815-3db5fc6bac03 // indirect
 	google.golang.org/appengine v1.6.1 // indirect

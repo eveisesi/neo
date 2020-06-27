@@ -11,3 +11,6 @@ build:
 
 serve: build
 	./neo serve
+
+top: build
+	./neo top

@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/go-redis/redis/v7"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"
@@ -183,6 +184,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 
 	r.Get("/auth/state", s.handleGetState)
 	r.Post("/auth/token", s.handlePostCode)
+	r.Handle("/top/metrics", promhttp.Handler())
 
 	return r
 

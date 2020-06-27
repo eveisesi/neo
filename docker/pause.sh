@@ -1,0 +1,1 @@
+source docker.env && docker-compose pause import serve cron tracker notifier updater backup
