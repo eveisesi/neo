@@ -22,6 +22,6 @@ scrape_configs:
     scheme: https
 
     static_configs:
-      - targets: ["https://api.neo.eveisesi.space"]
+      - targets: ["api.neo.eveisesi.space"]
       - labels:
           origin: "homeserver"
