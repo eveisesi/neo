@@ -89,3 +89,15 @@ services:
             - .env
         volumes:
             - ./logs:/app/logs
+    prometheus:
+        image: prom/prometheus:v2.19.2
+        network_mode: "host"
+        restart: on-failure
+        container_name: prometheus
+        hostname: prometheus
+        volumes:
+            - prometheus_data:/prometheus
+            - ./external/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+volumes:
+    prometheus_data:
