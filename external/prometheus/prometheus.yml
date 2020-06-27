@@ -19,7 +19,9 @@ scrape_configs:
 
     metrics_path: /top/metrics
 
+    scheme: https
+
     static_configs:
-      - targets: ["api.neo.eveisesi.space"]
+      - targets: ["https://api.neo.eveisesi.space"]
       - labels:
           origin: "homeserver"
