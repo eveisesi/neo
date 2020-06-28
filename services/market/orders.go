@@ -50,6 +50,11 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 		return price
 	}
 
+	price = s.getCalculatedPrice(id, date)
+	if price > 0.00 {
+		return price
+	}
+
 	if !invType.Published {
 		return price
 	}
@@ -63,12 +68,9 @@ func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
 	neededData := 33
 	priceList := make([]*neo.HistoricalRecord, 0)
 	// We have more than enough
-	if len(history) >= neededData {
+	if len(history) > 0 {
 		priceList = history
 		// Ok, do we don't have 33. Lets take what we can get
-	} else if len(history) > 0 {
-		priceList = history[0 : len(history)-1]
-		// Son of a bitch. Alright, let just make shit up then
 	} else {
 		priceList = append(priceList, &neo.HistoricalRecord{Price: 0.01})
 	}
@@ -162,8 +164,28 @@ func (s *service) getFixedPrice(id uint64, date time.Time) float64 {
 	// Not sure
 
 	switch id {
-	case 670:
+	case 670, 33328:
 		return 10000.0000
+	case 4318:
+		return 0.01
+	}
+
+	return 0.00
+}
+
+func (s *service) getCalculatedPrice(id uint64, date time.Time) float64 {
+
+	// TODO: Same as TODO in getFixedPrice
+
+	switch id {
+	case 2233: // Planatary Customs Office
+		gantry := s.FetchTypePrice(3962, date)
+		nodes := s.FetchTypePrice(2867, date)
+		modules := s.FetchTypePrice(2871, date)
+		mainframes := s.FetchTypePrice(2876, date)
+		cores := s.FetchTypePrice(2872, date)
+		total := gantry + ((nodes + modules + mainframes + cores) * 8)
+		return total
 	}
 
 	return 0.00
@@ -239,6 +261,7 @@ func (s *service) processGroup(v int) {
 		s.logger.WithField("type_id", t).Debug("successfully processed historical records for type")
 
 	}
+
 	s.logger.WithField("group_id", v).Info("done processing group")
 	time.Sleep(time.Millisecond * 100)
 }
