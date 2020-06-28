@@ -130,61 +130,67 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Use(Cors)
-	r.Use(NewStructuredLogger(s.logger))
-	r.Use(s.RateLimiter)
-	r.Use(s.Dataloaders)
+	r.Group(func(r chi.Router) {
+		r.Use(NewStructuredLogger(s.logger))
+		r.Use(s.Dataloaders)
 
-	schema := service.NewExecutableSchema(service.Config{
-		Resolvers: &resolvers.Resolver{
-			Services: resolvers.Services{
-				Killmail:    s.killmail,
-				Alliance:    s.alliance,
-				Corporation: s.corporation,
-				Character:   s.character,
-				Universe:    s.universe,
-				Search:      s.search,
+		schema := service.NewExecutableSchema(service.Config{
+			Resolvers: &resolvers.Resolver{
+				Services: resolvers.Services{
+					Killmail:    s.killmail,
+					Alliance:    s.alliance,
+					Corporation: s.corporation,
+					Character:   s.character,
+					Universe:    s.universe,
+					Search:      s.search,
+				},
+				Dataloader: CtxLoaders,
+				Logger:     s.logger,
 			},
-			Dataloader: CtxLoaders,
-			Logger:     s.logger,
-		},
-	})
-
-	gqlhandler := handler.New(schema)
-	gqlhandler.AddTransport(transport.GET{})
-	gqlhandler.AddTransport(transport.POST{})
-	gqlhandler.AddTransport(transport.Websocket{})
-	gqlhandler.Use(extension.Introspection{})
-	gqlhandler.Use(extension.AutomaticPersistedQuery{
-		Cache: &GQLCache{client: s.redis, ttl: time.Hour * 24},
-	})
-
-	gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-		opCtx := graphql.GetOperationContext(ctx)
-
-		entry := s.logger.WithField("operationName", opCtx.Operation.Name)
-		for i, v := range opCtx.Variables {
-			entry = entry.WithField(fmt.Sprintf("var.%s", i), v)
-		}
-
-		entry.Println()
-
-		return next(ctx)
-	})
-
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-
-			next.ServeHTTP(w, r)
 		})
+
+		gqlhandler := handler.New(schema)
+		gqlhandler.AddTransport(transport.GET{})
+		gqlhandler.AddTransport(transport.POST{})
+		gqlhandler.AddTransport(transport.Websocket{})
+		gqlhandler.Use(extension.Introspection{})
+		gqlhandler.Use(extension.AutomaticPersistedQuery{
+			Cache: &GQLCache{client: s.redis, ttl: time.Hour * 24},
+		})
+
+		gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+			opCtx := graphql.GetOperationContext(ctx)
+
+			entry := s.logger.WithField("operationName", opCtx.Operation.Name)
+			for i, v := range opCtx.Variables {
+				entry = entry.WithField(fmt.Sprintf("var.%s", i), v)
+			}
+
+			entry.Println()
+
+			return next(ctx)
+		})
+
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+
+				next.ServeHTTP(w, r)
+			})
+		})
+
+		r.Handle("/query", gqlhandler)
+
 	})
 
-	r.Handle("/query", gqlhandler)
+	r.Group(func(r chi.Router) {
+		r.Use(Cors)
+		r.Use(s.RateLimiter)
+		r.Get("/auth/state", s.handleGetState)
+		r.Post("/auth/token", s.handlePostCode)
+		r.Handle("/top/metrics", promhttp.Handler())
 
-	r.Get("/auth/state", s.handleGetState)
-	r.Post("/auth/token", s.handlePostCode)
-	r.Handle("/top/metrics", promhttp.Handler())
+	})
 
 	return r
 
