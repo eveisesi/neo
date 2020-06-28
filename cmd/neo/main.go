@@ -4,15 +4,11 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 	"time"
-
-	"github.com/eveisesi/neo"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
-	"github.com/robfig/cron/v3"
 	"github.com/urfave/cli"
 )
 
@@ -24,60 +20,17 @@ func init() {
 	_ = godotenv.Load(".env")
 
 	app = cli.NewApp()
-	app.Name = "Neo Core"
+	app.Name = "neo"
+	app.UsageText = "neo [parent] [child command] [--options]"
 	app.Usage = "Service that manages all services related to Neo and its stable operation"
 	app.Version = "v0.0.1"
 	app.Commands = []cli.Command{
 		cli.Command{
-			Name:  "import",
-			Usage: "Listen to a Redis PubSub channel for killmail hashes. On Message receive, reach out to CCP for Killmail Data and process.",
-			Action: func(c *cli.Context) error {
-				app := core.New()
-				limit := c.Int64("gLimit")
-				sleep := c.Int64("gSleep")
-
-				err := app.Killmail.Importer(limit, sleep)
-				if err != nil {
-					return cli.NewExitError(err, 1)
-				}
-
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.Int64Flag{
-					Name:     "gLimit",
-					Usage:    "gLimit is the number of goroutines that the limiter should allow to be in flight at any one time",
-					Required: true,
-				},
-				cli.Int64Flag{
-					Name:     "gSleep",
-					Usage:    "gSleep is the number of milliseconds the limiter will sleep between launching go routines when a slot is available",
-					Required: true,
-				},
-			},
+			Name:        "killmail",
+			Usage:       "Parent command for all administrative task around killmails",
+			Subcommands: killmailCommands(),
 		},
-		cli.Command{
-			Name:  "backup",
-			Usage: "Monitors a redis sorted set. As fully processed killmails populate the queue, backup pulls them off and pushes them to a digital ocean space",
-			Action: func(c *cli.Context) error {
-
-				core.New().Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
-
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.Int64Flag{
-					Name:     "gLimit",
-					Usage:    "gLimit is the number of goroutines that the limiter should allow to be in flight at any one time",
-					Required: true,
-				},
-				cli.Int64Flag{
-					Name:     "gSleep",
-					Usage:    "gSleep is the number of milliseconds the limiter will sleep between launching go routines when a slot is available",
-					Required: true,
-				},
-			},
-		},
+		cronCommand(),
 		// cli.Command{
 		// 	Name:  "restore",
 		// 	Usage: "Reaches out to the DO Space and restore killmails that may have of been lost",
@@ -148,122 +101,7 @@ func init() {
 			Usage:  "Starts an HTTP Server to serve killmail data",
 			Action: server.Action,
 		},
-		cli.Command{
-			Name:  "cron",
-			Usage: "Spins up the crons",
-			Action: func(ctx *cli.Context) error {
 
-				if ctx.Bool("now") {
-					app := core.New()
-
-					app.Market.FetchPrices()
-
-					app.Market.FetchHistory()
-				}
-				app := core.New()
-
-				c := cron.New(
-					cron.WithLocation(time.UTC),
-					cron.WithLogger(
-						cron.PrintfLogger(
-							// log.New(
-							// 	os.Stdout,
-							// 	"cron: ", log.LstdFlags,
-							// ),
-							app.Logger,
-						),
-					),
-					cron.WithSeconds(),
-				)
-
-				_, _ = c.AddFunc("0 10 11 * * *", func() {
-
-					app.Logger.Info("starting fetch prices")
-					app.Market.FetchPrices()
-					app.Logger.Info("done with fetch prices")
-					app.Logger.Info("starting fetch history ")
-					app.Market.FetchHistory()
-					app.Logger.Info("done with fetch history ")
-
-				})
-
-				_, _ = c.AddFunc("*/30 * * * * *", func() {
-
-					app.Logger.Info("checking tq server status")
-
-					serverStatus, m := app.ESI.GetStatus()
-					if m.IsError() {
-						app.Logger.WithError(m.Msg).Error("Failed to fetch tq server status from ESI")
-						return
-					}
-
-					if m.Code != 200 {
-						app.Logger.WithField("code", m.Code).Error("unable to acquire tq server status")
-						return
-					}
-
-					app.Redis.Set(neo.TQ_PLAYER_COUNT, serverStatus.Players, 0)
-					app.Redis.Set(neo.TQ_VIP_MODE, serverStatus.VIP.Bool, 0)
-
-					app.Logger.Info("done checking tq server status")
-
-				})
-
-				_, _ = c.AddFunc("0 * * * * *", func() {
-
-					app.Logger.Info("starting esi tracking set janitor")
-
-					ts := time.Now().Add(time.Minute * -6).UnixNano()
-					sets := []string{
-						neo.REDIS_ESI_TRACKING_OK,
-						neo.REDIS_ESI_TRACKING_NOT_MODIFIED,
-						neo.REDIS_ESI_TRACKING_CALM_DOWN,
-						neo.REDIS_ESI_TRACKING_4XX,
-						neo.REDIS_ESI_TRACKING_5XX,
-					}
-					count := int64(0)
-					for _, set := range sets {
-						a, err := app.Redis.ZRemRangeByScore(set, "-inf", strconv.FormatInt(ts, 10)).Result()
-						if err != nil {
-							app.Logger.WithError(err).Error("failed to fetch current count of esi success set from redis")
-							return
-						}
-						count += a
-					}
-
-					app.Logger.WithField("removed", count).Info("successfully cleared keys from success queue")
-					app.Logger.Info("stopping esi tracking set janitor")
-
-				})
-
-				_, _ = c.AddFunc("0 0 11 * * *", func() {
-					app := core.New()
-
-					app.Logger.Info("rebuilding autocompleter index")
-
-					err := app.Search.Build()
-					if err != nil {
-						app.Logger.WithError(err).Error("failed to rebuild autocompleter index")
-					}
-
-					app.Logger.Info("done rebuilding autocompleter index")
-				})
-
-				c.Run()
-
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.BoolFlag{
-					Name:  "now",
-					Usage: "fetch orders immediately, then initiate the cron",
-				},
-				cli.IntFlag{
-					Name:  "from",
-					Usage: "Group ID to start fetch from",
-				},
-			},
-		},
 		cli.Command{
 			Name:  "listen",
 			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
@@ -276,23 +114,7 @@ func init() {
 		cli.Command{
 			Name: "top",
 			Action: func(c *cli.Context) error {
-
-				switch c.String("service") {
-				case "table":
-					return core.New().Top.Run()
-				// case "server":
-				// 	return core.New().Top.Serve()
-				default:
-					core.New().Logger.Fatal("invalid service specified. Valid services are: table, server")
-				}
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     "service",
-					Usage:    "Top has two services, a table render and an http server.",
-					Required: true,
-				},
+				return core.New().Top.Run()
 			},
 		},
 		cli.Command{
@@ -354,31 +176,7 @@ func init() {
 
 			},
 		},
-		cli.Command{
-			Name: "migrate",
-			Action: func(c *cli.Context) error {
-
-				app := core.New()
-
-				app.Logger.Info("initialize migrations")
-
-				err := app.Migration.Init()
-				if err != nil {
-					return cli.NewExitError(err, 1)
-				}
-
-				app.Logger.Info("migrations initialized")
-
-				app.Logger.Info("running migrations")
-
-				app.Migration.Run()
-
-				app.Logger.Info("migrations run successfully. exiting application")
-				time.Sleep(time.Second * 2)
-
-				return nil
-			},
-		},
+		migrateCommand(),
 		cli.Command{
 			Name:  "recalculate",
 			Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
@@ -431,6 +229,11 @@ func init() {
 					Value: 0,
 				},
 			},
+		},
+		cli.Command{
+			Name:        "market",
+			Usage:       "Updates market prices in the Db",
+			Subcommands: marketCommands(),
 		},
 	}
 }
