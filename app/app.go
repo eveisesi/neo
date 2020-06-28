@@ -89,14 +89,10 @@ func New() *App {
 		logrus.WithError(err).Fatal("failed to make db connection")
 	}
 
-	logger.Info("pinging database server")
-
 	err = db.Ping()
 	if err != nil {
 		logger.WithError(err).Fatal("failed to ping db server")
 	}
-
-	logger.Info("successfully pinged db server")
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:               cfg.RedisAddr,
@@ -105,14 +101,10 @@ func New() *App {
 		IdleCheckFrequency: time.Second * 10,
 	})
 
-	logger.Info("pinging redis server")
-
-	pong, err := redisClient.Ping().Result()
+	_, err = redisClient.Ping().Result()
 	if err != nil {
 		logger.WithError(err).Fatal("failed to ping redis server")
 	}
-
-	logger.WithField("pong", pong).Info("successfully pinged redis server")
 
 	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
 
