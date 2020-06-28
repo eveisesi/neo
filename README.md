@@ -48,7 +48,10 @@ SSO_JWKS_URL=https://login.eveonline.com/oauth/jwks
 # https://api.slack.com/messaging/webhooks
 SLACK_NOTIFIER_ENABLED=<bool>
 SLACK_NOTIFIER_URL=<string>
+# Killmails valued at or above this number will be posted to the provided webhook URL
 SLACK_NOTIFIER_THRESHOLD=<int|multiplied by 1K>
+# Base URL for Action buttons in webhook message (Format: https://example.com)
+SLACK_ACTION_BASE_URL=<string>
 
 # Backup for Processed Killmail pre DB write. Completely optional
 # https://www.digitalocean.com/products/spaces/
@@ -65,15 +68,16 @@ docker.env
 ```
 export DOCKER_VERSION="0.17.8" # Github Tag
 export PROCESS_LIMIT=10 # Num of GoRoutines to use
-export PROCESS_SLEEP=100 # Millisecond Routine sleeps before returning when do processing
+export PROCESS_SLEEP=100 # Milliseconds Routine should sleep before returning when done processing
 export RECAL_QUEUE_LIMIT=10000
 export RECAL_QUEUE_MINIMUM=5000
 export RECAL_NUM_WORKERS=50 # Num of GoRoutines to use
+# Loops from MAX -> MIN in descending order
 export HISTORY_MAX=20191031 # Date Year Month Day
 export HISTORY_MIN=20150101 # Same as above
 # Holds on each date rather than just continuing to loop and put everything on the queue. Use in low memory situations
 export HISTORY_DATEHOLD=true
-# if datehold is true, when the queue gets below this number, the loop with continue to the next date
+# if datehold is true, when the queue gets below this number, the loop will continue to the next date
 export HISTORY_THRESHOLD=200
 export BACKUP_PROCESS_LIMIT=7 # Num of GoRoutines to use
 export BACKUP_PROCESS_SLEEP=100 # Millisecond Routine sleeps before returning when do processing

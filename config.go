@@ -34,6 +34,7 @@ type Config struct {
 	SlackNotifierEnabled        bool   `envconfig:"SLACK_NOTIFIER_ENABLED" default:"false"`
 	SlackNotifierWebhookURL     string `envconfig:"SLACK_NOTIFIER_URL"`
 	SlackNotifierValueThreshold int    `envconfig:"SLACK_NOTIFIER_THRESHOLD"`
+	SlackActionBaseURL          string `envconfig:"SLACK_ACTION_BASE_URL"`
 
 	SpacesEnabled  bool   `envconfig:"SPACES_ENABLED" required:"true"`
 	SpacesBucket   string `envconfig:"SPACES_BUCKET"`
