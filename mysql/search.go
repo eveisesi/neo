@@ -26,11 +26,17 @@ func (r *searchRespository) AllSearchableEntities(ctx context.Context) ([]*neo.S
 		UNION
 		(
 			SELECT 
-				t.id, t.name, 'ship' as type, CONCAT( "types/",t.id, "/render") AS image 
+				t.id, t.name, 'ships' as type, CONCAT( "types/",t.id, "/render") AS image 
 			FROM types t
 			LEFT JOIN type_groups ON t.group_id = type_groups.id
 			WHERE type_groups.category_id = 6
 		)
+		UNION
+		SELECT id, name, 'systems' as type, 'types/6/render' as image from systems
+		UNION
+		SELECT id, name, 'constellations' as type, 'types/9/render' as image from constellations
+		UNION
+		SELECT id, name, 'regions' as type, 'types/8/render' as image from regions
 	`
 
 	entities := make([]*neo.SearchableEntity, 0)
