@@ -12,7 +12,7 @@ func migrateCommand() cli.Command {
 		Name: "migrate",
 		Action: func(c *cli.Context) error {
 
-			app := core.New()
+			app := core.New(false)
 
 			app.Logger.Info("initialize migrations")
 

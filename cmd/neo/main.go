@@ -36,7 +36,7 @@ func init() {
 		// 	Usage: "Reaches out to the DO Space and restore killmails that may have of been lost",
 		// 	Action: func(c *cli.Context) error {
 
-		// 		app := core.New()
+		// 		app := core.New(false)
 
 		// 		client := s3.New(app.Spaces)
 		// 		// hash=ef45d50a8ab98eb33fd386214dd0c906b6444a52 id=80621595
@@ -62,7 +62,7 @@ func init() {
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 				maxdate := c.String("maxdate")
 				mindate := c.String("mindate")
 				threshold := c.Int64("threshold")
@@ -106,7 +106,7 @@ func init() {
 			Name:  "listen",
 			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
 			Action: func(c *cli.Context) error {
-				_ = core.New().Killmail.Websocket()
+				_ = core.New(false).Killmail.Websocket()
 
 				return nil
 			},
@@ -114,14 +114,14 @@ func init() {
 		cli.Command{
 			Name: "top",
 			Action: func(c *cli.Context) error {
-				return core.New().Top.Run()
+				return core.New(false).Top.Run()
 			},
 		},
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {
 
-				app := core.New()
+				app := core.New(false)
 
 				beginning := time.Now().In(time.UTC)
 				start := time.Date(beginning.Year(), beginning.Month(), beginning.Day(), 10, 58, 0, 0, time.UTC)
@@ -137,7 +137,7 @@ func init() {
 			Description: "Manually rebuild the autocompleter index",
 			Action: func(c *cli.Context) error {
 
-				app := core.New()
+				app := core.New(false)
 
 				err := app.Search.Build()
 				if err != nil {
@@ -151,7 +151,7 @@ func init() {
 			Name:        "notifications",
 			Description: "Notifications subscribe to the a Redis PubSub. When the importer detects a killmail with a value greater than the configured notification value, it publishes the id and hash to this pubsub and this service will format the message for slack and post the killmail to slack",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 
 				app.Notification.Run()
 				return nil
@@ -161,7 +161,7 @@ func init() {
 			Name:        "updater",
 			Description: "Updater ensures that all updatable records in the database are update date according to their CacheUntil timestamp.",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 				var ctx = context.Background()
 
 				ch := make(chan int, 3)
@@ -181,11 +181,11 @@ func init() {
 			Name:  "recalculate",
 			Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
 			Action: func(c *cli.Context) error {
-				app := core.New()
 
+				debug := c.Bool("debug")
 				workers := c.Int64("workers")
 
-				app.Killmail.Recalculator(workers)
+				core.New(debug).Killmail.Recalculator(workers)
 
 				return nil
 			},
@@ -195,6 +195,10 @@ func init() {
 					Usage: "Number of Go Routines to that should be used to process messages.",
 					Value: 10,
 				},
+				cli.BoolFlag{
+					Name:  "debug",
+					Usage: "Outputs Debug Logs",
+				},
 			},
 		},
 		cli.Command{
@@ -202,13 +206,11 @@ func init() {
 			Usage: "Finds Killmails where the DestroyedValue and the DroppedValue do not equal the TotalValue and dispatches them to a queue to have these properties recalculated",
 			Action: func(c *cli.Context) error {
 
-				app := core.New()
-
 				limit := c.Int64("limit")
 				trigger := c.Int64("trigger")
 				after := c.Uint64("after")
 
-				app.Killmail.RecalculatorDispatcher(limit, trigger, after)
+				core.New(false).Killmail.RecalculatorDispatcher(limit, trigger, after)
 
 				return nil
 			},

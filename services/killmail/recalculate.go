@@ -131,6 +131,8 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		"hash": payload.Hash,
 	})
 
+	entry.Debugln()
+
 	killmail, err := s.killmails.Killmail(ctx, payload.ID, payload.Hash)
 	if err != nil {
 		entry.WithError(err).Error("unable to retreive killmail from db")

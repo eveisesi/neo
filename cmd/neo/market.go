@@ -11,7 +11,7 @@ func marketCommands() []cli.Command {
 			Name:  "all",
 			Usage: "Fetches Prices and History",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 
 				app.Market.FetchPrices()
 				app.Market.FetchHistory()
@@ -23,7 +23,7 @@ func marketCommands() []cli.Command {
 			Name:  "prices",
 			Usage: "Fetches Prices",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 
 				app.Market.FetchPrices()
 
@@ -34,7 +34,7 @@ func marketCommands() []cli.Command {
 			Name:  "history",
 			Usage: "Fetches Market History",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 
 				app.Market.FetchHistory()
 

@@ -15,7 +15,7 @@ func killmailCommands() []cli.Command {
 			Name:  "import",
 			Usage: "Listen to a Redis PubSub channel for killmail hashes. On Message receive, reach out to CCP for Killmail Data and process.",
 			Action: func(c *cli.Context) error {
-				app := core.New()
+				app := core.New(false)
 				limit := c.Int64("gLimit")
 				sleep := c.Int64("gSleep")
 
@@ -44,7 +44,7 @@ func killmailCommands() []cli.Command {
 			Usage: "Monitors a redis sorted set. As fully processed killmails populate the queue, backup pulls them off and pushes them to a digital ocean space",
 			Action: func(c *cli.Context) error {
 
-				core.New().Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
+				core.New(false).Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
 
 				return nil
 			},
@@ -69,7 +69,7 @@ func killmailCommands() []cli.Command {
 				in := c.String("in")
 				delete := c.Bool("delete")
 
-				app := core.New()
+				app := core.New(false)
 				entry := app.Logger.WithFields(logrus.Fields{
 					"in": in,
 				})

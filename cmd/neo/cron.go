@@ -15,7 +15,7 @@ func cronCommand() cli.Command {
 		Name:  "cron",
 		Usage: "Spins up the crons",
 		Action: func(ctx *cli.Context) error {
-			app := core.New()
+			app := core.New(false)
 
 			c := cron.New(
 				cron.WithLocation(time.UTC),

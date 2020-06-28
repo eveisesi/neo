@@ -69,11 +69,15 @@ type App struct {
 	Universe     universe.Service
 }
 
-func New() *App {
+func New(debug bool) *App {
 
 	cfg, err := loadEnv()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if debug {
+		cfg.LogLevel = "debug"
 	}
 
 	logger, err := makeLogger(cfg.LogLevel)
