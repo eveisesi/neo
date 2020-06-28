@@ -48,13 +48,20 @@ func (s *service) Websocket() error {
 				break
 			}
 
-			var message WSPayload
+			var message map[string]interface{}
 			err = json.Unmarshal(msg, &message)
 			if err != nil {
 				s.logger.WithError(err).WithField("msg", string(msg)).Error("failed to unmarhal message into message struct")
 			}
 
-			go s.handleWSSPayload(message)
+			if _, ok := message["killID"]; !ok {
+				continue
+			}
+			if _, ok := message["hash"]; !ok {
+				continue
+			}
+
+			go s.DispatchPayload(message["killID"].(uint64), message["hash"].(string))
 		}
 
 		s.logger.Info("bottom of parent loop. Sleep and attemp to reconnect")
@@ -63,27 +70,27 @@ func (s *service) Websocket() error {
 
 }
 
-func (s *service) handleWSSPayload(msg WSPayload) {
+func (s *service) DispatchPayload(id uint64, hash string) {
 
 	payload, err := json.Marshal(Message{
-		ID:   msg.KillID,
-		Hash: msg.Hash,
+		ID:   id,
+		Hash: hash,
 	})
 	if err != nil {
 		s.logger.WithError(err).Error("unable to marshal WSSPayload")
 		return
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(msg.KillID), Member: string(payload)}).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(id), Member: string(payload)}).Result()
 	if err != nil {
 		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
 		return
 	}
 
 	s.logger.WithFields(logrus.Fields{
-		"id":   msg.KillID,
-		"hash": msg.Hash,
-	}).Info("message received and queued successfully")
+		"id":   id,
+		"hash": hash,
+	}).Info("payload dispatched successfully")
 }
 
 func (s *service) connect() (*websocket.Conn, error) {

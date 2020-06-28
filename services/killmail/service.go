@@ -25,6 +25,7 @@ type (
 		Websocket() error
 		Recalculator(gLimit int64)
 		RecalculatorDispatcher(limit, trigger int64, after uint64)
+		DispatchPayload(id uint64, hash string)
 
 		// Killmails
 		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
