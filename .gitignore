@@ -1,5 +1,4 @@
 .env
-.app-env
 .config/*.*
 logs
 neo
