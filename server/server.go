@@ -132,6 +132,7 @@ func NewServer(
 func (s *Server) RegisterRoutes() *chi.Mux {
 
 	r := chi.NewRouter()
+	r.Use(Cors)
 
 	r.Group(func(r chi.Router) {
 		r.Use(s.Dataloaders)
@@ -207,7 +208,6 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Use(Cors)
 		r.Use(s.RateLimiter)
 		r.Get("/auth/state", s.handleGetState)
 		r.Post("/auth/token", s.handlePostCode)
