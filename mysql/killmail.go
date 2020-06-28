@@ -151,7 +151,7 @@ func (r *killmailRepository) Recalculable(ctx context.Context, limit int, after 
 
 	mods := []qm.QueryMod{}
 	mods = append(mods,
-		qm.Where("(destroyed_value + dropped_value) != total_value"),
+		qm.Where("(destroyed_value + dropped_value) NOT BETWEEN total_value * 0.95 AND total_value * 1.05"),
 		boiler.KillmailWhere.ID.GT(after),
 		qm.OrderBy(fmt.Sprintf("%s ASC", boiler.KillmailColumns.ID)),
 	)
