@@ -40,31 +40,7 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 
 	logFields["remote_addr"] = r.RemoteAddr
 
-	logFields["request_uri"] = r.URL.String()
-
-	// data, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	entry.Logger = entry.Logger.WithFields(logFields)
-	// 	return entry
-	// }
-
-	// var body GraphQLBody
-	// err = json.Unmarshal(data, &body)
-	// if err != nil {
-	// 	entry.Logger = entry.Logger.WithFields(logFields)
-	// 	return entry
-	// }
-
-	// slQuery := strings.Fields(body.Query)
-	// sQuery := strings.Join(slQuery, " ")
-	// slVariables := strings.Fields(string(body.Variables))
-	// sVariables := strings.Join(slVariables, " ")
-	// sVariables = strings.Replace(sVariables, "\"", "", -1)
-
-	// logFields["query"] = sQuery
-	// logFields["variables"] = sVariables
-
-	// r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	logFields["request_path"] = r.URL.Path
 
 	entry.Logger = entry.Logger.WithFields(logFields)
 
@@ -92,3 +68,30 @@ func (l *StructuredLoggerEntry) Panic(v interface{}, stack []byte) {
 		"panic": fmt.Sprintf("%+v", v),
 	})
 }
+
+// // Helper methods used by the application to get the request-scoped
+// // logger entry and set additional fields between handlers.
+// //
+// // This is a useful pattern to use to set state on the entry as it
+// // passes through the handler chain, which at any point can be logged
+// // with a call to .Print(), .Info(), etc.
+
+// // GetLogEntry will get return the logger off of the http request
+// func GetLogEntry(r *http.Request) logrus.FieldLogger {
+// 	entry := middleware.GetLogEntry(r).(*StructuredLoggerEntry)
+// 	return entry.Logger
+// }
+
+// // LogEntrySetField will set a new field on a log entry
+// func LogEntrySetField(r *http.Request, key string, value interface{}) {
+// 	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+// 		entry.Logger = entry.Logger.WithField(key, value)
+// 	}
+// }
+
+// // LogEntrySetFields will set a map of key/value pairs on a log entry
+// func LogEntrySetFields(r *http.Request, fields map[string]interface{}) {
+// 	if entry, ok := r.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+// 		entry.Logger = entry.Logger.WithFields(fields)
+// 	}
+// }

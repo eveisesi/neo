@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis/v7"
 )
@@ -24,6 +25,8 @@ func (c *GQLCache) Get(ctx context.Context, hash string) (interface{}, bool) {
 	if err != nil {
 		return "", false
 	}
+
+	spew.Dump(s)
 
 	return s, true
 }

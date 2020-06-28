@@ -15,8 +15,10 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-redis/redis/v7"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/vektah/gqlparser/v2/ast"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"
@@ -29,6 +31,7 @@ import (
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
@@ -131,8 +134,8 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
-		r.Use(NewStructuredLogger(s.logger))
 		r.Use(s.Dataloaders)
+		r.Use(NewStructuredLogger(s.logger))
 
 		schema := service.NewExecutableSchema(service.Config{
 			Resolvers: &resolvers.Resolver{
@@ -155,18 +158,37 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		gqlhandler.AddTransport(transport.Websocket{})
 		gqlhandler.Use(extension.Introspection{})
 		gqlhandler.Use(extension.AutomaticPersistedQuery{
-			Cache: &GQLCache{client: s.redis, ttl: time.Hour * 24},
+			Cache: &GQLCache{client: s.redis, ttl: time.Minute * 30},
 		})
 
 		gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-			opCtx := graphql.GetOperationContext(ctx)
 
-			entry := s.logger.WithField("operationName", opCtx.Operation.Name)
-			for i, v := range opCtx.Variables {
-				entry = entry.WithField(fmt.Sprintf("var.%s", i), v)
+			entry, ok := ctx.Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry)
+			if !ok {
+				fmt.Println("entry missing")
+				return next(ctx)
 			}
 
-			entry.Println()
+			opCtx := graphql.GetOperationContext(ctx)
+
+			entry.Logger = entry.Logger.WithField("operationName", opCtx.OperationName)
+
+			for _, s := range opCtx.Operation.SelectionSet {
+				var field *ast.Field
+				var ok bool
+				if field, ok = s.(*ast.Field); !ok {
+					continue
+				}
+
+				for _, arg := range field.Arguments {
+					value, err := arg.Value.Value(opCtx.Variables)
+					if err != nil {
+						continue
+					}
+
+					entry.Logger = entry.Logger.WithField(fmt.Sprintf("%s_%s_%s", opCtx.OperationName, field.Alias, arg.Name), value)
+				}
+			}
 
 			return next(ctx)
 		})
@@ -180,6 +202,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		})
 
 		r.Handle("/query", gqlhandler)
+		r.Handle("/query/playground", playground.Handler("NEO GraphQL Playground", "/query"))
 
 	})
 
