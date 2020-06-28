@@ -7,7 +7,6 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/service"
-	"github.com/sirupsen/logrus"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int, hash string) (*neo.Killmail, error) {
@@ -65,13 +64,6 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 		return nil, errors.New("invalid category specified")
 	}
 
-	r.Logger.WithFields(logrus.Fields{
-		"category":  category.String(),
-		"entity":    entity.String(),
-		"id":        id,
-		"killmails": len(mails),
-	}).Println()
-
 	return mails, err
 
 }
@@ -111,12 +103,6 @@ func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.E
 	default:
 		return nil, errors.New("invalid entity")
 	}
-
-	r.Logger.WithFields(logrus.Fields{
-		"entity": entity.String(),
-		"id":     id,
-		"mails":  len(mails),
-	}).Println()
 
 	return mails, err
 }
