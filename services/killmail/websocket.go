@@ -61,7 +61,7 @@ func (s *service) Websocket() error {
 				continue
 			}
 
-			go s.DispatchPayload(message["killID"].(uint64), message["hash"].(string))
+			go s.DispatchPayload(uint64(message["killID"].(float64)), message["hash"].(string))
 		}
 
 		s.logger.Info("bottom of parent loop. Sleep and attemp to reconnect")
