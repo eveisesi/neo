@@ -22,7 +22,7 @@ type Character struct {
 	CorporationID    uint64      `boil:"corporation_id" json:"corporation_id"`
 	AllianceID       null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty"`
 	FactionID        null.Uint64 `boil:"faction_id" json:"faction_id,omitempty"`
-	SecurityStatus   float64     `boil:"security_status" json:"securityStatus"`
+	SecurityStatus   float64     `boil:"security_status" json:"security_status"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
 	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`
 	Etag             null.String `boil:"etag" json:"etag"`
