@@ -32,7 +32,7 @@ func (r *searchRespository) AllSearchableEntities(ctx context.Context) ([]*neo.S
 			WHERE type_groups.category_id = 6
 		)
 		UNION
-		SELECT id, name, 'systems' as type, 'types/6/render' as image from systems
+		SELECT id, name, 'systems' as type, 'types/6/render' as image from solar_systems
 		UNION
 		SELECT id, name, 'constellations' as type, 'types/9/render' as image from constellations
 		UNION
