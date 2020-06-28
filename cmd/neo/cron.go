@@ -15,7 +15,6 @@ func cronCommand() cli.Command {
 		Name:  "cron",
 		Usage: "Spins up the crons",
 		Action: func(ctx *cli.Context) error {
-			var err error
 			app := core.New()
 
 			c := cron.New(
@@ -108,7 +107,7 @@ func registerMarketDataCron(c *cron.Cron, app *core.App) {
 
 func registerTrackingJanitorCron(c *cron.Cron, app *core.App) {
 
-	_, err = c.AddFunc("0 * * * * *", func() {
+	_, err := c.AddFunc("0 * * * * *", func() {
 		app.Logger.Info("starting esi tracking set janitor")
 
 		ts := time.Now().Add(time.Minute * -6).UnixNano()
