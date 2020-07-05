@@ -12,6 +12,12 @@ func (s *service) Build() error {
 
 	var ctx = context.Background()
 
+	err := s.Autocompleter.Delete()
+	if err != nil {
+		s.Logger.WithError(err).Error("failed to flush autocompleter")
+		return err
+	}
+
 	entities, err := s.AllSearchableEntities(ctx)
 	if err != nil {
 		return err
@@ -30,7 +36,7 @@ func (s *service) Build() error {
 
 		suggestion := redisearch.Suggestion{
 			Term:    entity.Name,
-			Score:   1.0,
+			Score:   float64(entity.Priority),
 			Payload: string(payload),
 		}
 

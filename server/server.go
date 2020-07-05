@@ -204,6 +204,7 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 
 		r.Handle("/query", gqlhandler)
 		r.Handle("/query/playground", playground.Handler("NEO GraphQL Playground", "/query"))
+		r.Get("/search", s.handleSearchRequest)
 
 	})
 

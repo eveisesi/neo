@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/eveisesi/neo"
@@ -11,8 +10,6 @@ import (
 )
 
 func (s *service) Fetch(ctx context.Context, term string) ([]*neo.SearchableEntity, error) {
-
-	fmt.Println(term)
 
 	suggestions, err := s.Autocompleter.SuggestOpts(term, redisearch.SuggestOptions{
 		Num:          20,
@@ -26,8 +23,12 @@ func (s *service) Fetch(ctx context.Context, term string) ([]*neo.SearchableEnti
 		return nil, errors.Wrap(err, msg)
 	}
 
+	sortable := redisearch.SuggestionList(suggestions)
+
+	sortable.Sort()
+
 	var entities = make([]*neo.SearchableEntity, 0)
-	for _, suggestion := range suggestions {
+	for _, suggestion := range sortable {
 		entity := neo.SearchableEntity{}
 		err := json.Unmarshal([]byte(suggestion.Payload), &entity)
 		if err != nil {
