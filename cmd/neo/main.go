@@ -31,33 +31,6 @@ func init() {
 			Subcommands: killmailCommands(),
 		},
 		cronCommand(),
-		// cli.Command{
-		// 	Name:  "restore",
-		// 	Usage: "Reaches out to the DO Space and restore killmails that may have of been lost",
-		// 	Action: func(c *cli.Context) error {
-
-		// 		app := core.New(false)
-
-		// 		client := s3.New(app.Spaces)
-		// 		// hash=ef45d50a8ab98eb33fd386214dd0c906b6444a52 id=80621595
-		// 		input := &s3.HeadObjectInput{
-		// 			Bucket: aws.String("neo"),
-		// 			Key:    aws.String(fmt.Sprintf("killmails/%d:%s.json", 80625595, "ef45d50a8ab98eb33fd386214dd0c906b6444a52")),
-		// 		}
-
-		// 		object, err := client.HeadObject(input)
-		// 		if err != nil {
-		// 			spew.Dump(err)
-		// 			app.Logger.WithError(err).Error("failed to list objects")
-		// 			return err
-		// 		}
-
-		// 		spew.Dump(object)
-
-		// 		return nil
-
-		// 	},
-		// },
 		cli.Command{
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
