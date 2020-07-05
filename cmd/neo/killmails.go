@@ -43,9 +43,11 @@ func killmailCommands() []cli.Command {
 			Name:  "backup",
 			Usage: "Monitors a redis sorted set. As fully processed killmails populate the queue, backup pulls them off and pushes them to a digital ocean space",
 			Action: func(c *cli.Context) error {
-
-				core.New(false).Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
-
+				app := core.New(false)
+				if !app.Config.SpacesEnabled {
+					return cli.NewExitError("spaces is disabled. Exiting", 0)
+				}
+				app.Backup.Run(c.Int64("gLimit"), c.Int64("gSleep"))
 				return nil
 			},
 			Flags: []cli.Flag{
