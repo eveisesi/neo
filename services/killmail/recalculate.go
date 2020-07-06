@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/eveisesi/neo/tools"
 	"github.com/go-redis/redis/v7"
 	"github.com/korovkin/limiter"
 	"github.com/pkg/errors"
@@ -151,116 +150,14 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 		return
 	}
 
+	killmail.Attackers, err = s.attackers.ByKillmailID(ctx, killmail.ID)
+	if err != nil {
+		entry.WithError(err).Error("encountered error fetching attackers")
+		return
+	}
+
 	s.primeKillmailNodes(ctx, killmail, entry)
 
-	txn, err := s.txn.Begin()
-	if err != nil {
-		entry.WithError(err).Error("failed to start transaction")
-		return
-	}
-
-	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, killmail.KillmailTime)
-	killmail.Victim.ShipValue = shipValue
-
-	err = s.victim.UpdateWithTxn(ctx, txn, killmail.Victim)
-	if err != nil {
-		rollErr := txn.Rollback()
-		if err != nil {
-			err = errors.Wrap(err, errors.Wrap(rollErr, "failed to rollback txn").Error())
-		}
-		entry.WithError(err).Error("failed to update killmail victim")
-		return
-	}
-
-	destroyedValue := float64(0)
-	droppedValue := float64(0)
-
-	for _, item := range killmail.Victim.Items {
-		item.KillmailID = killmail.ID
-		itemValue := float64(0)
-		if item.Singleton != 2 {
-			itemValue = s.market.FetchTypePrice(item.ItemTypeID, killmail.KillmailTime)
-		} else {
-			itemValue = 0.01
-		}
-
-		if item.QuantityDestroyed.Uint64 > 0 {
-			destroyedValue += itemValue * float64(item.QuantityDestroyed.Uint64)
-		}
-		if item.QuantityDropped.Uint64 > 0 {
-			droppedValue += itemValue * float64(item.QuantityDropped.Uint64)
-		}
-		item.ItemValue = itemValue
-
-	}
-
-	err = s.items.UpdateBulkWithTxn(ctx, txn, killmail.Victim.Items)
-	if err != nil {
-		rollErr := txn.Rollback()
-		if err != nil {
-			err = errors.Wrap(err, errors.Wrap(rollErr, "failed to rollback txn").Error())
-		}
-		entry.WithError(err).Error("failed to update killmail victim items first level")
-		return
-	}
-
-	for _, item := range killmail.Victim.Items {
-		if len(item.Items) > 0 {
-			for _, subItem := range item.Items {
-				subItemValue := float64(0)
-				if item.Singleton != 2 {
-					subItemValue = s.market.FetchTypePrice(subItem.ItemTypeID, killmail.KillmailTime)
-				} else {
-					subItemValue = 0.01
-				}
-
-				subItem.ItemValue = subItemValue
-
-				if subItem.QuantityDestroyed.Uint64 > 0 {
-					destroyedValue += subItemValue * float64(subItem.QuantityDestroyed.Uint64)
-				}
-				if subItem.QuantityDropped.Uint64 > 0 {
-					droppedValue += subItemValue * float64(subItem.QuantityDropped.Uint64)
-				}
-			}
-
-			err = s.items.UpdateBulkWithTxn(ctx, txn, item.Items)
-			if err != nil {
-				rollErr := txn.Rollback()
-				if err != nil {
-					err = errors.Wrap(err, errors.Wrap(rollErr, "failed to rollback txn").Error())
-				}
-				entry.WithError(err).WithField("parent_id", item.ID).Error("failed to update killmail victim items nested level")
-				return
-			}
-		}
-	}
-
-	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
-	fittedValue += shipValue
-	destroyedValue += shipValue
-	sum := tools.ToFixed(droppedValue, 2) + tools.ToFixed(destroyedValue, 2)
-
-	killmail.DestroyedValue = destroyedValue
-	killmail.DroppedValue = droppedValue
-	killmail.FittedValue = fittedValue
-	killmail.TotalValue = sum
-
-	err = s.killmails.UpdateWithTxn(ctx, txn, killmail)
-	if err != nil {
-		rollErr := txn.Rollback()
-		if err != nil {
-			err = errors.Wrap(err, errors.Wrap(rollErr, "failed to rollback txn").Error())
-		}
-		entry.WithError(err).Error("failed to update killmail")
-
-		return
-	}
-
-	err = txn.Commit()
-	if err != nil {
-		entry.WithError(err).Error("failed to commit txn")
-		return
-	}
+	s.stats.Calculate(killmail)
 
 }
