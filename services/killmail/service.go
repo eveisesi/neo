@@ -10,6 +10,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/market"
+	"github.com/eveisesi/neo/services/stats"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis/v7"
@@ -95,6 +96,7 @@ type (
 		alliance    alliance.Service
 		universe    universe.Service
 		market      market.Service
+		stats       stats.Service
 		tracker     tracker.Service
 		txn         neo.Starter
 		killmails   neo.KillmailRepository
@@ -123,6 +125,7 @@ func NewService(
 	alliance alliance.Service,
 	universe universe.Service,
 	market market.Service,
+	stats stats.Service,
 	tracker tracker.Service,
 
 	txn neo.Starter,
@@ -145,6 +148,7 @@ func NewService(
 		alliance,
 		universe,
 		market,
+		stats,
 		tracker,
 		txn,
 		killmails,

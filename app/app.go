@@ -27,6 +27,7 @@ import (
 	"github.com/eveisesi/neo/services/migration"
 	"github.com/eveisesi/neo/services/notifications"
 	"github.com/eveisesi/neo/services/search"
+	"github.com/eveisesi/neo/services/stats"
 	"github.com/eveisesi/neo/services/token"
 	"github.com/eveisesi/neo/services/top"
 	"github.com/eveisesi/neo/services/tracker"
@@ -137,6 +138,7 @@ func New(debug bool) *App {
 		tracker,
 		mysql.NewAllianceRepository(db),
 	)
+
 	character := character.NewService(
 		redisClient,
 		logger,
@@ -144,6 +146,7 @@ func New(debug bool) *App {
 		tracker,
 		mysql.NewCharacterRepository(db),
 	)
+
 	corporation := corporation.NewService(
 		redisClient,
 		logger,
@@ -196,6 +199,8 @@ func New(debug bool) *App {
 		mysql.NewTokenRepository(db),
 	)
 
+	stats := stats.NewService(mysql.NewStatRepository(db))
+
 	killmail := killmail.NewService(
 		client,
 		redisClient,
@@ -207,6 +212,7 @@ func New(debug bool) *App {
 		alliance,
 		universe,
 		market,
+		stats,
 		tracker,
 		txn,
 		mysql.NewKillmailRepository(db),

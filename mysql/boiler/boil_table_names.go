@@ -19,6 +19,7 @@ var TableNames = struct {
 	PricesBuilt        string
 	Regions            string
 	SolarSystems       string
+	Stats              string
 	Tokens             string
 	TypeAttributes     string
 	TypeCategories     string
@@ -41,6 +42,7 @@ var TableNames = struct {
 	PricesBuilt:        "prices_built",
 	Regions:            "regions",
 	SolarSystems:       "solar_systems",
+	Stats:              "stats",
 	Tokens:             "tokens",
 	TypeAttributes:     "type_attributes",
 	TypeCategories:     "type_categories",

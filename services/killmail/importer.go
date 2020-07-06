@@ -64,6 +64,11 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		"worker": workerID,
 	})
 
+	err = s.stats.Calculate(killmail)
+	if err != nil {
+		entry.WithError(err).Error("encountered error with stats")
+	}
+
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
 		if killmail.TotalValue >= float64(threshold) {
@@ -223,6 +228,9 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		}
 		if item.QuantityDropped.Uint64 > 0 {
 			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint64)
+		}
+		if len(item.Items) > 0 {
+			item.IsParent = true
 		}
 	}
 
@@ -396,10 +404,24 @@ func (s *service) calcIsSolo(ctx context.Context, killmail *neo.Killmail) bool {
 }
 
 func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail, entry *logrus.Entry) {
-	_, err = s.universe.SolarSystem(ctx, killmail.SolarSystemID)
+	system, err := s.universe.SolarSystem(ctx, killmail.SolarSystemID)
 	if err != nil {
 		entry.WithError(err).Error("failed to prime solar system")
 	}
+
+	constellation, err := s.universe.Constellation(ctx, system.ConstellationID)
+	if err != nil {
+		entry.WithError(err).Error("failed to prime constellation")
+	}
+
+	region, err := s.universe.Region(ctx, constellation.RegionID)
+	if err != nil {
+		entry.WithError(err).Error("failed to prime region")
+	}
+
+	constellation.Region = region
+	system.Constellation = constellation
+	killmail.System = system
 
 	victim := killmail.Victim
 

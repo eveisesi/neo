@@ -50,3 +50,30 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	strmangle.PutBuffer(buf)
 	return str
 }
+
+// Enum values for stats.entity
+const (
+	StatsEntityCharacter     = "character"
+	StatsEntityCorporation   = "corporation"
+	StatsEntityAlliance      = "alliance"
+	StatsEntityShip          = "ship"
+	StatsEntitySystem        = "system"
+	StatsEntityConstellation = "constellation"
+	StatsEntityRegion        = "region"
+)
+
+// Enum values for stats.category
+const (
+	StatsCategoryIskKilled   = "isk_killed"
+	StatsCategoryIskLost     = "isk_lost"
+	StatsCategoryShipsKilled = "ships_killed"
+	StatsCategoryShipsLost   = "ships_lost"
+)
+
+// Enum values for stats.frequency
+const (
+	StatsFrequencyDaily   = "daily"
+	StatsFrequencyMonthly = "monthly"
+	StatsFrequencyYearly  = "yearly"
+	StatsFrequencyAlltime = "alltime"
+)
