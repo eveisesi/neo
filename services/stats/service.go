@@ -27,6 +27,10 @@ func (s *service) date(t time.Time) *neo.Date {
 
 func (s *service) Calculate(killmail *neo.Killmail) error {
 
+	if killmail.IsNPC {
+		return nil
+	}
+
 	stats := make([]*neo.Stat, 0)
 	stats = append(stats, s.location(killmail)...)
 	stats = append(stats, s.victim(killmail)...)
@@ -232,7 +236,7 @@ func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
 				Category:  neo.StatCategoryISKKilled,
 				Frequency: neo.StatFrequencyDaily,
 				Date:      date,
-				Value:     1,
+				Value:     killmail.TotalValue,
 			})
 		}
 		if attacker.CorporationID.Valid {
@@ -250,7 +254,7 @@ func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
 				Category:  neo.StatCategoryISKKilled,
 				Frequency: neo.StatFrequencyDaily,
 				Date:      date,
-				Value:     1,
+				Value:     killmail.TotalValue,
 			})
 		}
 		if attacker.AllianceID.Valid {
@@ -268,7 +272,7 @@ func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
 				Category:  neo.StatCategoryISKKilled,
 				Frequency: neo.StatFrequencyDaily,
 				Date:      date,
-				Value:     1,
+				Value:     killmail.TotalValue,
 			})
 		}
 
@@ -287,7 +291,7 @@ func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
 				Category:  neo.StatCategoryISKKilled,
 				Frequency: neo.StatFrequencyDaily,
 				Date:      date,
-				Value:     1,
+				Value:     killmail.TotalValue,
 			})
 		}
 	}

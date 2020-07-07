@@ -21,12 +21,12 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
-  recalulator:
+  recalculator:
     image: docker.pkg.github.com/eveisesi/neo/neo:${DOCKER_VERSION}
     network_mode: "host"
-    command: ./neo recalculate --worker ${RECAL_NUM_WORKERS}
-    container_name: recalulator
-    hostname: recalulator
+    command: ./neo recalculate --workers ${RECAL_NUM_WORKERS}
+    container_name: recalculator
+    hostname: recalculator
     env_file:
       - .env
     volumes:
