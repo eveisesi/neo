@@ -597,7 +597,7 @@ func (o *Killmail) AddKillmailAttackers(ctx context.Context, exec boil.ContextEx
 	for _, rel := range related {
 		if insert {
 			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -650,7 +650,7 @@ func (o *Killmail) AddKillmailItems(ctx context.Context, exec boil.ContextExecut
 	for _, rel := range related {
 		if insert {
 			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -703,7 +703,7 @@ func (o *Killmail) AddKillmailVictims(ctx context.Context, exec boil.ContextExec
 	for _, rel := range related {
 		if insert {
 			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
 		} else {
@@ -781,7 +781,7 @@ func FindKillmail(ctx context.Context, exec boil.ContextExecutor, iD uint64, has
 
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *Killmail) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
+func (o *Killmail) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns, ignore bool) error {
 	if o == nil {
 		return errors.New("boiler: no killmails provided for insertion")
 	}
@@ -821,10 +821,16 @@ func (o *Killmail) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		if err != nil {
 			return err
 		}
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `killmails` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		insert := "INSERT%s"
+		if ignore {
+			insert = fmt.Sprintf(insert, " IGNORE")
 		} else {
-			cache.query = "INSERT INTO `killmails` () VALUES ()%s%s"
+			insert = fmt.Sprintf(insert, "")
+		}
+		if len(wl) != 0 {
+			cache.query = fmt.Sprintf("%s INTO `killmails` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		} else {
+			cache.query = fmt.Sprintf("%s INTO `killmails` () VALUES ()%s%s", insert)
 		}
 
 		var queryOutput, queryReturning string

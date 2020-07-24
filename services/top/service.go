@@ -48,6 +48,9 @@ type (
 		BackupQueue     int64
 		PrevBackupQueue int64
 
+		StatsQueue     int64
+		PrevStatsQueue int64
+
 		InvalidQueue     int64
 		PrevInvalidQueue int64
 	}
@@ -99,12 +102,17 @@ func NewService(redis *redis.Client) Service {
 		Help: "Number of killmails waiting to be sent to DigitalOcean",
 	}, s.fetchBackupQueueStat)
 
+	queueStats := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "queue_stats",
+		Help: "Number of killmails pending stats calculation",
+	}, s.fetchStatsQueueStat)
+
 	queueInvalid := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "queue_invalid",
 		Help: "Number of invalid killmail id and/or hashes received from ZKillboard",
 	}, s.fetchInvalidQueueStat)
 
-	prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid)
+	prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid, queueStats)
 
 	return s
 }
@@ -213,6 +221,19 @@ func (s *service) fetchBackupQueueStat() float64 {
 	return float64(i)
 }
 
+func (s *service) fetchStatsQueue() (int64, error) {
+	return s.redis.ZCount(neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
+}
+
+func (s *service) fetchStatsQueueStat() float64 {
+	i, err := s.fetchStatsQueue()
+	if err != nil {
+		return 0.00
+	}
+
+	return float64(i)
+}
+
 func (s *service) fetchInvalidQueue() (int64, error) {
 	return s.redis.ZCount(neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
 }
@@ -231,47 +252,52 @@ func (s *service) EvaluateParams(param *stat) error {
 
 	param.ESI200, err = s.fetchESI200()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch successful esi calls")
+		return errors.Wrap(err, "fetchESI200 failed ")
 	}
 
 	param.ESI304, err = s.fetchESI304()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchESI304 failed")
 	}
 
 	param.ESI420, err = s.fetchESI420()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchESI420 failed")
 	}
 
 	param.ESI4XX, err = s.fetchESI4XX()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchESI4XX failed")
 	}
 
 	param.ESI5XX, err = s.fetchESI5XX()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchESI5XX failed")
 	}
 
 	param.ProcessingQueue, err = s.fetchProcessingQueue()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchProcessingQueue failed")
 	}
 
 	param.RecalculatingQueue, err = s.fetchRecalculatingQueue()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchRecalculatingQueue failed")
 	}
 
 	param.BackupQueue, err = s.fetchBackupQueue()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch failed esi calls")
+		return errors.Wrap(err, "fetchBackupQueue failed")
+	}
+
+	param.StatsQueue, err = s.fetchStatsQueue()
+	if err != nil {
+		return errors.Wrap(err, "fetchStatsQueue failed")
 	}
 
 	param.InvalidQueue, err = s.fetchInvalidQueue()
 	if err != nil {
-		return errors.Wrap(err, "failed to fetch invalid hashes count")
+		return errors.Wrap(err, "fetchInvalidQueue failed")
 	}
 
 	return nil
@@ -287,6 +313,7 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevProcessingQueue = params.ProcessingQueue
 	params.PrevRecalculatingQueue = params.RecalculatingQueue
 	params.PrevBackupQueue = params.BackupQueue
+	params.PrevStatsQueue = params.StatsQueue
 	params.PrevInvalidQueue = params.InvalidQueue
 }
 
@@ -303,66 +330,83 @@ func (s *service) Run() error {
 		}
 		tw := table.NewWriter()
 
-		tw.AppendRows(
-			[]table.Row{
-				table.Row{
-					fmt.Sprintf(
-						"%d: Queue Processing (%d)",
-						params.ProcessingQueue,
-						params.ProcessingQueue-params.PrevProcessingQueue,
-					),
-					fmt.Sprintf(
-						"%d: ESI HTTP 200s in last 5 minutes (%d)",
-						params.ESI200,
-						params.ESI200-params.PrevESI200,
-					),
-				},
-				table.Row{
-					fmt.Sprintf(
-						"%d: Queue Recalculating (%d)",
-						params.RecalculatingQueue,
-						params.RecalculatingQueue-params.PrevRecalculatingQueue,
-					),
-					fmt.Sprintf(
-						"%d: ESI HTTP 304s in last 5 minutes (%d)",
-						params.ESI304,
-						params.ESI304-params.PrevESI304,
-					),
-				},
-				table.Row{
-					fmt.Sprintf(
-						"%d: Queue Backup (%d)",
-						params.BackupQueue,
-						params.BackupQueue-params.PrevBackupQueue,
-					),
-					fmt.Sprintf(
-						"%d: ESI HTTP 420s in last 5 minutes (%d)",
-						params.ESI420,
-						params.ESI420-params.PrevESI420,
-					),
-				},
-				table.Row{
-					fmt.Sprintf(
-						"%d: Queue Invalid Hashes (%d)",
-						params.InvalidQueue,
-						params.InvalidQueue-params.PrevInvalidQueue,
-					),
-					fmt.Sprintf(
-						"%d: ESI HTTP 4XXs in last 5 minutes (%d)",
-						params.ESI4XX,
-						params.ESI4XX-params.PrevESI4XX,
-					),
-				},
-				table.Row{
-					"",
-					fmt.Sprintf(
-						"%d: ESI HTTP 5XXs in last 5 minutes (%d)",
-						params.ESI5XX,
-						params.ESI5XX-params.PrevESI5XX,
-					),
-				},
+		columns := [][]string{
+			[]string{
+				fmt.Sprintf(
+					"%d: Queue Processing (%d)",
+					params.ProcessingQueue,
+					params.ProcessingQueue-params.PrevProcessingQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Recalculating (%d)",
+					params.RecalculatingQueue,
+					params.RecalculatingQueue-params.PrevRecalculatingQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Stats (%d)",
+					params.StatsQueue,
+					params.StatsQueue-params.PrevStatsQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Backup (%d)",
+					params.BackupQueue,
+					params.BackupQueue-params.PrevBackupQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Invalid Hashes (%d)",
+					params.InvalidQueue,
+					params.InvalidQueue-params.PrevInvalidQueue,
+				),
 			},
-		)
+			[]string{
+				fmt.Sprintf(
+					"%d: ESI HTTP 200s in last 5 minutes (%d)",
+					params.ESI200,
+					params.ESI200-params.PrevESI200,
+				),
+				fmt.Sprintf(
+					"%d: ESI HTTP 304s in last 5 minutes (%d)",
+					params.ESI304,
+					params.ESI304-params.PrevESI304,
+				),
+				fmt.Sprintf(
+					"%d: ESI HTTP 420s in last 5 minutes (%d)",
+					params.ESI420,
+					params.ESI420-params.PrevESI420,
+				),
+				fmt.Sprintf(
+					"%d: ESI HTTP 4XXs in last 5 minutes (%d)",
+					params.ESI4XX,
+					params.ESI4XX-params.PrevESI4XX,
+				),
+				fmt.Sprintf(
+					"%d: ESI HTTP 5XXs in last 5 minutes (%d)",
+					params.ESI5XX,
+					params.ESI5XX-params.PrevESI5XX,
+				),
+			},
+		}
+
+		// Find the number of rows
+		rows := 0
+		for _, column := range columns {
+			if len(column) > rows {
+				rows = len(column)
+			}
+		}
+
+		emptyValue := ""
+		for i := 0; i < rows; i++ {
+			tr := table.Row{}
+			for _, column := range columns {
+				if i < len(column) {
+					tr = append(tr, column[i])
+				} else {
+					tr = append(tr, emptyValue)
+				}
+			}
+			tw.AppendRow(tr)
+		}
 
 		fmt.Println(tw.Render())
 

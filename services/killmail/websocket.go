@@ -72,7 +72,7 @@ func (s *service) Websocket() error {
 
 func (s *service) DispatchPayload(id uint64, hash string) {
 
-	payload, err := json.Marshal(Message{
+	payload, err := json.Marshal(neo.Message{
 		ID:   id,
 		Hash: hash,
 	})

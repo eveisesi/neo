@@ -10,7 +10,6 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/market"
-	"github.com/eveisesi/neo/services/stats"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis/v7"
@@ -30,6 +29,7 @@ type (
 
 		// Killmails
 		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
+		FullKillmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
 		RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error)
 		KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
 		KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
@@ -69,11 +69,6 @@ type (
 		MVKByRegionID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
 	}
 
-	Message struct {
-		ID   uint64 `json:"id"`
-		Hash string `json:"hash"`
-	}
-
 	WSPayload struct {
 		Action        string `json:"action"`
 		KillID        uint64 `json:"killID"`
@@ -96,7 +91,6 @@ type (
 		alliance    alliance.Service
 		universe    universe.Service
 		market      market.Service
-		stats       stats.Service
 		tracker     tracker.Service
 		txn         neo.Starter
 		killmails   neo.KillmailRepository
@@ -125,7 +119,6 @@ func NewService(
 	alliance alliance.Service,
 	universe universe.Service,
 	market market.Service,
-	stats stats.Service,
 	tracker tracker.Service,
 
 	txn neo.Starter,
@@ -148,7 +141,6 @@ func NewService(
 		alliance,
 		universe,
 		market,
-		stats,
 		tracker,
 		txn,
 		killmails,

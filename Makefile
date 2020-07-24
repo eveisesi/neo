@@ -7,10 +7,13 @@ gqlgen:
 	go run scripts/gqlgen/gqlgen.go
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o neo cmd/neo/*.go
+	go build -o neo cmd/neo/*.go
 
 serve: build
 	./neo serve
 
 top: build
 	./neo top
+
+clean:
+	rm -f neo

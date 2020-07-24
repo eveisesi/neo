@@ -64,6 +64,15 @@ func killmailCommands() []cli.Command {
 			},
 		},
 		cli.Command{
+			Name:  "stats",
+			Usage: "Monitors the stats queue and calculates stats as new killmails get processed",
+			Action: func(c *cli.Context) error {
+				app := core.New(false)
+				app.Stats.Calculate()
+				return nil
+			},
+		},
+		cli.Command{
 			Name:  "add",
 			Usage: "Adds a Killmail ID and Hash to the queue",
 			Action: func(c *cli.Context) error {

@@ -23,7 +23,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 	}
 	// If Current is an empty string, set it to the passed in max string
 	if current == "" {
-		current = max
+		current = min
 	}
 
 	// Date Parsing to get time.Time's to deal with
@@ -32,9 +32,15 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 		s.logger.WithError(err).Fatal("unable to parse provided date")
 	}
 
-	maxdate, err := time.Parse("20060102", max)
-	if err != nil {
-		s.logger.WithError(err).Fatal("unable to parse provided date")
+	var maxdate time.Time
+	if max == "" {
+		now := time.Now()
+		maxdate = time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, time.UTC)
+	} else {
+		maxdate, err = time.Parse("20060102", max)
+		if err != nil {
+			s.logger.WithError(err).Fatal("unable to parse provided date")
+		}
 	}
 
 	currentdate, err := time.Parse("20060102", current)
@@ -117,7 +123,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 			continue
 		}
 
-		currentdate = currentdate.AddDate(0, 0, -1)
+		currentdate = currentdate.AddDate(0, 0, 1)
 		_, err = s.redis.Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 		if err != nil {
 			s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
@@ -133,6 +139,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 		}
 
 		if datehold && threshold > 0 {
+			i := 0
 			for {
 				count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 				if err != nil {
@@ -142,8 +149,11 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 				if count < threshold {
 					break
 				}
-
+				if i%10 == 0 {
+					entry.WithField("count", count).Infoln()
+				}
 				time.Sleep(time.Second)
+				i++
 			}
 		}
 
@@ -180,7 +190,7 @@ func (s *service) handleHashes(hashes map[string]string) {
 			return
 		}
 
-		msg, err := json.Marshal(Message{
+		msg, err := json.Marshal(neo.Message{
 			ID:   killmailID,
 			Hash: hash,
 		})

@@ -11,6 +11,7 @@ import (
 	"github.com/eveisesi/neo/tools"
 	"github.com/pkg/errors"
 	"github.com/sirkon/go-format"
+	"github.com/sirupsen/logrus"
 )
 
 func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
@@ -47,6 +48,68 @@ func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Ki
 
 	return killmail, errors.Wrap(err, "failed to cache killmail in redis")
 
+}
+
+// FullKillmail assume that caller only needs ids. This function is not suitable if name resolution is needed
+func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
+
+	var entry = s.logger.WithFields(logrus.Fields{
+		"id":   id,
+		"hash": hash,
+	})
+
+	killmail, err := s.Killmail(ctx, id, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	solarSystem, err := s.universe.SolarSystem(ctx, killmail.SolarSystemID)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch solar system")
+	}
+	if err == nil {
+		killmail.System = solarSystem
+	}
+
+	constellation, err := s.universe.Constellation(ctx, solarSystem.ConstellationID)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch constellation")
+	}
+	if err == nil {
+		solarSystem.Constellation = constellation
+	}
+
+	region, err := s.universe.Region(ctx, constellation.RegionID)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch region")
+	}
+	if err == nil {
+		constellation.Region = region
+	}
+
+	kmVictim, err := s.VictimByKillmailID(ctx, id, hash)
+	if err != nil {
+		entry.WithError(err).Error("Failed to retrieve killmail victim")
+	}
+
+	killmail.Victim = kmVictim
+
+	ship, err := s.universe.Type(ctx, kmVictim.ShipTypeID)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch ship")
+	}
+	if err == nil {
+		killmail.Victim.Ship = ship
+	}
+
+	kmAttackers, err := s.AttackersByKillmailID(ctx, id, hash)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch km attackers")
+	}
+
+	killmail.Attackers = kmAttackers
+
+	return killmail, nil
 }
 
 func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error) {

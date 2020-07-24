@@ -12,7 +12,6 @@ import (
 type StatsRepository interface {
 	Apply(id uint64, entity StatEntity, category StatCategory, frequency StatFrequency, date time.Time, value float64) error
 	Save(ctx context.Context, stats []*Stat) error
-	// Fetch(uint, string, string, string, time.Time) (float64, error)
 }
 
 // Stat is an object representing the database table.

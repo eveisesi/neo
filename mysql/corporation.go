@@ -56,7 +56,7 @@ func (r *corporationRepository) CreateCorporation(ctx context.Context, corporati
 		return corporation, errors.Wrap(err, "unable to copy corporation to orm")
 	}
 
-	err = bCorporation.Insert(ctx, r.db, boil.Infer())
+	err = bCorporation.Insert(ctx, r.db, boil.Infer(), true)
 	if err != nil {
 		return corporation, errors.Wrap(err, "unable to insert corporation into db")
 	}

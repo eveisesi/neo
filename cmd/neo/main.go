@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
@@ -32,6 +33,15 @@ func init() {
 		},
 		cronCommand(),
 		cli.Command{
+			Name: "test",
+			Action: func(c *cli.Context) error {
+
+				spew.Dump(string([]byte{105, 110, 118, 97, 108, 105, 100, 95, 98, 108, 111, 99, 107, 115}))
+
+				return nil
+			},
+		},
+		cli.Command{
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {
@@ -50,9 +60,8 @@ func init() {
 			},
 			Flags: []cli.Flag{
 				cli.StringFlag{
-					Name:     "maxdate",
-					Usage:    "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
-					Required: true,
+					Name:  "maxdate",
+					Usage: "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
 				},
 				cli.StringFlag{
 					Name:     "mindate",

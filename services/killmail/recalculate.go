@@ -48,7 +48,7 @@ func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
 
 		for _, killmail := range killmails {
 
-			msg := Message{
+			msg := neo.Message{
 				ID:   killmail.ID,
 				Hash: killmail.Hash,
 			}
@@ -117,7 +117,7 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 
 	var ctx = context.Background()
 
-	var payload Message
+	var payload = neo.Message{}
 
 	err := json.Unmarshal(message, &payload)
 	if err != nil {
@@ -157,7 +157,5 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 	}
 
 	s.primeKillmailNodes(ctx, killmail, entry)
-
-	s.stats.Calculate(killmail)
 
 }

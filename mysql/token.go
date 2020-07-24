@@ -38,7 +38,7 @@ func (r *tokenRepository) CreateToken(ctx context.Context, token *neo.Token) (*n
 		return nil, errors.Wrap(err, "unable to create token")
 	}
 
-	err = bToken.Insert(ctx, r.db, boil.Infer())
+	err = bToken.Insert(ctx, r.db, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert token")
 	}

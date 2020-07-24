@@ -98,7 +98,7 @@ func (r *universeRepository) CreateSolarSystem(ctx context.Context, system *neo.
 		return errors.Wrap(err, "unable to copy solar system to orm")
 	}
 
-	err = bSolar.Insert(ctx, r.db, boil.Infer())
+	err = bSolar.Insert(ctx, r.db, boil.Infer(), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert solar system into db")
 	}
@@ -145,7 +145,7 @@ func (r *universeRepository) CreateType(ctx context.Context, invType *neo.Type) 
 		return errors.Wrap(err, "unable to copy invType to orm")
 	}
 
-	err = bType.Insert(ctx, r.db, boil.Infer())
+	err = bType.Insert(ctx, r.db, boil.Infer(), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to insert invType into db")
 	}
@@ -199,7 +199,7 @@ func (r *universeRepository) CreateTypeAttributes(ctx context.Context, attribute
 			return errors.Wrap(err, "unable to copy attribute to orm")
 		}
 
-		err = bAttribute.Insert(ctx, txn, boil.Infer())
+		err = bAttribute.Insert(ctx, txn, boil.Infer(), true)
 		if err != nil {
 			txnErr := txn.Rollback()
 			if txnErr != nil {

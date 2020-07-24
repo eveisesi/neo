@@ -57,7 +57,7 @@ func (r *killmailRepository) Create(ctx context.Context, killmail *neo.Killmail)
 		return nil, errors.Wrap(err, "unable to copy killmail to orm")
 	}
 
-	err = bKillmail.Insert(ctx, r.db, boil.Infer())
+	err = bKillmail.Insert(ctx, r.db, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to insert killmail into db")
 	}
@@ -76,7 +76,7 @@ func (r *killmailRepository) CreateWithTxn(ctx context.Context, txn neo.Transact
 		return nil, errors.Wrap(err, "unable to copy killmail to orm")
 	}
 
-	err = bKillmail.Insert(ctx, t, boil.Infer())
+	err = bKillmail.Insert(ctx, t, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to insert killmail into db")
 	}

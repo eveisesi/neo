@@ -59,7 +59,7 @@ func (r *killmailItemRepository) Create(ctx context.Context, item *neo.KillmailI
 		return nil, errors.Wrap(err, "failed to copy item to orm")
 	}
 
-	err = bItem.Insert(ctx, r.db, boil.Infer())
+	err = bItem.Insert(ctx, r.db, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert item into db")
 	}
@@ -79,7 +79,7 @@ func (r *killmailItemRepository) CreateWithTxn(ctx context.Context, txn neo.Tran
 		return nil, errors.Wrap(err, "failed to copy item to orm")
 	}
 
-	err = bItem.Insert(ctx, t, boil.Infer())
+	err = bItem.Insert(ctx, t, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert item into db")
 	}
@@ -99,7 +99,7 @@ func (r *killmailItemRepository) CreateBulk(ctx context.Context, items []*neo.Ki
 			return nil, errors.Wrap(err, "failed to copy item to orm")
 		}
 
-		err = bItem.Insert(ctx, r.db, boil.Infer())
+		err = bItem.Insert(ctx, r.db, boil.Infer(), false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to insert item into db")
 		}
@@ -125,7 +125,7 @@ func (r *killmailItemRepository) CreateBulkWithTxn(ctx context.Context, txn neo.
 			return nil, errors.Wrap(err, "failed to copy item to orm")
 		}
 
-		err = bItem.Insert(ctx, t, boil.Infer())
+		err = bItem.Insert(ctx, t, boil.Infer(), false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to insert item into db")
 		}

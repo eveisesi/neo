@@ -2,31 +2,72 @@ package stats
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"github.com/eveisesi/neo/services/killmail"
+
 	"github.com/eveisesi/neo"
+	"github.com/go-redis/redis/v7"
+	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	Calculate(*neo.Killmail) error
+	Calculate() error
 }
 
 type service struct {
+	redis  *redis.Client
+	logger *logrus.Logger
+
+	killmail killmail.Service
+
 	neo.StatsRepository
 }
 
-func NewService(stats neo.StatsRepository) Service {
+func NewService(redis *redis.Client, logger *logrus.Logger, killmail killmail.Service, stats neo.StatsRepository) Service {
 	return &service{
+		redis,
+		logger,
+		killmail,
 		stats,
 	}
 }
 
-func (s *service) date(t time.Time) *neo.Date {
-	return &neo.Date{Time: time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)}
+func (s *service) Calculate() error {
+
+	subscription := s.redis.Subscribe(neo.QUEUES_KILLMAIL_STATS)
+	channel := subscription.Channel()
+	for msg := range channel {
+		b := msg.Payload
+		var message = neo.Message{}
+		err := json.Unmarshal([]byte(b), &message)
+		if err != nil {
+			s.logger.WithError(err).WithField("message", string(b)).Error("unable to decode payload")
+			time.Sleep(time.Millisecond * 100)
+			continue
+		}
+		s.logger.WithFields(logrus.Fields{
+			"id": message.ID, "hash": message.Hash,
+		}).Infoln()
+		err = s.calculate(message.ID, message.Hash)
+		if err != nil {
+			s.logger.WithError(err).WithField("message", string(b)).Error("failed to calculate stats")
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (s *service) Calculate(killmail *neo.Killmail) error {
+func (s *service) calculate(id uint64, hash string) error {
 
+	var ctx = context.Background()
+
+	killmail, err := s.killmail.FullKillmail(ctx, id, hash)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to fetch full killmail for stats")
+	}
 	if killmail.IsNPC {
 		return nil
 	}
@@ -36,10 +77,9 @@ func (s *service) Calculate(killmail *neo.Killmail) error {
 	stats = append(stats, s.victim(killmail)...)
 	stats = append(stats, s.attackers(killmail)...)
 
-	chunks := ChunkSliceStats(stats, 100)
+	chunks := chunkSliceStats(stats, 100)
 	for _, chunk := range chunks {
-
-		err := s.Save(context.Background(), chunk)
+		err := s.Save(ctx, chunk)
 		if err != nil {
 			return err
 		}
@@ -49,7 +89,7 @@ func (s *service) Calculate(killmail *neo.Killmail) error {
 
 }
 
-func ChunkSliceStats(slice []*neo.Stat, size int) [][]*neo.Stat {
+func chunkSliceStats(slice []*neo.Stat, size int) [][]*neo.Stat {
 
 	var chunk = make([][]*neo.Stat, 0)
 	if len(slice) <= size {
@@ -74,6 +114,10 @@ func ChunkSliceStats(slice []*neo.Stat, size int) [][]*neo.Stat {
 
 }
 
+func (s *service) date(t time.Time) *neo.Date {
+	return &neo.Date{Time: time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)}
+}
+
 func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
 
 	date := s.date(killmail.KillmailTime)
@@ -92,7 +136,7 @@ func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
 		Category:  neo.StatCategoryISKKilled,
 		Frequency: neo.StatFrequencyDaily,
 		Date:      date,
-		Value:     1,
+		Value:     killmail.TotalValue,
 	})
 	if killmail.System != nil {
 		stats = append(stats, &neo.Stat{
@@ -109,7 +153,7 @@ func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
 			Category:  neo.StatCategoryISKKilled,
 			Frequency: neo.StatFrequencyDaily,
 			Date:      date,
-			Value:     1,
+			Value:     killmail.TotalValue,
 		})
 		if killmail.System.Constellation != nil {
 			stats = append(stats, &neo.Stat{
@@ -126,7 +170,7 @@ func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
 				Category:  neo.StatCategoryISKKilled,
 				Frequency: neo.StatFrequencyDaily,
 				Date:      date,
-				Value:     1,
+				Value:     killmail.TotalValue,
 			})
 		}
 	}

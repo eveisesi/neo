@@ -55,7 +55,7 @@ func (r *characterRepository) CreateCharacter(ctx context.Context, character *ne
 		return character, errors.Wrap(err, "unable to copy character to orm")
 	}
 
-	err = bCharacter.Insert(ctx, r.db, boil.Infer())
+	err = bCharacter.Insert(ctx, r.db, boil.Infer(), true)
 	if err != nil {
 		return character, errors.Wrap(err, "unable to insert character into db")
 	}

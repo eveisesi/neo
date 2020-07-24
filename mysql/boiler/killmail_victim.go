@@ -363,7 +363,7 @@ func (killmailVictimL) LoadKillmail(ctx context.Context, e boil.ContextExecutor,
 func (o *KillmailVictim) SetKillmail(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Killmail) error {
 	var err error
 	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+		if err = related.Insert(ctx, exec, boil.Infer(), false); err != nil {
 			return errors.Wrap(err, "failed to insert into foreign table")
 		}
 	}
@@ -438,7 +438,7 @@ func FindKillmailVictim(ctx context.Context, exec boil.ContextExecutor, iD uint6
 
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *KillmailVictim) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
+func (o *KillmailVictim) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns, ignore bool) error {
 	if o == nil {
 		return errors.New("boiler: no killmail_victim provided for insertion")
 	}
@@ -478,10 +478,16 @@ func (o *KillmailVictim) Insert(ctx context.Context, exec boil.ContextExecutor, 
 		if err != nil {
 			return err
 		}
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `killmail_victim` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		insert := "INSERT%s"
+		if ignore {
+			insert = fmt.Sprintf(insert, " IGNORE")
 		} else {
-			cache.query = "INSERT INTO `killmail_victim` () VALUES ()%s%s"
+			insert = fmt.Sprintf(insert, "")
+		}
+		if len(wl) != 0 {
+			cache.query = fmt.Sprintf("%s INTO `killmail_victim` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		} else {
+			cache.query = fmt.Sprintf("%s INTO `killmail_victim` () VALUES ()%s%s", insert)
 		}
 
 		var queryOutput, queryReturning string

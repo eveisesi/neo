@@ -10,3 +10,8 @@ type Envelope struct {
 	Hash     string          `json:"hash"`
 	Killmail json.RawMessage `json:"killmail"`
 }
+
+type Message struct {
+	ID   uint64 `json:"id"`
+	Hash string `json:"hash"`
+}

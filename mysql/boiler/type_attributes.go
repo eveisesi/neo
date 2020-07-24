@@ -227,7 +227,7 @@ func FindTypeAttribute(ctx context.Context, exec boil.ContextExecutor, typeID ui
 
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *TypeAttribute) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
+func (o *TypeAttribute) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns, ignore bool) error {
 	if o == nil {
 		return errors.New("boiler: no type_attributes provided for insertion")
 	}
@@ -267,10 +267,16 @@ func (o *TypeAttribute) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		if err != nil {
 			return err
 		}
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `type_attributes` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		insert := "INSERT%s"
+		if ignore {
+			insert = fmt.Sprintf(insert, " IGNORE")
 		} else {
-			cache.query = "INSERT INTO `type_attributes` () VALUES ()%s%s"
+			insert = fmt.Sprintf(insert, "")
+		}
+		if len(wl) != 0 {
+			cache.query = fmt.Sprintf("%s INTO `type_attributes` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		} else {
+			cache.query = fmt.Sprintf("%s INTO `type_attributes` () VALUES ()%s%s", insert)
 		}
 
 		var queryOutput, queryReturning string

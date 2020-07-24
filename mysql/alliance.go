@@ -56,7 +56,7 @@ func (r *allianceRepository) CreateAlliance(ctx context.Context, alliance *neo.A
 		return alliance, errors.Wrap(err, "unable to copy alliance to orm")
 	}
 
-	err = bAlliance.Insert(ctx, r.db, boil.Infer())
+	err = bAlliance.Insert(ctx, r.db, boil.Infer(), true)
 	if err != nil {
 		return alliance, errors.Wrap(err, "unable to insert alliance into db")
 	}

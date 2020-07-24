@@ -64,47 +64,31 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		"worker": workerID,
 	})
 
-	err = s.stats.Calculate(killmail)
-	if err != nil {
-		entry.WithError(err).Error("encountered error with stats")
-	}
-
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
 		if killmail.TotalValue >= float64(threshold) {
-			bytes, _ := json.Marshal(struct {
-				ID   uint64 `json:"id"`
-				Hash string `json:"hash"`
-			}{
+			bytes, _ := json.Marshal(neo.Message{
 				ID:   killmail.ID,
 				Hash: killmail.Hash,
 			})
-
 			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
 			if err != nil {
-				entry.WithError(err).Error("failed to publish message")
+				entry.WithError(err).Error("failed to publish message to notifications queue")
 			}
 		}
 	}
 
-	if s.config.SpacesEnabled {
-		x, err := json.Marshal(killmail)
-		if err != nil {
-			entry.WithError(err).Error("failed to marshal killmail for backup")
-			return
-		}
+	msg, err := json.Marshal(neo.Message{
+		ID:   killmail.ID,
+		Hash: killmail.Hash,
+	})
+	if err != nil {
+		entry.WithError(err).Error("failed to marshal message for stats queue")
+	}
 
-		y, err := json.Marshal(neo.Envelope{
-			ID:       killmail.ID,
-			Hash:     killmail.Hash,
-			Killmail: x,
-		})
-		if err != nil {
-			entry.WithError(err).Error("failed to marshal envelope for queue")
-			return
-		}
-
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(killmail.ID), Member: string(y)})
+	_, err = s.redis.Publish(neo.QUEUES_KILLMAIL_STATS, msg).Result()
+	if err != nil {
+		entry.WithError(err).Error("failed to publish message to stats queue")
 	}
 
 	time.Sleep(time.Millisecond * time.Duration(sleep))
@@ -115,7 +99,7 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 
 	var ctx = context.Background()
 
-	var payload Message
+	var payload = neo.Message{}
 	err := json.Unmarshal(message, &payload)
 	if err != nil {
 		s.logger.WithField("message", string(message)).Error("failed to unmarhal message into message struct")
@@ -269,7 +253,12 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 
 	err = txn.Commit()
 	if err != nil {
-		entry.WithError(err).Error("failed to commit transaction")
+		entry.WithError(err).Error("failed to commit transaction.attempting rollback")
+		err = txn.Rollback()
+		if err != nil {
+			entry.WithError(err).Fatal("failed to rollback transaction, exiting...")
+		}
+
 		return nil, err
 	}
 
@@ -302,6 +291,7 @@ func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 	if killmail.Victim == nil {
 		return false
 	}
+
 	if killmail.Attackers == nil {
 		return false
 	}

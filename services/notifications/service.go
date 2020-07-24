@@ -82,7 +82,7 @@ func (s *service) Run() {
 	ch := pubsub.Channel()
 
 	for payload := range ch {
-		message := Message{}
+		message := neo.Message{}
 		err := json.Unmarshal([]byte(payload.Payload), &message)
 		if err != nil {
 			s.logger.WithError(err).WithField("payload", payload.Payload).Error("failed to unmarshal pubsub payload")
@@ -96,7 +96,7 @@ func (s *service) Run() {
 
 }
 
-func (s *service) processMessage(msg Message) {
+func (s *service) processMessage(msg neo.Message) {
 
 	var ctx = context.Background()
 
@@ -303,7 +303,10 @@ func (s *service) processMessage(msg Message) {
 
 	if response.StatusCode > 200 {
 		data, _ := ioutil.ReadAll(response.Body)
-		entry.WithError(err).WithField("data", data).Error("webhook request to slack failed")
+		entry.WithError(err).WithFields(logrus.Fields{
+			"response": string(data),
+			"request":  string(b),
+		}).Error("webhook request to slack failed")
 	}
 
 }

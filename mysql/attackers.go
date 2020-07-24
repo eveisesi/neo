@@ -59,7 +59,7 @@ func (r *killmailAttackerRepository) Create(ctx context.Context, attacker *neo.K
 		return nil, errors.Wrap(err, "failed to copy attacker to orm")
 	}
 
-	err = bAttacker.Insert(ctx, r.db, boil.Infer())
+	err = bAttacker.Insert(ctx, r.db, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert attacker into db")
 	}
@@ -79,7 +79,7 @@ func (r *killmailAttackerRepository) CreateWithTxn(ctx context.Context, txn neo.
 		return nil, errors.Wrap(err, "failed to copy attacker to orm")
 	}
 
-	err = bAttacker.Insert(ctx, t, boil.Infer())
+	err = bAttacker.Insert(ctx, t, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert attacker into db")
 	}
@@ -99,7 +99,7 @@ func (r *killmailAttackerRepository) CreateBulk(ctx context.Context, attackers [
 			return nil, errors.Wrap(err, "failed to copy attacker to orm")
 		}
 
-		err = bAttacker.Insert(ctx, r.db, boil.Infer())
+		err = bAttacker.Insert(ctx, r.db, boil.Infer(), false)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to insert attacker into db")
 		}
@@ -119,22 +119,9 @@ func (r *killmailAttackerRepository) CreateBulkWithTxn(ctx context.Context, txn 
 
 	for _, attacker := range attackers {
 		_, err = r.CreateWithTxn(ctx, txn, attacker)
-		// var bAttacker = new(boiler.KillmailAttacker)
-		// err := copier.Copy(bAttacker, attacker)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to copy attacker to orm")
-		// }
-
-		// err = bAttacker.Insert(ctx, t, boil.Infer())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to insert attacker into db")
 		}
-
-		// err = copier.Copy(attacker, bAttacker)
-		// if err != nil {
-		// 	return nil, errors.Wrap(err, "failed to copy orm to attacker")
-		// }
-
 	}
 
 	return attackers, nil

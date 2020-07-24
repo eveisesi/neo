@@ -59,7 +59,7 @@ func (r *killmailVictimRepository) Create(ctx context.Context, victim *neo.Killm
 		return nil, errors.Wrap(err, "failed to copy victim to orm")
 	}
 
-	err = bVictim.Insert(ctx, r.db, boil.Infer())
+	err = bVictim.Insert(ctx, r.db, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert victim into db")
 	}
@@ -79,7 +79,7 @@ func (r *killmailVictimRepository) CreateWithTxn(ctx context.Context, txn neo.Tr
 		return nil, errors.Wrap(err, "failed to copy victim to orm")
 	}
 
-	err = bVictim.Insert(ctx, t, boil.Infer())
+	err = bVictim.Insert(ctx, t, boil.Infer(), false)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to insert victim into db")
 	}

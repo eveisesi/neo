@@ -70,6 +70,7 @@ const REDIS_GRAPHQL_APQ_CACHE = "neo:graphql:apq"
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
 const QUEUES_KILLMAIL_RECALCULATE = "neo:killmails:recalculate"
 const QUEUES_KILLMAIL_BACKUP = "neo:killmails:backup"
+const QUEUES_KILLMAIL_STATS = "neo:killmails:stats"
 
 // NEO Notifications Redis PubSub Channel
 const REDIS_NOTIFICATION_PUBSUB = "neo:notifications"

@@ -242,7 +242,7 @@ func FindSolarSystem(ctx context.Context, exec boil.ContextExecutor, iD uint64, 
 
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *SolarSystem) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
+func (o *SolarSystem) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns, ignore bool) error {
 	if o == nil {
 		return errors.New("boiler: no solar_systems provided for insertion")
 	}
@@ -282,10 +282,16 @@ func (o *SolarSystem) Insert(ctx context.Context, exec boil.ContextExecutor, col
 		if err != nil {
 			return err
 		}
-		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO `solar_systems` (`%s`) %%sVALUES (%s)%%s", strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		insert := "INSERT%s"
+		if ignore {
+			insert = fmt.Sprintf(insert, " IGNORE")
 		} else {
-			cache.query = "INSERT INTO `solar_systems` () VALUES ()%s%s"
+			insert = fmt.Sprintf(insert, "")
+		}
+		if len(wl) != 0 {
+			cache.query = fmt.Sprintf("%s INTO `solar_systems` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+		} else {
+			cache.query = fmt.Sprintf("%s INTO `solar_systems` () VALUES ()%s%s", insert)
 		}
 
 		var queryOutput, queryReturning string

@@ -63,6 +63,7 @@ type App struct {
 	Market       market.Service
 	Migration    migration.Service
 	Search       search.Service
+	Stats        stats.Service
 	Notification notifications.Service
 	Token        token.Service
 	Top          top.Service
@@ -199,8 +200,6 @@ func New(debug bool) *App {
 		mysql.NewTokenRepository(db),
 	)
 
-	stats := stats.NewService(mysql.NewStatRepository(db))
-
 	killmail := killmail.NewService(
 		client,
 		redisClient,
@@ -212,7 +211,6 @@ func New(debug bool) *App {
 		alliance,
 		universe,
 		market,
-		stats,
 		tracker,
 		txn,
 		mysql.NewKillmailRepository(db),
@@ -221,6 +219,8 @@ func New(debug bool) *App {
 		mysql.NewKillmailVictimRepository(db),
 		mysql.NewMVRepository(db),
 	)
+
+	stats := stats.NewService(redisClient, logger, killmail, mysql.NewStatRepository(db))
 
 	notifications := notifications.NewService(
 		redisClient,
@@ -269,6 +269,7 @@ func New(debug bool) *App {
 		Migration:    migration,
 		Notification: notifications,
 		Search:       search,
+		Stats:        stats,
 		Token:        token,
 		Top:          top,
 		Tracker:      tracker,
