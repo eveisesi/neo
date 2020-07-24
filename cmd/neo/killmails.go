@@ -68,7 +68,7 @@ func killmailCommands() []cli.Command {
 			Usage: "Monitors the stats queue and calculates stats as new killmails get processed",
 			Action: func(c *cli.Context) error {
 				app := core.New(false)
-				app.Stats.Calculate()
+				_ = app.Stats.Run()
 				return nil
 			},
 		},

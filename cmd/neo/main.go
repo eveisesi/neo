@@ -133,7 +133,11 @@ func init() {
 			Name:        "notifications",
 			Description: "Notifications subscribe to the a Redis PubSub. When the importer detects a killmail with a value greater than the configured notification value, it publishes the id and hash to this pubsub and this service will format the message for slack and post the killmail to slack",
 			Action: func(c *cli.Context) error {
-				app := core.New(false)
+				app := core.New(true)
+
+				if !app.Config.SlackNotifierEnabled {
+					return nil
+				}
 
 				app.Notification.Run()
 				return nil

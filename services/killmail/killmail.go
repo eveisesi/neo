@@ -92,6 +92,36 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 		entry.WithError(err).Error("Failed to retrieve killmail victim")
 	}
 
+	if kmVictim != nil {
+		if kmVictim.CharacterID.Valid {
+			character, err := s.character.Character(ctx, kmVictim.CharacterID.Uint64)
+			if err != nil {
+				entry.WithError(err).Error("failed to fetch victim character information")
+			}
+			if err == nil {
+				kmVictim.Character = character
+			}
+		}
+		if kmVictim.CorporationID.Valid {
+			corporation, err := s.corporation.Corporation(ctx, kmVictim.CorporationID.Uint64)
+			if err != nil {
+				entry.WithError(err).Error("failed to fetch victim corporation information")
+			}
+			if err == nil {
+				kmVictim.Corporation = corporation
+			}
+		}
+		if kmVictim.AllianceID.Valid {
+			alliance, err := s.alliance.Alliance(ctx, kmVictim.AllianceID.Uint64)
+			if err != nil {
+				entry.WithError(err).Error("failed to fetch victim alliance information")
+			}
+			if err == nil {
+				kmVictim.Alliance = alliance
+			}
+		}
+	}
+
 	killmail.Victim = kmVictim
 
 	ship, err := s.universe.Type(ctx, kmVictim.ShipTypeID)
@@ -100,6 +130,14 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 	}
 	if err == nil {
 		killmail.Victim.Ship = ship
+	}
+
+	items, err := s.items.ByKillmailID(ctx, id)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch items")
+	}
+	if err == nil {
+		kmVictim.Items = items
 	}
 
 	kmAttackers, err := s.AttackersByKillmailID(ctx, id, hash)

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/eveisesi/neo/tools"
 
@@ -72,26 +73,36 @@ func NewService(
 
 func (s *service) Run() {
 
-	if !s.config.SlackNotifierEnabled {
-		return
-	}
-
-	// Subscribe to the PubSub for Killmail Notifications
-	pubsub := s.redis.Subscribe(neo.REDIS_NOTIFICATION_PUBSUB)
-
-	ch := pubsub.Channel()
-
-	for payload := range ch {
-		message := neo.Message{}
-		err := json.Unmarshal([]byte(payload.Payload), &message)
+	for {
+		entry := s.logger
+		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
 		if err != nil {
-			s.logger.WithError(err).WithField("payload", payload.Payload).Error("failed to unmarshal pubsub payload")
+			entry.WithError(err).Error("unable to determine count of message queue")
+			time.Sleep(time.Second * 2)
+			continue
 		}
 
-		s.logger.WithField("id", message.ID).WithField("hash", message.Hash).Info("notification received")
+		if count == 0 {
+			entry.Info("notification queue is empty")
+			time.Sleep(time.Second * 15)
+			continue
+		}
 
-		go s.processMessage(message)
+		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_NOTIFICATION, 5).Result()
+		if err != nil {
+			entry.WithError(err).Fatal("unable to retrieve hashes from queue")
+		}
 
+		for _, result := range results {
+			var message neo.Message
+			err := json.Unmarshal([]byte(result.Member.(string)), &message)
+			if err != nil {
+				s.logger.WithError(err).WithField("member", result.Member).Error("failed to unmarshal queue payload")
+			}
+
+			s.processMessage(message)
+			time.Sleep(time.Second * 2)
+		}
 	}
 
 }
@@ -100,88 +111,16 @@ func (s *service) processMessage(msg neo.Message) {
 
 	var ctx = context.Background()
 
-	entry := s.logger.WithField("message", msg)
+	entry := s.logger.WithFields(logrus.Fields{
+		"id":   msg.ID,
+		"hash": msg.Hash,
+	})
 
 	// Build Killmail
-	killmail, err := s.killmail.Killmail(ctx, msg.ID, msg.Hash)
+	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, msg.Hash)
 	if err != nil {
 		entry.WithError(err).Error("Failed to retrieve killmail from DB")
 		return
-	}
-
-	solarSystem, err := s.universe.SolarSystem(ctx, killmail.SolarSystemID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch solar system")
-	}
-	if err == nil {
-		killmail.System = solarSystem
-	}
-
-	constellation, err := s.universe.Constellation(ctx, solarSystem.ConstellationID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch constellation")
-	}
-	if err == nil {
-		solarSystem.Constellation = constellation
-	}
-
-	region, err := s.universe.Region(ctx, constellation.RegionID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch region")
-	}
-	if err == nil {
-		constellation.Region = region
-	}
-
-	kmVictim, err := s.killmail.VictimByKillmailID(ctx, msg.ID, msg.Hash)
-	if err != nil {
-		entry.WithError(err).Error("Failed to retrieve killmail victim")
-		return
-	}
-
-	killmail.Victim = kmVictim
-
-	if kmVictim.CharacterID.Valid {
-		character, err := s.character.Character(ctx, kmVictim.CharacterID.Uint64)
-		if err != nil {
-			entry.WithError(err).Error("failed to fetch character")
-		}
-		if err == nil {
-			killmail.Victim.Character = character
-		}
-	}
-	if kmVictim.CorporationID.Valid {
-		corporation, err := s.corporation.Corporation(ctx, kmVictim.CorporationID.Uint64)
-		if err != nil {
-			entry.WithError(err).Error("failed to fetch character")
-		}
-		if err == nil {
-			killmail.Victim.Corporation = corporation
-		}
-	}
-	if kmVictim.AllianceID.Valid {
-		alliance, err := s.alliance.Alliance(ctx, kmVictim.AllianceID.Uint64)
-		if err != nil {
-			entry.WithError(err).Error("failed to fetch alliance")
-		}
-		if err == nil {
-			killmail.Victim.Alliance = alliance
-		}
-	}
-	ship, err := s.universe.Type(ctx, kmVictim.ShipTypeID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch ship")
-	}
-	if err == nil {
-		killmail.Victim.Ship = ship
-	}
-
-	shipGroup, err := s.universe.TypeGroup(ctx, ship.GroupID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch ship")
-	}
-	if err == nil {
-		ship.Group = shipGroup
 	}
 
 	killmailSectionBlock := goslack.NewSectionBlock(
@@ -307,7 +246,10 @@ func (s *service) processMessage(msg neo.Message) {
 			"response": string(data),
 			"request":  string(b),
 		}).Error("webhook request to slack failed")
+		fmt.Println(string(b))
 	}
+
+	entry.Info("notification processed successfully")
 
 }
 
@@ -357,6 +299,10 @@ func (s *service) buildSlackVictimString(victim *neo.KillmailVictim) string {
 
 	if victim.Character == nil && victim.Alliance != nil {
 		response = fmt.Sprintf("%s (%s)", response, victim.Alliance.Name)
+	}
+
+	if response == "" {
+		response = "Unknown Victim"
 	}
 
 	return response

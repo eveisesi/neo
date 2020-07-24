@@ -13,7 +13,7 @@ import (
 )
 
 type Service interface {
-	Calculate() error
+	Run() error
 }
 
 type service struct {
@@ -34,42 +34,56 @@ func NewService(redis *redis.Client, logger *logrus.Logger, killmail killmail.Se
 	}
 }
 
-func (s *service) Calculate() error {
+func (s *service) Run() error {
 
-	subscription := s.redis.Subscribe(neo.QUEUES_KILLMAIL_STATS)
-	channel := subscription.Channel()
-	for msg := range channel {
-		b := msg.Payload
-		var message = neo.Message{}
-		err := json.Unmarshal([]byte(b), &message)
+	for {
+		entry := s.logger
+		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
 		if err != nil {
-			s.logger.WithError(err).WithField("message", string(b)).Error("unable to decode payload")
-			time.Sleep(time.Millisecond * 100)
+			entry.WithError(err).Error("unable to determine count of message queue")
+			time.Sleep(time.Second * 2)
 			continue
 		}
-		s.logger.WithFields(logrus.Fields{
-			"id": message.ID, "hash": message.Hash,
-		}).Infoln()
-		err = s.calculate(message.ID, message.Hash)
+
+		if count == 0 {
+			// entry.Info("stats queue is empty")
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_STATS, 5).Result()
 		if err != nil {
-			s.logger.WithError(err).WithField("message", string(b)).Error("failed to calculate stats")
-			return err
+			entry.WithError(err).Fatal("unable to retrieve hashes from queue")
+		}
+
+		for _, result := range results {
+			var message neo.Message
+			err := json.Unmarshal([]byte(result.Member.(string)), &message)
+			if err != nil {
+				s.logger.WithError(err).WithField("membver", result.Member).Error("failed to unmarshal queue payload")
+			}
+
+			s.processMessage(message)
 		}
 	}
 
-	return nil
 }
 
-func (s *service) calculate(id uint64, hash string) error {
+func (s *service) processMessage(msg neo.Message) {
 
 	var ctx = context.Background()
 
-	killmail, err := s.killmail.FullKillmail(ctx, id, hash)
+	entry := s.logger.WithFields(logrus.Fields{
+		"id":   msg.ID,
+		"hash": msg.Hash,
+	})
+
+	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, msg.Hash)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to fetch full killmail for stats")
+		entry.WithError(err).Error("failed to fetch full killmail for stats")
 	}
 	if killmail.IsNPC {
-		return nil
+		return
 	}
 
 	stats := make([]*neo.Stat, 0)
@@ -81,11 +95,12 @@ func (s *service) calculate(id uint64, hash string) error {
 	for _, chunk := range chunks {
 		err := s.Save(ctx, chunk)
 		if err != nil {
-			return err
+			entry.WithError(err).Error("encountered error calculating stats")
+			return
 		}
 	}
 
-	return nil
+	entry.Info("stats calculated successfully")
 
 }
 

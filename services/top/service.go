@@ -51,6 +51,9 @@ type (
 		StatsQueue     int64
 		PrevStatsQueue int64
 
+		NotificationsQueue     int64
+		PrevNotificationsQueue int64
+
 		InvalidQueue     int64
 		PrevInvalidQueue int64
 	}
@@ -112,7 +115,12 @@ func NewService(redis *redis.Client) Service {
 		Help: "Number of invalid killmail id and/or hashes received from ZKillboard",
 	}, s.fetchInvalidQueueStat)
 
-	prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid, queueStats)
+	queueNotifications := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "queue_notifications",
+		Help: "Number of killmails pending processing by our notification service",
+	}, s.fetchNotificationQueueStat)
+
+	prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid, queueStats, queueNotifications)
 
 	return s
 }
@@ -234,6 +242,19 @@ func (s *service) fetchStatsQueueStat() float64 {
 	return float64(i)
 }
 
+func (s *service) fetchNotificationQueue() (int64, error) {
+	return s.redis.ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
+}
+
+func (s *service) fetchNotificationQueueStat() float64 {
+	i, err := s.fetchNotificationQueue()
+	if err != nil {
+		return 0.00
+	}
+
+	return float64(i)
+}
+
 func (s *service) fetchInvalidQueue() (int64, error) {
 	return s.redis.ZCount(neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
 }
@@ -295,6 +316,11 @@ func (s *service) EvaluateParams(param *stat) error {
 		return errors.Wrap(err, "fetchStatsQueue failed")
 	}
 
+	param.NotificationsQueue, err = s.fetchNotificationQueue()
+	if err != nil {
+		return errors.Wrap(err, "fetchStatsQueue failed")
+	}
+
 	param.InvalidQueue, err = s.fetchInvalidQueue()
 	if err != nil {
 		return errors.Wrap(err, "fetchInvalidQueue failed")
@@ -314,6 +340,7 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevRecalculatingQueue = params.RecalculatingQueue
 	params.PrevBackupQueue = params.BackupQueue
 	params.PrevStatsQueue = params.StatsQueue
+	params.PrevNotificationsQueue = params.NotificationsQueue
 	params.PrevInvalidQueue = params.InvalidQueue
 }
 
@@ -346,6 +373,11 @@ func (s *service) Run() error {
 					"%d: Queue Stats (%d)",
 					params.StatsQueue,
 					params.StatsQueue-params.PrevStatsQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Notifications (%d)",
+					params.NotificationsQueue,
+					params.NotificationsQueue-params.PrevNotificationsQueue,
 				),
 				fmt.Sprintf(
 					"%d: Queue Backup (%d)",

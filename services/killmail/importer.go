@@ -64,29 +64,26 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 		"worker": workerID,
 	})
 
-	if s.config.SlackNotifierEnabled {
-		threshold := s.config.SlackNotifierValueThreshold * 1000000
-		if killmail.TotalValue >= float64(threshold) {
-			bytes, _ := json.Marshal(neo.Message{
-				ID:   killmail.ID,
-				Hash: killmail.Hash,
-			})
-			_, err = s.redis.Publish(neo.REDIS_NOTIFICATION_PUBSUB, bytes).Result()
-			if err != nil {
-				entry.WithError(err).Error("failed to publish message to notifications queue")
-			}
-		}
-	}
-
 	msg, err := json.Marshal(neo.Message{
 		ID:   killmail.ID,
 		Hash: killmail.Hash,
 	})
 	if err != nil {
 		entry.WithError(err).Error("failed to marshal message for stats queue")
+		return
+	}
+	member := &redis.Z{Score: float64(killmail.ID), Member: msg}
+	if s.config.SlackNotifierEnabled {
+		threshold := s.config.SlackNotifierValueThreshold * 1000000
+		if killmail.TotalValue >= float64(threshold) {
+			_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
+			if err != nil {
+				entry.WithError(err).Error("failed to publish message to notifications queue")
+			}
+		}
 	}
 
-	_, err = s.redis.Publish(neo.QUEUES_KILLMAIL_STATS, msg).Result()
+	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_STATS, member).Result()
 	if err != nil {
 		entry.WithError(err).Error("failed to publish message to stats queue")
 	}
