@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Character/get_characters_character_id
 // Version: v4
 // Cache: 86400 sec (24 Hour)
-func (s *service) GetCharactersCharacterID(id uint64, etag null.String) (*neo.Character, *Meta) {
+func (s *service) GetCharactersCharacterID(ctx context.Context, id uint64, etag null.String) (*neo.Character, *Meta) {
 
 	path := fmt.Sprintf("/v4/characters/%d/", id)
 	headers := make(map[string]string)
@@ -31,7 +32,7 @@ func (s *service) GetCharactersCharacterID(id uint64, etag null.String) (*neo.Ch
 		headers: headers,
 	}
 
-	response, m := s.request(request)
+	response, m := s.request(ctx, request)
 	if m.IsError() {
 		return nil, m
 	}

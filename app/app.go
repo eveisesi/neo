@@ -43,16 +43,21 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/newrelic/go-agent/v3/integrations/nrlogrus"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+
 	sqlDriver "github.com/go-sql-driver/mysql"
 )
 
 type App struct {
-	Logger *logrus.Logger
-	DB     *sqlx.DB
-	Redis  *redis.Client
-	Client *http.Client
-	Config *neo.Config
-	Spaces *session.Session
+	Label    string
+	NewRelic *newrelic.Application
+	Logger   *logrus.Logger
+	DB       *sqlx.DB
+	Redis    *redis.Client
+	Client   *http.Client
+	Config   *neo.Config
+	Spaces   *session.Session
 
 	ESI          esi.Service
 	Alliance     alliance.Service
@@ -71,7 +76,7 @@ type App struct {
 	Universe     universe.Service
 }
 
-func New(debug bool) *App {
+func New(command string, debug bool) *App {
 
 	cfg, err := loadEnv()
 	if err != nil {
@@ -82,12 +87,22 @@ func New(debug bool) *App {
 		cfg.LogLevel = "debug"
 	}
 
-	logger, err := makeLogger(cfg.LogLevel)
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+
+	logger, err := makeLogger(hostname, cfg.LogLevel)
 	if err != nil {
 		if logger != nil {
 			logger.WithError(err).Fatal("failed to configure logger")
 		}
 		log.Fatal(err)
+	}
+
+	nr, err := makeNewRelicApp(cfg, logger, command)
+	if err != nil {
+		logger.WithError(err).Fatal("failed to initialize newrelic application")
 	}
 
 	db, err := makeDB(cfg)
@@ -107,6 +122,10 @@ func New(debug bool) *App {
 		IdleCheckFrequency: time.Second * 10,
 	})
 
+	redisClient.AddHook(redisHook{
+		cfg: cfg,
+	})
+
 	_, err = redisClient.Ping().Result()
 	if err != nil {
 		logger.WithError(err).Fatal("failed to ping redis server")
@@ -122,8 +141,9 @@ func New(debug bool) *App {
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
+	client.Transport = newrelic.NewRoundTripper(client.Transport)
 
-	esiClient := esi.New(redisClient, cfg.ESIHost, cfg.ESIUAgent)
+	esiClient := esi.New(client, redisClient, cfg.ESIHost, cfg.ESIUAgent)
 
 	txn := mysql.NewTransactioner(db)
 
@@ -203,6 +223,7 @@ func New(debug bool) *App {
 	killmail := killmail.NewService(
 		client,
 		redisClient,
+		nr,
 		esiClient,
 		logger,
 		cfg,
@@ -220,11 +241,13 @@ func New(debug bool) *App {
 		mysql.NewMVRepository(db),
 	)
 
-	stats := stats.NewService(redisClient, logger, killmail, mysql.NewStatRepository(db))
+	stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(db))
 
 	notifications := notifications.NewService(
+		client,
 		redisClient,
 		logger,
+		nr,
 		cfg,
 		character,
 		corporation,
@@ -252,13 +275,15 @@ func New(debug bool) *App {
 	)
 
 	return &App{
-		Logger: logger,
-		DB:     db,
-		Redis:  redisClient,
-		Client: client,
-		ESI:    esiClient,
-		Config: cfg,
-		Spaces: spacesSession,
+		Label:    command,
+		NewRelic: nr,
+		Logger:   logger,
+		DB:       db,
+		Redis:    redisClient,
+		Client:   client,
+		ESI:      esiClient,
+		Config:   cfg,
+		Spaces:   spacesSession,
 
 		Alliance:     alliance,
 		Backup:       backup,
@@ -275,6 +300,33 @@ func New(debug bool) *App {
 		Tracker:      tracker,
 		Universe:     universe,
 	}
+
+}
+
+// makeNewRelicApp configures a instance of newrelic.Application for this application
+// name is the command that this instance of the application is executing and is configured at runtime in func main
+func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*newrelic.Application, error) {
+
+	appName := fmt.Sprintf("%s-%s", cfg.NewRelicAppName, cfg.Env)
+
+	app, err := newrelic.NewApplication(
+		newrelic.ConfigAppName(appName),
+		newrelic.ConfigLicense(cfg.NewRelicLicensenKey),
+		newrelic.ConfigDistributedTracerEnabled(true),
+		newrelic.ConfigLogger(nrlogrus.Transform(logger)),
+		func(config *newrelic.Config) {
+			config.Labels = map[string]string{
+				"command": command,
+			}
+		},
+	)
+	if err != nil {
+		logger.WithError(err).Fatal("failed to build newrelic application")
+	}
+
+	err = app.WaitForConnection(time.Second * 5)
+
+	return app, err
 
 }
 
@@ -313,10 +365,23 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 func loadEnv() (*neo.Config, error) {
 	config := neo.Config{}
 	err := envconfig.Process("", &config)
+
+	config.AllowedStatsEntities = []string{
+		"character",
+		"corporation",
+		"alliance",
+
+		"system",
+		"constellation",
+		"region",
+
+		"ship",
+	}
+
 	return &config, err
 }
 
-func makeLogger(logLevel string) (*logrus.Logger, error) {
+func makeLogger(hostname, logLevel string) (*logrus.Logger, error) {
 	logger := logrus.New()
 
 	logger.SetOutput(ioutil.Discard)
@@ -325,11 +390,6 @@ func makeLogger(logLevel string) (*logrus.Logger, error) {
 		Writer:    os.Stdout,
 		LogLevels: logrus.AllLevels,
 	})
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "unknown"
-	}
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{

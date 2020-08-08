@@ -2,6 +2,7 @@ package esi
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/volatiletech/null"
 
 	"github.com/go-redis/redis/v7"
@@ -25,31 +27,31 @@ var (
 type (
 	Service interface {
 		// Alliances
-		GetAlliancesAllianceID(id uint64, etag null.String) (*neo.Alliance, *Meta)
+		GetAlliancesAllianceID(ctx context.Context, id uint64, etag null.String) (*neo.Alliance, *Meta)
 
 		// Characters
-		GetCharactersCharacterID(id uint64, etag null.String) (*neo.Character, *Meta)
+		GetCharactersCharacterID(ctx context.Context, id uint64, etag null.String) (*neo.Character, *Meta)
 
 		// Corporations
-		GetCorporationsCorporationID(id uint64, etag null.String) (*neo.Corporation, *Meta)
+		GetCorporationsCorporationID(ctx context.Context, id uint64, etag null.String) (*neo.Corporation, *Meta)
 
 		// Killmails
-		GetKillmailsKillmailIDKillmailHash(id uint64, hash string) (*neo.Killmail, *Meta)
+		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint64, hash string) (*neo.Killmail, *Meta)
 
 		// Market
-		HeadMarketsRegionIDTypes(regionID uint64) *Meta
-		GetMarketGroups() ([]int, *Meta)
-		GetMarketGroupsMarketGroupID(id int) (*neo.MarketGroup, *Meta)
-		GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]int, *Meta)
-		GetMarketsRegionIDHistory(regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta)
-		GetMarketsPrices() ([]*neo.MarketPrices, *Meta)
+		HeadMarketsRegionIDTypes(ctx context.Context, regionID uint64) *Meta
+		GetMarketGroups(ctx context.Context) ([]int, *Meta)
+		GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*neo.MarketGroup, *Meta)
+		GetMarketsRegionIDTypes(ctx context.Context, regionID uint64, page null.String) ([]int, *Meta)
+		GetMarketsRegionIDHistory(ctx context.Context, regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta)
+		GetMarketsPrices(ctx context.Context) ([]*neo.MarketPrices, *Meta)
 
 		// Status
-		GetStatus() (*neo.ServerStatus, *Meta)
+		GetStatus(ctx context.Context) (*neo.ServerStatus, *Meta)
 
 		// Universe
-		GetUniverseSystemsSystemID(id uint64) (*neo.SolarSystem, *Meta)
-		GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta)
+		GetUniverseSystemsSystemID(ctx context.Context, id uint64) (*neo.SolarSystem, *Meta)
+		GetUniverseTypesTypeID(ctx context.Context, id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta)
 	}
 	service struct {
 		client      *http.Client
@@ -89,13 +91,11 @@ func (r *Meta) IsError() bool {
 }
 
 // New returns a default configuration for this package
-func New(redis *redis.Client, host, uagent string) Service {
+func New(client *http.Client, redis *redis.Client, host, uagent string) Service {
 
 	return &service{
-		redis: redis,
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		redis:       redis,
+		client:      client,
 		ua:          uagent,
 		maxattempts: 3,
 	}
@@ -104,7 +104,7 @@ func New(redis *redis.Client, host, uagent string) Service {
 
 // Request prepares and executes an http request to the EVE Swagger Interface OpenAPI
 // and returns the response
-func (s *service) request(r request) ([]byte, *Meta) {
+func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 
 	uri := url.URL{
 		Scheme:   "https",
@@ -113,11 +113,12 @@ func (s *service) request(r request) ([]byte, *Meta) {
 		RawQuery: r.query,
 	}
 
-	req, err := http.NewRequest(r.method, uri.String(), bytes.NewBuffer(r.body))
+	req, err := http.NewRequestWithContext(ctx, r.method, uri.String(), bytes.NewBuffer(r.body))
 	if err != nil {
 		err = errors.Wrap(err, "Unable build request")
 		return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, errors.Wrap(err, "failed to build esi request"))
 	}
+	req = newrelic.RequestWithTransactionContext(req, newrelic.FromContext(ctx))
 
 	for k, v := range r.headers {
 		req.Header.Add(k, v)
@@ -170,10 +171,10 @@ func (s *service) request(r request) ([]byte, *Meta) {
 
 	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, nil)
 
-	s.retrieveErrorReset(headers)
-	s.retrieveErrorCount(headers)
+	s.retrieveErrorReset(ctx, headers)
+	s.retrieveErrorCount(ctx, headers)
 
-	s.trackESICallStatusCode(m.Code)
+	s.trackESICallStatusCode(ctx, m.Code)
 
 	return data, m
 }
@@ -207,7 +208,7 @@ func (s *service) retrieveEtagHeader(h map[string]string) string {
 
 // retrieveErrorCount is a helper method that retrieves the number of errors that this application
 // has triggered and how many more we can trigger before being 420'd
-func (s *service) retrieveErrorCount(h map[string]string) {
+func (s *service) retrieveErrorCount(ctx context.Context, h map[string]string) {
 	// Default to a low count. This will cause the app to slow down
 	// if the header is not present to set the actual value from the header
 	var count int = 15
@@ -220,13 +221,13 @@ func (s *service) retrieveErrorCount(h map[string]string) {
 	}
 
 	mx.Lock()
-	s.redis.Set(neo.REDIS_ESI_ERROR_COUNT, count, 0)
+	s.redis.WithContext(ctx).Set(neo.REDIS_ESI_ERROR_COUNT, count, 0)
 	mx.Unlock()
 
 }
 
 // retrieveErrorReset is a helper method that retrieves the number of seconds until our Error Limit resets
-func (s *service) retrieveErrorReset(h map[string]string) {
+func (s *service) retrieveErrorReset(ctx context.Context, h map[string]string) {
 	if _, ok := h["X-Esi-Error-Limit-Reset"]; !ok {
 		err = fmt.Errorf("X-Esi-Error-Limit-Reset Header is missing")
 		return
@@ -238,27 +239,27 @@ func (s *service) retrieveErrorReset(h map[string]string) {
 	}
 
 	mx.Lock()
-	s.redis.Set(neo.REDIS_ESI_ERROR_RESET, time.Now().Add(time.Second*time.Duration(seconds)).Unix(), 0)
+	s.redis.WithContext(ctx).Set(neo.REDIS_ESI_ERROR_RESET, time.Now().Add(time.Second*time.Duration(seconds)).Unix(), 0)
 	mx.Unlock()
 
 }
 
-func (s *service) trackESICallStatusCode(code int) {
+func (s *service) trackESICallStatusCode(ctx context.Context, code int) {
 
 	value := time.Now().UnixNano()
 	input := redis.Z{Score: float64(value), Member: strconv.FormatInt(value, 10)}
 
 	switch n := code; {
 	case n == http.StatusOK:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_OK, &input)
+		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_OK, &input)
 	case n == http.StatusNotModified:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, &input)
+		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, &input)
 	case n == 420:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
+		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
 	case n >= 400 && n < 500:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_4XX, &input)
+		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_4XX, &input)
 	case n > 500:
-		s.redis.ZAdd(neo.REDIS_ESI_TRACKING_5XX, &input)
+		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_5XX, &input)
 	}
 
 }

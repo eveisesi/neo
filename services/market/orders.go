@@ -191,10 +191,10 @@ func (s *service) getCalculatedPrice(id uint64, date time.Time) float64 {
 	return 0.00
 }
 
-func (s *service) FetchHistory() {
+func (s *service) FetchHistory(ctx context.Context) {
 	s.logger.Info("fetching market groups")
 
-	groups, m := s.esi.GetMarketGroups()
+	groups, m := s.esi.GetMarketGroups(ctx)
 	if m.IsError() {
 		s.logger.WithError(m.Msg).Error("failed to fetch market groups")
 		return
@@ -205,7 +205,7 @@ func (s *service) FetchHistory() {
 	for _, v := range groups {
 		s.tracker.GateKeeper()
 		limiter.Execute(func() {
-			s.processGroup(v)
+			s.processGroup(ctx, v)
 		})
 	}
 
@@ -213,11 +213,11 @@ func (s *service) FetchHistory() {
 
 }
 
-func (s *service) processGroup(v int) {
+func (s *service) processGroup(ctx context.Context, v int) {
 
 	s.logger.WithField("group_id", v).Info("processing group")
 
-	group, m := s.esi.GetMarketGroupsMarketGroupID(v)
+	group, m := s.esi.GetMarketGroupsMarketGroupID(ctx, v)
 	if m.IsError() {
 		s.logger.WithError(m.Msg).WithField("market_group_id", v).Error("failed to fetch types for market group")
 		return
@@ -237,7 +237,7 @@ func (s *service) processGroup(v int) {
 			continue
 		}
 
-		records, m := s.esi.GetMarketsRegionIDHistory(region, strconv.FormatUint(t, 10))
+		records, m := s.esi.GetMarketsRegionIDHistory(ctx, region, strconv.FormatUint(t, 10))
 		if m.IsError() {
 			s.logger.WithError(m.Msg).WithField("type_id", t).Error("failed to pull market history for type")
 			continue
@@ -253,7 +253,7 @@ func (s *service) processGroup(v int) {
 			for _, record := range chunk {
 				record.TypeID = t
 			}
-			_, err := s.MarketRepository.CreateHistoricalRecord(context.Background(), chunk)
+			_, err := s.MarketRepository.CreateHistoricalRecord(ctx, chunk)
 			if err != nil {
 				s.logger.WithError(err).WithField("type_id", t).Error("failed to insert chunk of historical records into db")
 			}

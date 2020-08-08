@@ -17,7 +17,7 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 	var corporation = new(neo.Corporation)
 	var key = fmt.Sprintf(neo.REDIS_CORPORATION, id)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -42,13 +42,13 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 			return nil, errors.Wrap(err, "unable to marshal corporation for cache")
 		}
 
-		_, err = s.redis.Set(key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*60).Result()
 
 		return corporation, errors.Wrap(err, "failed to cache corporation in redis")
 	}
 
 	// Corporation is not cached, the DB doesn't have this corporation, lets check ESI
-	corporation, m := s.esi.GetCorporationsCorporationID(id, null.NewString("", false))
+	corporation, m := s.esi.GetCorporationsCorporationID(ctx, id, null.NewString("", false))
 	if m.IsError() {
 		return nil, m.Msg
 	}
@@ -64,7 +64,7 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 		return corporation, errors.Wrap(err, "unable to marshal corporation for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
 
 	return corporation, errors.Wrap(err, "failed to cache solar corporation in redis")
 }
@@ -74,7 +74,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64
 	var corporations = make([]*neo.Corporation, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_CORPORATION, id)
-		result, err := s.redis.Get(key).Bytes()
+		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -127,7 +127,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64
 			return nil, errors.Wrap(err, "unable to marshal corporation to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache corporation in redis")
 		}
@@ -156,7 +156,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, corporation := range expired {
 			s.tracker.GateKeeper()
-			newCorporation, m := s.esi.GetCorporationsCorporationID(corporation.ID, corporation.Etag)
+			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, corporation.Etag)
 			if m.IsError() {
 				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
 				continue

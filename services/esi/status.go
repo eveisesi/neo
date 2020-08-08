@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -8,9 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetStatus() (*neo.ServerStatus, *Meta) {
+func (s *service) GetStatus(ctx context.Context) (*neo.ServerStatus, *Meta) {
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   "/v1/status",
 	})

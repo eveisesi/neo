@@ -10,6 +10,8 @@ import (
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
+	_ "github.com/newrelic/go-agent/v3/integrations/nrmysql"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/urfave/cli"
 )
 
@@ -45,7 +47,7 @@ func init() {
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 			Action: func(c *cli.Context) error {
-				app := core.New(false)
+				app := core.New("killmail-history", false)
 				maxdate := c.String("maxdate")
 				mindate := c.String("mindate")
 				threshold := c.Int64("threshold")
@@ -88,7 +90,7 @@ func init() {
 			Name:  "listen",
 			Usage: "Opens a WSS Connection to ZKillboard and lsitens to the stream",
 			Action: func(c *cli.Context) error {
-				_ = core.New(false).Killmail.Websocket()
+				_ = core.New("killmail-listener", false).Killmail.Websocket()
 
 				return nil
 			},
@@ -96,14 +98,14 @@ func init() {
 		cli.Command{
 			Name: "top",
 			Action: func(c *cli.Context) error {
-				return core.New(false).Top.Run()
+				return core.New("top", false).Top.Run()
 			},
 		},
 		cli.Command{
 			Name: "tracking",
 			Action: func(c *cli.Context) error {
 
-				app := core.New(false)
+				app := core.New("tracking", false)
 
 				beginning := time.Now().In(time.UTC)
 				start := time.Date(beginning.Year(), beginning.Month(), beginning.Day(), 10, 58, 0, 0, time.UTC)
@@ -119,9 +121,11 @@ func init() {
 			Description: "Manually rebuild the autocompleter index",
 			Action: func(c *cli.Context) error {
 
-				app := core.New(false)
-
-				err := app.Search.Build()
+				app := core.New("autocompleter", false)
+				txn := app.NewRelic.StartTransaction(app.Label)
+				defer txn.End()
+				ctx := newrelic.NewContext(context.Background(), txn)
+				err := app.Search.Build(ctx)
 				if err != nil {
 					return cli.NewExitError(err, 1)
 				}
@@ -133,13 +137,15 @@ func init() {
 			Name:        "notifications",
 			Description: "Notifications subscribe to the a Redis PubSub. When the importer detects a killmail with a value greater than the configured notification value, it publishes the id and hash to this pubsub and this service will format the message for slack and post the killmail to slack",
 			Action: func(c *cli.Context) error {
-				app := core.New(true)
+				app := core.New("notifier", true)
 
 				if !app.Config.SlackNotifierEnabled {
 					return nil
 				}
-
-				app.Notification.Run()
+				txn := app.NewRelic.StartTransaction(app.Label)
+				defer txn.End()
+				ctx := newrelic.NewContext(context.Background(), txn)
+				app.Notification.Run(ctx)
 				return nil
 			},
 		},
@@ -147,7 +153,7 @@ func init() {
 			Name:        "updater",
 			Description: "Updater ensures that all updatable records in the database are update date according to their CacheUntil timestamp.",
 			Action: func(c *cli.Context) error {
-				app := core.New(false)
+				app := core.New("updater", false)
 				var ctx = context.Background()
 
 				ch := make(chan int, 3)
@@ -171,7 +177,7 @@ func init() {
 				debug := c.Bool("debug")
 				workers := c.Int64("workers")
 
-				core.New(debug).Killmail.Recalculator(workers)
+				core.New("recalculate", debug).Killmail.Recalculator(workers)
 
 				return nil
 			},
@@ -196,7 +202,7 @@ func init() {
 				trigger := c.Int64("trigger")
 				after := c.Uint64("after")
 
-				core.New(false).Killmail.RecalculatorDispatcher(limit, trigger, after)
+				core.New("recalculable", false).Killmail.RecalculatorDispatcher(limit, trigger, after)
 
 				return nil
 			},

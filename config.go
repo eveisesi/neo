@@ -9,6 +9,8 @@ type Config struct {
 	DBReadTimeout  int    `default:"30"`
 	DBWriteTimeout int    `default:"30"`
 
+	Env string `required:"true"`
+
 	// logger configuration
 	LogLevel string `required:"true"`
 
@@ -42,4 +44,9 @@ type Config struct {
 	SpacesRegion   string `envconfig:"SPACES_REGION"`
 	SpacesKey      string `envconfig:"SPACES_KEY"`
 	SpacesSecret   string `envconfig:"SPACES_SECRET"`
+
+	NewRelicAppName     string `envconfig:"NEW_RELIC_APP_NAME" required:"true"`
+	NewRelicLicensenKey string `envconfig:"NEW_RELIC_LICENSE_KEY" required:"true"`
+
+	AllowedStatsEntities []string
 }

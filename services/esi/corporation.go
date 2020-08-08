@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Corporation/get_corporations_corporation_id
 // Version: v4
 // Cache: 3600 sec (1 Hour)
-func (s *service) GetCorporationsCorporationID(id uint64, etag null.String) (*neo.Corporation, *Meta) {
+func (s *service) GetCorporationsCorporationID(ctx context.Context, id uint64, etag null.String) (*neo.Corporation, *Meta) {
 
 	path := fmt.Sprintf("/v4/corporations/%d/", id)
 	headers := make(map[string]string)
@@ -31,7 +32,7 @@ func (s *service) GetCorporationsCorporationID(id uint64, etag null.String) (*ne
 		headers: headers,
 	}
 
-	response, m := s.request(request)
+	response, m := s.request(ctx, request)
 	if m.IsError() {
 		return nil, m
 	}

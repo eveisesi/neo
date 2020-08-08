@@ -9,6 +9,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis/v7"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,18 +18,20 @@ type Service interface {
 }
 
 type service struct {
-	redis  *redis.Client
-	logger *logrus.Logger
+	redis    *redis.Client
+	logger   *logrus.Logger
+	newrelic *newrelic.Application
 
 	killmail killmail.Service
 
 	neo.StatsRepository
 }
 
-func NewService(redis *redis.Client, logger *logrus.Logger, killmail killmail.Service, stats neo.StatsRepository) Service {
+func NewService(redis *redis.Client, logger *logrus.Logger, newrelic *newrelic.Application, killmail killmail.Service, stats neo.StatsRepository) Service {
 	return &service{
 		redis,
 		logger,
+		newrelic,
 		killmail,
 		stats,
 	}
@@ -71,9 +74,12 @@ func (s *service) Run() error {
 
 func (s *service) processMessage(msg neo.Message) {
 
-	var ctx = context.Background()
+	txn := s.newrelic.StartTransaction("process stats message")
+	defer txn.End()
 
-	entry := s.logger.WithFields(logrus.Fields{
+	ctx := newrelic.NewContext(context.Background(), txn)
+
+	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
 		"id":   msg.ID,
 		"hash": msg.Hash,
 	})

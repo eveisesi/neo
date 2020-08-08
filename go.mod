@@ -33,6 +33,10 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
+	github.com/newrelic/go-agent v3.8.1+incompatible
+	github.com/newrelic/go-agent/v3 v3.8.1
+	github.com/newrelic/go-agent/v3/integrations/nrlogrus v1.0.0
+	github.com/newrelic/go-agent/v3/integrations/nrmysql v1.2.0
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pkg/errors v0.9.1

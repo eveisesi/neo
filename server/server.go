@@ -51,7 +51,7 @@ type Server struct {
 }
 
 func Action(c *cli.Context) {
-	app := core.New(false)
+	app := core.New("server", false)
 
 	server := NewServer(
 		app.Config.ServerPort,

@@ -1,11 +1,13 @@
 package killmail
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 	"time"
 
 	"github.com/eveisesi/neo"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
@@ -17,14 +19,19 @@ func (s *service) Websocket() error {
 
 	for {
 		for {
+			txn := s.newrelic.StartTransaction("connect to zkillboard")
 			// Attempt to connect to Websocket
-			conn, err = s.connect()
+
+			ctx := newrelic.NewContext(context.Background(), txn)
+
+			conn, err = s.connect(ctx)
 			if err != nil {
+				txn.NoticeError(err)
 				s.logger.WithError(err).Error("failed to establish connection to websocket")
 				time.Sleep(time.Second * 2)
 				continue
 			}
-
+			txn.End()
 			break
 		}
 
@@ -61,7 +68,12 @@ func (s *service) Websocket() error {
 				continue
 			}
 
-			go s.DispatchPayload(uint64(message["killID"].(float64)), message["hash"].(string))
+			neoMsg := &neo.Message{
+				ID:   uint64(message["killID"].(float64)),
+				Hash: message["hash"].(string),
+			}
+
+			go s.DispatchPayload(neoMsg)
 		}
 
 		s.logger.Info("bottom of parent loop. Sleep and attemp to reconnect")
@@ -70,30 +82,35 @@ func (s *service) Websocket() error {
 
 }
 
-func (s *service) DispatchPayload(id uint64, hash string) {
+func (s *service) DispatchPayload(msg *neo.Message) {
+	txn := s.newrelic.StartTransaction("listen")
+	defer txn.End()
 
-	payload, err := json.Marshal(neo.Message{
-		ID:   id,
-		Hash: hash,
-	})
+	txn.AddAttribute("id", msg.ID)
+	txn.AddAttribute("hash", msg.Hash)
+
+	ctx := newrelic.NewContext(context.Background(), txn)
+
+	payload, err := json.Marshal(msg)
 	if err != nil {
-		s.logger.WithError(err).Error("unable to marshal WSSPayload")
+		txn.NoticeError(err)
+		s.logger.WithContext(ctx).WithError(err).Error("unable to marshal WSSPayload")
+		return
+	}
+	_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(msg.ID), Member: string(payload)}).Result()
+	if err != nil {
+		txn.NoticeError(err)
+		s.logger.WithContext(ctx).WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
 		return
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(id), Member: string(payload)}).Result()
-	if err != nil {
-		s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")
-		return
-	}
-
-	s.logger.WithFields(logrus.Fields{
-		"id":   id,
-		"hash": hash,
+	s.logger.WithContext(ctx).WithFields(logrus.Fields{
+		"id":   msg.ID,
+		"hash": msg.Hash,
 	}).Info("payload dispatched successfully")
 }
 
-func (s *service) connect() (*websocket.Conn, error) {
+func (s *service) connect(ctx context.Context) (*websocket.Conn, error) {
 	address := url.URL{
 		Scheme: "wss",
 		Host:   "zkillboard.com:2096",
@@ -109,21 +126,23 @@ func (s *service) connect() (*websocket.Conn, error) {
 
 	msg, err := json.Marshal(body)
 	if err != nil {
-		s.logger.WithError(err).WithField("request", body).Error("Encoutered Error Attempting marshal sub message")
+		newrelic.FromContext(ctx).NoticeError(err)
+		s.logger.WithContext(ctx).WithError(err).WithField("request", body).Error("Encoutered Error Attempting marshal sub message")
 		return nil, err
 	}
 
-	s.logger.WithField("address", address.String()).Info("attempting to connect to websocket")
-
-	c, _, err := websocket.DefaultDialer.Dial(address.String(), nil)
+	s.logger.WithContext(ctx).WithField("address", address.String()).Info("attempting to connect to websocket")
+	c, _, err := websocket.DefaultDialer.DialContext(ctx, address.String(), nil)
 	if err != nil {
+		newrelic.FromContext(ctx).NoticeError(err)
 		return nil, err
 	}
 
-	s.logger.Info("successfully connected to websocket. Sending Initial Msg")
+	s.logger.WithContext(ctx).Info("successfully connected to websocket. Sending Initial Msg")
 
 	err = c.WriteMessage(websocket.TextMessage, msg)
 	if err != nil {
+		newrelic.FromContext(ctx).NoticeError(err)
 		return nil, errors.Wrap(err, "failed to send initial message")
 	}
 

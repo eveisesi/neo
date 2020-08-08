@@ -8,10 +8,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) Build() error {
+func (s *service) Build(ctx context.Context) error {
 
-	var ctx = context.Background()
-
+	// TODO: Wrap this in a DatastoreSegment
 	err := s.Autocompleter.Delete()
 	if err != nil {
 		s.Logger.WithError(err).Error("failed to flush autocompleter")
@@ -30,7 +29,7 @@ func (s *service) Build() error {
 	for _, entity := range entities {
 		payload, err := json.Marshal(entity)
 		if err != nil {
-			s.Logger.WithError(err).Error("failed to marshal searchable entity")
+			s.Logger.WithContext(ctx).WithError(err).Error("failed to marshal searchable entity")
 			continue
 		}
 
@@ -45,10 +44,11 @@ func (s *service) Build() error {
 		// We don't want to hammer redis, so exec an add every 5K terms and then reset the slice
 		count++
 		if count >= 5000 {
+			// Wrap in DatastoreSegment
 			err = s.Autocompleter.AddTerms(suggestions...)
 			if err != nil {
 				msg := "failed to add searchable entities to autocompleter"
-				s.Logger.WithError(err).Error(msg)
+				s.Logger.WithContext(ctx).WithError(err).Error(msg)
 				return errors.Wrap(err, msg)
 			}
 
@@ -64,7 +64,7 @@ func (s *service) Build() error {
 		err = s.Autocompleter.AddTerms(suggestions...)
 		if err != nil {
 			msg := "failed to add searchable entities to autocompleter"
-			s.Logger.WithError(err).Error(msg)
+			s.Logger.WithContext(ctx).WithError(err).Error(msg)
 			return errors.Wrap(err, msg)
 		}
 

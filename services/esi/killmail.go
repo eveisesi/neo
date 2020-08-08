@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetKillmailsKillmailIDKillmailHash(id uint64, hash string) (*neo.Killmail, *Meta) {
+func (s *service) GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint64, hash string) (*neo.Killmail, *Meta) {
 
 	path := fmt.Sprintf("/v1/killmails/%d/%s/", id, hash)
 
@@ -18,7 +19,7 @@ func (s *service) GetKillmailsKillmailIDKillmailHash(id uint64, hash string) (*n
 		path:   path,
 	}
 
-	response, m := s.request(request)
+	response, m := s.request(ctx, request)
 	if m.IsError() {
 		return nil, m
 	}

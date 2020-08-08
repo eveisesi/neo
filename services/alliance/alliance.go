@@ -17,7 +17,7 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 	var alliance = new(neo.Alliance)
 	var key = fmt.Sprintf(neo.REDIS_ALLIANCE, id)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -41,13 +41,13 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 			return nil, errors.Wrap(err, "unable to marshal alliance for cache")
 		}
 
-		_, err = s.redis.Set(key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*60).Result()
 
 		return alliance, errors.Wrap(err, "failed to cache alliance in redis")
 	}
 
 	// Alliance is not cached, the DB doesn't have this alliance, lets check ESI
-	alliance, m := s.esi.GetAlliancesAllianceID(id, null.NewString("", false))
+	alliance, m := s.esi.GetAlliancesAllianceID(ctx, id, null.NewString("", false))
 	if m.IsError() {
 		return nil, m.Msg
 	}
@@ -63,7 +63,7 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 		return alliance, errors.Wrap(err, "unable to marshal alliance for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
 
 	return alliance, errors.Wrap(err, "failed to cache solar alliance in redis")
 }
@@ -73,7 +73,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 	var alliances = make([]*neo.Alliance, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_ALLIANCE, id)
-		result, err := s.redis.Get(key).Bytes()
+		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -126,7 +126,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 			return nil, errors.Wrap(err, "unable to marshal alliance to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache alliance in redis")
 		}
@@ -155,7 +155,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 		for _, alliance := range expired {
 			s.tracker.GateKeeper()
-			newAlliance, m := s.esi.GetAlliancesAllianceID(alliance.ID, alliance.Etag)
+			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, alliance.Etag)
 			if m.IsError() {
 				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
 				continue

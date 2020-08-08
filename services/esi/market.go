@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,9 +12,9 @@ import (
 	"github.com/volatiletech/null"
 )
 
-func (s *service) GetMarketGroups() ([]int, *Meta) {
+func (s *service) GetMarketGroups(ctx context.Context) ([]int, *Meta) {
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   "/v1/markets/groups/",
 	})
@@ -32,11 +33,11 @@ func (s *service) GetMarketGroups() ([]int, *Meta) {
 
 }
 
-func (s *service) GetMarketGroupsMarketGroupID(id int) (*neo.MarketGroup, *Meta) {
+func (s *service) GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*neo.MarketGroup, *Meta) {
 
 	path := fmt.Sprintf("/v1/markets/groups/%d", id)
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   path,
 	})
@@ -55,14 +56,14 @@ func (s *service) GetMarketGroupsMarketGroupID(id int) (*neo.MarketGroup, *Meta)
 
 }
 
-func (s *service) GetMarketsRegionIDHistory(regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta) {
+func (s *service) GetMarketsRegionIDHistory(ctx context.Context, regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta) {
 
 	path := fmt.Sprintf("/v1/markets/%d/history/", regionID)
 
 	query := url.Values{}
 	query.Set("type_id", typeID)
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   path,
 		query:  query.Encode(),
@@ -82,9 +83,9 @@ func (s *service) GetMarketsRegionIDHistory(regionID uint64, typeID string) ([]*
 	return records, m
 }
 
-func (s *service) HeadMarketsRegionIDTypes(regionID uint64) *Meta {
+func (s *service) HeadMarketsRegionIDTypes(ctx context.Context, regionID uint64) *Meta {
 
-	_, m := s.request(request{
+	_, m := s.request(ctx, request{
 		method: http.MethodHead,
 		path:   fmt.Sprintf("/v1/markets/%d/types/", regionID),
 	})
@@ -92,7 +93,7 @@ func (s *service) HeadMarketsRegionIDTypes(regionID uint64) *Meta {
 
 }
 
-func (s *service) GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]int, *Meta) {
+func (s *service) GetMarketsRegionIDTypes(ctx context.Context, regionID uint64, page null.String) ([]int, *Meta) {
 
 	path := fmt.Sprintf("/v1/markets/%d/types/", regionID)
 
@@ -101,7 +102,7 @@ func (s *service) GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]
 		query.Set("page", page.String)
 	}
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   path,
 		query:  query.Encode(),
@@ -122,11 +123,11 @@ func (s *service) GetMarketsRegionIDTypes(regionID uint64, page null.String) ([]
 
 }
 
-func (s *service) GetMarketsPrices() ([]*neo.MarketPrices, *Meta) {
+func (s *service) GetMarketsPrices(ctx context.Context) ([]*neo.MarketPrices, *Meta) {
 
 	path := "/v1/markets/prices/"
 
-	response, m := s.request(request{
+	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   path,
 	})

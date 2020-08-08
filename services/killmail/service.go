@@ -14,6 +14,7 @@ import (
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,7 +26,7 @@ type (
 		Websocket() error
 		Recalculator(gLimit int64)
 		RecalculatorDispatcher(limit, trigger int64, after uint64)
-		DispatchPayload(id uint64, hash string)
+		DispatchPayload(msg *neo.Message)
 
 		// Killmails
 		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
@@ -83,6 +84,7 @@ type (
 	service struct {
 		client      *http.Client
 		redis       *redis.Client
+		newrelic    *newrelic.Application
 		esi         esi.Service
 		logger      *logrus.Logger
 		config      *neo.Config
@@ -109,6 +111,7 @@ var (
 func NewService(
 	client *http.Client,
 	redis *redis.Client,
+	nr *newrelic.Application,
 	esi esi.Service,
 	logger *logrus.Logger,
 	config *neo.Config,
@@ -133,6 +136,7 @@ func NewService(
 	return &service{
 		client,
 		redis,
+		nr,
 		esi,
 		logger,
 		config,

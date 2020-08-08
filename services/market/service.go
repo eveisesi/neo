@@ -1,6 +1,7 @@
 package market
 
 import (
+	"context"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -12,9 +13,9 @@ import (
 )
 
 type Service interface {
-	FetchHistory()
+	FetchHistory(ctx context.Context)
 	FetchTypePrice(id uint64, date time.Time) float64
-	FetchPrices()
+	FetchPrices(ctx context.Context)
 	neo.MarketRepository
 }
 

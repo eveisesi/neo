@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,7 +27,7 @@ type TypeAttribute struct {
 	Value       float64 `json:"value"`
 }
 
-func (s *service) GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta) {
+func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta) {
 
 	var esitype = new(Type)
 
@@ -37,7 +38,7 @@ func (s *service) GetUniverseTypesTypeID(id uint64) (*neo.Type, []*neo.TypeAttri
 		path:   path,
 	}
 
-	response, m := s.request(request)
+	response, m := s.request(ctx, request)
 	if m.IsError() {
 		return nil, nil, m
 	}

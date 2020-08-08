@@ -1,6 +1,7 @@
 package esi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -27,7 +28,7 @@ type (
 	}
 )
 
-func (s *service) GetUniverseSystemsSystemID(id uint64) (*neo.SolarSystem, *Meta) {
+func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint64) (*neo.SolarSystem, *Meta) {
 
 	var path = fmt.Sprintf("/v4/universe/systems/%d/", id)
 
@@ -36,7 +37,7 @@ func (s *service) GetUniverseSystemsSystemID(id uint64) (*neo.SolarSystem, *Meta
 		path:   path,
 	}
 
-	response, m := s.request(request)
+	response, m := s.request(ctx, request)
 	if m.IsError() {
 		return nil, m
 	}

@@ -47,7 +47,7 @@ func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 	}
 
 	// Type is not cached, the DB doesn't have this type, lets check ESI
-	invType, attributes, m := s.esi.GetUniverseTypesTypeID(id)
+	invType, attributes, m := s.esi.GetUniverseTypesTypeID(ctx, id)
 	if m.IsError() {
 		return nil, m.Msg
 	}

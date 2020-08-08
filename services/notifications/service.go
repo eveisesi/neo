@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo/tools"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
@@ -24,14 +25,16 @@ import (
 )
 
 type Service interface {
-	Run()
+	Run(ctx context.Context)
 }
 
 type (
 	service struct {
-		redis  *redis.Client
-		logger *logrus.Logger
-		config *neo.Config
+		client   *http.Client
+		redis    *redis.Client
+		logger   *logrus.Logger
+		newrelic *newrelic.Application
+		config   *neo.Config
 
 		// Services
 		character   character.Service
@@ -48,8 +51,10 @@ type (
 )
 
 func NewService(
+	client *http.Client,
 	redis *redis.Client,
 	logger *logrus.Logger,
+	newrelic *newrelic.Application,
 	config *neo.Config,
 
 	// Services
@@ -60,8 +65,10 @@ func NewService(
 	killmail killmail.Service,
 ) Service {
 	return &service{
+		client,
 		redis,
 		logger,
+		newrelic,
 		config,
 		character,
 		corporation,
@@ -71,11 +78,12 @@ func NewService(
 	}
 }
 
-func (s *service) Run() {
+func (s *service) Run(ctx context.Context) {
 
 	for {
-		entry := s.logger
-		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
+		txn := newrelic.FromContext(ctx)
+		entry := s.logger.WithContext(ctx)
+		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
 		if err != nil {
 			entry.WithError(err).Error("unable to determine count of message queue")
 			time.Sleep(time.Second * 2)
@@ -83,12 +91,13 @@ func (s *service) Run() {
 		}
 
 		if count == 0 {
+			txn.Ignore()
 			entry.Info("notification queue is empty")
 			time.Sleep(time.Second * 15)
 			continue
 		}
 
-		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_NOTIFICATION, 5).Result()
+		results, err := s.redis.WithContext(ctx).ZPopMax(neo.QUEUES_KILLMAIL_NOTIFICATION, 5).Result()
 		if err != nil {
 			entry.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
@@ -103,15 +112,19 @@ func (s *service) Run() {
 			s.processMessage(message)
 			time.Sleep(time.Second * 2)
 		}
+		txn.End()
 	}
 
 }
 
 func (s *service) processMessage(msg neo.Message) {
 
-	var ctx = context.Background()
+	txn := s.newrelic.StartTransaction("process notification message")
+	defer txn.End()
 
-	entry := s.logger.WithFields(logrus.Fields{
+	ctx := newrelic.NewContext(context.Background(), txn)
+
+	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
 		"id":   msg.ID,
 		"hash": msg.Hash,
 	})
@@ -234,7 +247,13 @@ func (s *service) processMessage(msg neo.Message) {
 
 	body := bytes.NewBuffer(b)
 
-	response, err := http.Post(s.config.SlackNotifierWebhookURL, "application/json", body)
+	req, err := http.NewRequestWithContext(ctx, s.config.SlackNotifierWebhookURL, "application/json", body)
+	if err != nil {
+		entry.WithError(err).Error("failed to build webhook request to slack webhook")
+		return
+	}
+
+	response, err := s.client.Do(req)
 	if err != nil {
 		entry.WithError(err).Error("failed to make request to slack webhook")
 		return

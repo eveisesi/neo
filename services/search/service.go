@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	Build() error
+	Build(ctx context.Context) error
 	Fetch(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
 	neo.SearchRepository
 }

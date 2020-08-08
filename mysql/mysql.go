@@ -13,7 +13,7 @@ var ErrEmptyTransaction = errors.New("sql transcation cannot be empty")
 
 func Connect(conf *sqlDriver.Config) (db *sqlx.DB, err error) {
 
-	db, err = sqlx.Open("mysql", conf.FormatDSN())
+	db, err = sqlx.Open("nrmysql", conf.FormatDSN())
 	if err != nil {
 		err = errors.New("unable to create mysql connection")
 		return

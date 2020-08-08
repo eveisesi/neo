@@ -7,11 +7,11 @@ import (
 	"github.com/eveisesi/neo"
 )
 
-func (s *service) FetchPrices() {
+func (s *service) FetchPrices(ctx context.Context) {
 
 	s.logger.Info("fetching hourly market prices")
 
-	prices, m := s.esi.GetMarketsPrices()
+	prices, m := s.esi.GetMarketsPrices(ctx)
 	if m.IsError() {
 		s.logger.WithError(m.Msg).Error("failed to fetch market prices")
 		return
@@ -45,7 +45,7 @@ func (s *service) FetchPrices() {
 
 	chunks := chunkRecords(records, 1000)
 	for _, chunk := range chunks {
-		_, err := s.MarketRepository.CreateHistoricalRecord(context.Background(), chunk)
+		_, err := s.MarketRepository.CreateHistoricalRecord(ctx, chunk)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to insert prices chunk into db")
 			return

@@ -19,12 +19,12 @@ func (s *service) Fetch(ctx context.Context, term string) ([]*neo.SearchableEnti
 	})
 	if err != nil {
 		msg := "failed to fetch suggestions from autocompleter"
-		s.Logger.WithError(err).Error(msg)
+		s.Logger.WithContext(ctx).WithError(err).Error(msg)
 		return nil, errors.Wrap(err, msg)
 	}
 
+	// TODO: Wrap in Datastore Segment
 	sortable := redisearch.SuggestionList(suggestions)
-
 	sortable.Sort()
 
 	var entities = make([]*neo.SearchableEntity, 0)
@@ -33,7 +33,7 @@ func (s *service) Fetch(ctx context.Context, term string) ([]*neo.SearchableEnti
 		err := json.Unmarshal([]byte(suggestion.Payload), &entity)
 		if err != nil {
 			msg := "failed to unmarhal suggestion payload"
-			s.Logger.WithError(err).WithField("data", suggestion.Payload).Error(msg)
+			s.Logger.WithContext(ctx).WithError(err).WithField("data", suggestion.Payload).Error(msg)
 			return nil, errors.Wrap(err, msg)
 		}
 

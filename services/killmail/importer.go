@@ -9,6 +9,8 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis/v7"
 	"github.com/korovkin/limiter"
+	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,48 +19,60 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 	limit := limiter.NewConcurrencyLimiter(int(gLimit))
 
 	for {
-		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+		txn := s.newrelic.StartTransaction("killmail queue check")
+		ctx := newrelic.NewContext(context.Background(), txn)
+		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 		if err != nil {
+			txn.NoticeError(err)
 			s.logger.WithError(err).Error("unable to determine count of message queue")
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		if count == 0 {
+			txn.Ignore()
 			s.logger.Info("message queue is empty")
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
-		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
+		results, err := s.redis.WithContext(ctx).ZPopMax(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
 		if err != nil {
+			txn.NoticeError(err)
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
 
 		for _, result := range results {
+			innertxn := s.newrelic.StartTransaction("process killmail")
+			ctx := newrelic.NewContext(context.Background(), innertxn.NewGoroutine())
 			s.tracker.GateKeeper()
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
-				s.handleMessage([]byte(message), workerID, gSleep)
+				s.handleMessage(ctx, []byte(message), workerID, gSleep)
 			})
 		}
+		txn.End()
 	}
 }
 
-func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
+func (s *service) handleMessage(ctx context.Context, message []byte, workerID int, sleep int64) {
 
-	killmail, err := s.ProcessMessage(message)
+	txn := newrelic.FromContext(ctx)
+	defer txn.End()
+	killmail, err := s.ProcessMessage(ctx, message)
 	if err != nil {
-		s.logger.WithError(err).Error("failed to handle message")
+		txn.NoticeError(err)
+		s.logger.WithContext(ctx).WithError(err).Error("failed to handle message")
 		return
 	}
 
 	// Killmails we already know about an have processed come back as nil from the processor
 	if killmail == nil {
+		txn.Ignore()
 		return
 	}
 
-	entry := s.logger.WithFields(logrus.Fields{
+	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
 		"id":     killmail.ID,
 		"hash":   killmail.Hash,
 		"worker": workerID,
@@ -76,14 +90,14 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
 		if killmail.TotalValue >= float64(threshold) {
-			_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
+			_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
 			if err != nil {
 				entry.WithError(err).Error("failed to publish message to notifications queue")
 			}
 		}
 	}
 
-	_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_STATS, member).Result()
+	_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_STATS, member).Result()
 	if err != nil {
 		entry.WithError(err).Error("failed to publish message to stats queue")
 	}
@@ -92,36 +106,38 @@ func (s *service) handleMessage(message []byte, workerID int, sleep int64) {
 
 }
 
-func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
+func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Killmail, error) {
 
-	var ctx = context.Background()
+	txn := newrelic.FromContext(ctx)
 
 	var payload = neo.Message{}
 	err := json.Unmarshal(message, &payload)
 	if err != nil {
-		s.logger.WithField("message", string(message)).Error("failed to unmarhal message into message struct")
+		txn.NoticeError(err)
+		s.logger.WithContext(ctx).WithField("message", string(message)).Error("failed to unmarhal message into message struct")
 		return nil, err
 	}
 
-	entry := s.logger.WithFields(logrus.Fields{
+	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
 		"id":   payload.ID,
 		"hash": payload.Hash,
 	})
 
 	exists, err := s.killmails.Exists(ctx, payload.ID, payload.Hash)
 	if err != nil {
+		txn.NoticeError(err)
 		entry.WithError(err).
 			Error("error encountered checking if killmail exists")
 		return nil, err
 	}
-
 	if exists {
 		entry.Info("skipping existing killmail")
 		return nil, nil
 	}
 
-	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(payload.ID, payload.Hash)
+	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(ctx, payload.ID, payload.Hash)
 	if m.IsError() {
+		txn.NoticeError(m.Msg)
 		entry.WithError(m.Msg).WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
@@ -132,6 +148,7 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 	}
 
 	if m.Code != 200 {
+		txn.NoticeError(errors.New("unexpected response code from esi"))
 		entry.WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
@@ -139,26 +156,24 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		}).Error("unexpected response code from esi")
 
 		if m.Code == http.StatusUnprocessableEntity {
-			s.redis.ZAdd(neo.ZKB_INVALID_HASH, &redis.Z{Score: float64(payload.ID), Member: message})
+			s.redis.WithContext(ctx).ZAdd(neo.ZKB_INVALID_HASH, &redis.Z{Score: float64(payload.ID), Member: message})
 			return nil, err
 		}
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
+		s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return nil, err
 	}
-
 	entry = entry.WithField("killmail", killmail.KillmailTime.Format("2006-01-02 15:04:05"))
 
 	killmail.Hash = payload.Hash
-
 	s.primeKillmailNodes(ctx, killmail, entry)
 
-	txn, err := s.txn.Begin()
+	dbTxn, err := s.txn.Begin()
 	if err != nil {
 		s.logger.WithError(err).Error("failed to start transaction")
 		return nil, err
 	}
 
-	_, err = s.killmails.CreateWithTxn(ctx, txn, killmail)
+	_, err = s.killmails.CreateWithTxn(ctx, dbTxn, killmail)
 	if err != nil {
 		entry.WithError(err).Error("error encountered inserting killmail into db")
 		return nil, err
@@ -173,11 +188,10 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 	}
 
 	date := killmail.KillmailTime
-
 	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, date)
 	killmail.Victim.ShipValue = shipValue
 
-	_, err = s.victim.CreateWithTxn(ctx, txn, killmail.Victim)
+	_, err = s.victim.CreateWithTxn(ctx, dbTxn, killmail.Victim)
 	if err != nil {
 		entry.WithError(err).Error("error encountered inserting killmail victim into db")
 	}
@@ -186,7 +200,7 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		attacker.KillmailID = killmail.ID
 	}
 
-	_, err = s.attackers.CreateBulkWithTxn(ctx, txn, killmail.Attackers)
+	_, err = s.attackers.CreateBulkWithTxn(ctx, dbTxn, killmail.Attackers)
 	if err != nil {
 		entry.WithError(err).Error("error encountered inserting killmail attackers into db")
 	}
@@ -215,7 +229,7 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 		}
 	}
 
-	_, err = s.items.CreateBulkWithTxn(ctx, txn, killmail.Victim.Items)
+	_, err = s.items.CreateBulkWithTxn(ctx, dbTxn, killmail.Victim.Items)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to insert items into db")
 	}
@@ -241,17 +255,16 @@ func (s *service) ProcessMessage(message []byte) (*neo.Killmail, error) {
 				}
 			}
 
-			_, err = s.items.CreateBulkWithTxn(ctx, txn, item.Items)
+			_, err = s.items.CreateBulkWithTxn(ctx, dbTxn, item.Items)
 			if err != nil {
 				entry.WithError(err).Error("error encountered insert sub items")
 			}
 		}
 	}
-
-	err = txn.Commit()
+	err = dbTxn.Commit()
 	if err != nil {
 		entry.WithError(err).Error("failed to commit transaction.attempting rollback")
-		err = txn.Rollback()
+		err = dbTxn.Rollback()
 		if err != nil {
 			entry.WithError(err).Fatal("failed to rollback transaction, exiting...")
 		}

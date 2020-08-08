@@ -15,7 +15,7 @@ func (s *service) AttackersByKillmailID(ctx context.Context, id uint64, hash str
 	var attackers = make([]*neo.KillmailAttacker, 0)
 	var key = fmt.Sprintf(neo.REDIS_KILLMAIL_ATTACKERS, id, hash)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *service) AttackersByKillmailID(ctx context.Context, id uint64, hash str
 		return nil, errors.Wrap(err, "unable to marshal killmail for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlc, time.Minute*60).Result()
+	_, err = s.redis.WithContext(ctx).Set(key, byteSlc, time.Minute*60).Result()
 
 	return attackers, errors.Wrap(err, "failed to cache killmail attackers in redis")
 

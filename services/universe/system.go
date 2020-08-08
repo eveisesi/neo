@@ -16,7 +16,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem,
 	var system = new(neo.SolarSystem)
 	var key = fmt.Sprintf(neo.REDIS_SYSTEM, id)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem,
 	}
 
 	// System is not cached, the DB doesn't have this system, lets check ESI
-	system, m := s.esi.GetUniverseSystemsSystemID(id)
+	system, m := s.esi.GetUniverseSystemsSystemID(ctx, id)
 	if m.IsError() {
 		return nil, m.Msg
 	}
