@@ -13,9 +13,9 @@ import (
 
 type (
 	SolarSystem struct {
-		ID              uint64              `json:"system_id"`
+		ID              uint                `json:"system_id"`
 		Name            string              `json:"name"`
-		ConstellationID uint64              `json:"constellation_id"`
+		ConstellationID uint                `json:"constellation_id"`
 		SunTypeID       null.Int64          `json:"star_id"`
 		Position        SolarSystemPosition `json:"position"`
 		Security        float64             `json:"security_status"`
@@ -28,7 +28,7 @@ type (
 	}
 )
 
-func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint64) (*neo.SolarSystem, *Meta) {
+func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, *Meta) {
 
 	var path = fmt.Sprintf("/v4/universe/systems/%d/", id)
 

@@ -23,59 +23,64 @@ import (
 
 // Stat is an object representing the database table.
 type Stat struct {
-	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Entity    string    `boil:"entity" json:"entity" toml:"entity" yaml:"entity"`
-	Category  string    `boil:"category" json:"category" toml:"category" yaml:"category"`
-	Frequency string    `boil:"frequency" json:"frequency" toml:"frequency" yaml:"frequency"`
-	Date      time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
-	Value     float64   `boil:"value" json:"value" toml:"value" yaml:"value"`
-	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID         uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	EntityID   uint64    `boil:"entity_id" json:"entityID" toml:"entityID" yaml:"entityID"`
+	EntityType string    `boil:"entity_type" json:"entityType" toml:"entityType" yaml:"entityType"`
+	Category   string    `boil:"category" json:"category" toml:"category" yaml:"category"`
+	Frequency  string    `boil:"frequency" json:"frequency" toml:"frequency" yaml:"frequency"`
+	Date       time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
+	Value      float64   `boil:"value" json:"value" toml:"value" yaml:"value"`
+	CreatedAt  time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt  time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *statR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L statL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var StatColumns = struct {
-	ID        string
-	Entity    string
-	Category  string
-	Frequency string
-	Date      string
-	Value     string
-	CreatedAt string
-	UpdatedAt string
+	ID         string
+	EntityID   string
+	EntityType string
+	Category   string
+	Frequency  string
+	Date       string
+	Value      string
+	CreatedAt  string
+	UpdatedAt  string
 }{
-	ID:        "id",
-	Entity:    "entity",
-	Category:  "category",
-	Frequency: "frequency",
-	Date:      "date",
-	Value:     "value",
-	CreatedAt: "created_at",
-	UpdatedAt: "updated_at",
+	ID:         "id",
+	EntityID:   "entity_id",
+	EntityType: "entity_type",
+	Category:   "category",
+	Frequency:  "frequency",
+	Date:       "date",
+	Value:      "value",
+	CreatedAt:  "created_at",
+	UpdatedAt:  "updated_at",
 }
 
 // Generated where
 
 var StatWhere = struct {
-	ID        whereHelperuint64
-	Entity    whereHelperstring
-	Category  whereHelperstring
-	Frequency whereHelperstring
-	Date      whereHelpertime_Time
-	Value     whereHelperfloat64
-	CreatedAt whereHelpertime_Time
-	UpdatedAt whereHelpertime_Time
+	ID         whereHelperuint64
+	EntityID   whereHelperuint64
+	EntityType whereHelperstring
+	Category   whereHelperstring
+	Frequency  whereHelperstring
+	Date       whereHelpertime_Time
+	Value      whereHelperfloat64
+	CreatedAt  whereHelpertime_Time
+	UpdatedAt  whereHelpertime_Time
 }{
-	ID:        whereHelperuint64{field: "`stats`.`id`"},
-	Entity:    whereHelperstring{field: "`stats`.`entity`"},
-	Category:  whereHelperstring{field: "`stats`.`category`"},
-	Frequency: whereHelperstring{field: "`stats`.`frequency`"},
-	Date:      whereHelpertime_Time{field: "`stats`.`date`"},
-	Value:     whereHelperfloat64{field: "`stats`.`value`"},
-	CreatedAt: whereHelpertime_Time{field: "`stats`.`created_at`"},
-	UpdatedAt: whereHelpertime_Time{field: "`stats`.`updated_at`"},
+	ID:         whereHelperuint64{field: "`stats`.`id`"},
+	EntityID:   whereHelperuint64{field: "`stats`.`entity_id`"},
+	EntityType: whereHelperstring{field: "`stats`.`entity_type`"},
+	Category:   whereHelperstring{field: "`stats`.`category`"},
+	Frequency:  whereHelperstring{field: "`stats`.`frequency`"},
+	Date:       whereHelpertime_Time{field: "`stats`.`date`"},
+	Value:      whereHelperfloat64{field: "`stats`.`value`"},
+	CreatedAt:  whereHelpertime_Time{field: "`stats`.`created_at`"},
+	UpdatedAt:  whereHelpertime_Time{field: "`stats`.`updated_at`"},
 }
 
 // StatRels is where relationship names are stored.
@@ -95,10 +100,10 @@ func (*statR) NewStruct() *statR {
 type statL struct{}
 
 var (
-	statAllColumns            = []string{"id", "entity", "category", "frequency", "date", "value", "created_at", "updated_at"}
-	statColumnsWithoutDefault = []string{"id", "entity", "category", "frequency", "date", "value", "created_at", "updated_at"}
-	statColumnsWithDefault    = []string{}
-	statPrimaryKeyColumns     = []string{"id", "entity", "category", "frequency", "date"}
+	statAllColumns            = []string{"id", "entity_id", "entity_type", "category", "frequency", "date", "value", "created_at", "updated_at"}
+	statColumnsWithoutDefault = []string{"entity_id", "entity_type", "category", "frequency", "date", "value", "created_at", "updated_at"}
+	statColumnsWithDefault    = []string{"id"}
+	statPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
@@ -200,7 +205,7 @@ func Stats(mods ...qm.QueryMod) statQuery {
 
 // FindStat retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindStat(ctx context.Context, exec boil.ContextExecutor, iD uint64, entity string, category string, frequency string, date time.Time, selectCols ...string) (*Stat, error) {
+func FindStat(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Stat, error) {
 	statObj := &Stat{}
 
 	sel := "*"
@@ -208,10 +213,10 @@ func FindStat(ctx context.Context, exec boil.ContextExecutor, iD uint64, entity 
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `stats` where `id`=? AND `entity`=? AND `category`=? AND `frequency`=? AND `date`=?", sel,
+		"select %s from `stats` where `id`=?", sel,
 	)
 
-	q := queries.Raw(query, iD, entity, category, frequency, date)
+	q := queries.Raw(query, iD)
 
 	err := q.Bind(ctx, exec, statObj)
 	if err != nil {
@@ -275,7 +280,8 @@ func (o *Stat) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `stats` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `stats` () VALUES ()%s%s", insert)
+			format := "%s INTO `stats` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -295,24 +301,31 @@ func (o *Stat) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	_, err = exec.ExecContext(ctx, cache.query, vals...)
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "boiler: unable to insert into stats")
 	}
 
+	var lastID int64
 	var identifierCols []interface{}
 
 	if len(cache.retMapping) == 0 {
 		goto CacheNoHooks
 	}
 
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = uint64(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == statMapping["id"] {
+		goto CacheNoHooks
+	}
+
 	identifierCols = []interface{}{
 		o.ID,
-		o.Entity,
-		o.Category,
-		o.Frequency,
-		o.Date,
 	}
 
 	if boil.IsDebug(ctx) {
@@ -466,7 +479,9 @@ func (o StatSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 	return rowsAff, nil
 }
 
-var mySQLStatUniqueColumns = []string{}
+var mySQLStatUniqueColumns = []string{
+	"id",
+}
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
@@ -566,16 +581,27 @@ func (o *Stat) Upsert(ctx context.Context, exec boil.ContextExecutor, updateColu
 		fmt.Fprintln(writer, cache.query)
 		fmt.Fprintln(writer, vals)
 	}
-	_, err = exec.ExecContext(ctx, cache.query, vals...)
+	result, err := exec.ExecContext(ctx, cache.query, vals...)
 
 	if err != nil {
 		return errors.Wrap(err, "boiler: unable to upsert for stats")
 	}
 
+	var lastID int64
 	var uniqueMap []uint64
 	var nzUniqueCols []interface{}
 
 	if len(cache.retMapping) == 0 {
+		goto CacheNoHooks
+	}
+
+	lastID, err = result.LastInsertId()
+	if err != nil {
+		return ErrSyncFail
+	}
+
+	o.ID = uint64(lastID)
+	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == statMapping["id"] {
 		goto CacheNoHooks
 	}
 
@@ -613,7 +639,7 @@ func (o *Stat) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), statPrimaryKeyMapping)
-	sql := "DELETE FROM `stats` WHERE `id`=? AND `entity`=? AND `category`=? AND `frequency`=? AND `date`=?"
+	sql := "DELETE FROM `stats` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -690,7 +716,7 @@ func (o StatSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Stat) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindStat(ctx, exec, o.ID, o.Entity, o.Category, o.Frequency, o.Date)
+	ret, err := FindStat(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -729,16 +755,16 @@ func (o *StatSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // StatExists checks if the Stat row exists.
-func StatExists(ctx context.Context, exec boil.ContextExecutor, iD uint64, entity string, category string, frequency string, date time.Time) (bool, error) {
+func StatExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `stats` where `id`=? AND `entity`=? AND `category`=? AND `frequency`=? AND `date`=? limit 1)"
+	sql := "select exists(select 1 from `stats` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD, entity, category, frequency, date)
+		fmt.Fprintln(writer, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD, entity, category, frequency, date)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

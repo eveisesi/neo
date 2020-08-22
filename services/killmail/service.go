@@ -14,7 +14,7 @@ import (
 	"github.com/eveisesi/neo/services/universe"
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
-	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,50 +24,51 @@ type (
 		HistoryExporter(mindate, maxdate string, datehold bool, threshold int64) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
-		Recalculator(gLimit int64)
-		RecalculatorDispatcher(limit, trigger int64, after uint64)
+		// Recalculator(gLimit int64)
+		// RecalculatorDispatcher(limit, trigger int64, after uint64)
 		DispatchPayload(msg *neo.Message)
 
 		// Killmails
-		Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
-		FullKillmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error)
+		AllKillmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error)
+		Killmail(ctx context.Context, id uint) (*neo.Killmail, error)
+		FullKillmail(ctx context.Context, id uint, withNames bool) (*neo.Killmail, error)
 		RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error)
 		KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByAllianceID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByShipGroupID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsBySystemID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByConstellationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByRegionID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
+		KillmailsByCorporationID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByAllianceID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByShipID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByShipGroupID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsBySystemID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByConstellationID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByRegionID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
 
 		// Attackers
-		AttackersByKillmailID(ctx context.Context, id uint64, hash string) ([]*neo.KillmailAttacker, error)
-		AttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailAttacker, error)
+		AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error)
+		AttackersByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailAttacker, error)
 
 		// Items
-		ItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error)
+		ItemsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error)
 
 		// Victim
-		VictimByKillmailID(ctx context.Context, id uint64, hash string) (*neo.KillmailVictim, error)
-		VictimsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailVictim, error)
+		VictimByKillmailID(ctx context.Context, id uint) (*neo.KillmailVictim, error)
+		VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error)
 
 		// MVKs/MVLs
-		MVKAll(ctx context.Context, age, limit int) ([]*neo.Killmail, error)
-		MVKByCharacterID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVLByCharacterID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVLByCorporationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByCorporationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVLByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByAllianceID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVLByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByShipID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVLByShipGroupID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByShipGroupID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKAll(ctx context.Context, age, limit uint) ([]*neo.Killmail, error)
+		MVKByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error)
+		MVLByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error)
+		MVLByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVLByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVLByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVLByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
 
-		MVKBySystemID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByConstellationID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
-		MVKByRegionID(ctx context.Context, id uint64, age, limit int) ([]*neo.Killmail, error)
+		MVKBySystemID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByConstellationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MVKByRegionID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
 	}
 
 	WSPayload struct {

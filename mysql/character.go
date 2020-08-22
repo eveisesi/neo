@@ -11,7 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type characterRepository struct {
@@ -35,16 +34,27 @@ func (r *characterRepository) Character(ctx context.Context, id uint64) (*neo.Ch
 
 }
 
+func (r *characterRepository) Characters(ctx context.Context, mods ...neo.Modifier) ([]*neo.Character, error) {
+
+	if len(mods) == 0 {
+		return nil, fmt.Errorf("Atleast one modifier must be passed in")
+	}
+
+	characters := make([]*neo.Character, 0)
+	err := boiler.Characters(BuildQueryModifiers(boiler.TableNames.Characters, mods...)...).Bind(ctx, r.db, &characters)
+	return characters, err
+
+}
+
 func (r *characterRepository) Expired(ctx context.Context) ([]*neo.Character, error) {
 
-	var characters = make([]*neo.Character, 0)
-	err := boiler.Characters(
-		boiler.CharacterWhere.CachedUntil.LT(time.Now()),
-		qm.Limit(1000),
-		qm.OrderBy(boiler.CharacterColumns.CachedUntil+" ASC"),
-	).Bind(ctx, r.db, &characters)
+	mods := []neo.Modifier{
+		neo.LessThanTime{Column: "CacheUntil", Value: time.Now()},
+		neo.LimitModifier(1000),
+		neo.OrderModifier{Column: "CacheUntil", Sort: neo.SortAsc},
+	}
 
-	return characters, err
+	return r.Characters(ctx, mods...)
 }
 
 func (r *characterRepository) CreateCharacter(ctx context.Context, character *neo.Character) (*neo.Character, error) {
@@ -85,20 +95,4 @@ func (r *characterRepository) UpdateCharacter(ctx context.Context, id uint64, ch
 
 	return character, errors.Wrap(err, "unable to copy orm to character")
 
-}
-
-func (r *characterRepository) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
-
-	var characters = make([]*neo.Character, 0)
-	err := boiler.Characters(
-		qm.WhereIn(
-			fmt.Sprintf(
-				"%s IN ?",
-				boiler.CharacterColumns.ID,
-			),
-			convertSliceUint64ToSliceInterface(ids)...,
-		),
-	).Bind(ctx, r.db, &characters)
-
-	return characters, err
 }

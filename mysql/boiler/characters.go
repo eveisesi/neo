@@ -27,9 +27,9 @@ type Character struct {
 	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	SecurityStatus   float64     `boil:"security_status" json:"securityStatus" toml:"securityStatus" yaml:"securityStatus"`
-	CorporationID    uint64      `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
-	AllianceID       null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
-	FactionID        null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	CorporationID    uint        `boil:"corporation_id" json:"corporationID" toml:"corporationID" yaml:"corporationID"`
+	AllianceID       null.Uint   `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	FactionID        null.Uint   `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
 	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
 	Etag             null.String `boil:"etag" json:"etag,omitempty" toml:"etag" yaml:"etag,omitempty"`
@@ -71,6 +71,15 @@ var CharacterColumns = struct {
 
 // Generated where
 
+type whereHelperuint64 struct{ field string }
+
+func (w whereHelperuint64) EQ(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperuint64) NEQ(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperuint64) LT(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperuint64) LTE(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperuint64) GT(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperuint64) GTE(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 type whereHelperfloat64 struct{ field string }
 
 func (w whereHelperfloat64) EQ(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.EQ, x) }
@@ -86,26 +95,26 @@ func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_Uint64 struct{ field string }
+type whereHelpernull_Uint struct{ field string }
 
-func (w whereHelpernull_Uint64) EQ(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) EQ(x null.Uint) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, false, x)
 }
-func (w whereHelpernull_Uint64) NEQ(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) NEQ(x null.Uint) qm.QueryMod {
 	return qmhelper.WhereNullEQ(w.field, true, x)
 }
-func (w whereHelpernull_Uint64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Uint64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Uint64) LT(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint) LT(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_Uint64) LTE(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) LTE(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_Uint64) GT(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) GT(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
+func (w whereHelpernull_Uint) GTE(x null.Uint) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
@@ -113,9 +122,9 @@ var CharacterWhere = struct {
 	ID               whereHelperuint64
 	Name             whereHelperstring
 	SecurityStatus   whereHelperfloat64
-	CorporationID    whereHelperuint64
-	AllianceID       whereHelpernull_Uint64
-	FactionID        whereHelpernull_Uint64
+	CorporationID    whereHelperuint
+	AllianceID       whereHelpernull_Uint
+	FactionID        whereHelpernull_Uint
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
 	Etag             whereHelpernull_String
@@ -126,9 +135,9 @@ var CharacterWhere = struct {
 	ID:               whereHelperuint64{field: "`characters`.`id`"},
 	Name:             whereHelperstring{field: "`characters`.`name`"},
 	SecurityStatus:   whereHelperfloat64{field: "`characters`.`security_status`"},
-	CorporationID:    whereHelperuint64{field: "`characters`.`corporation_id`"},
-	AllianceID:       whereHelpernull_Uint64{field: "`characters`.`alliance_id`"},
-	FactionID:        whereHelpernull_Uint64{field: "`characters`.`faction_id`"},
+	CorporationID:    whereHelperuint{field: "`characters`.`corporation_id`"},
+	AllianceID:       whereHelpernull_Uint{field: "`characters`.`alliance_id`"},
+	FactionID:        whereHelpernull_Uint{field: "`characters`.`faction_id`"},
 	NotModifiedCount: whereHelperuint{field: "`characters`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`characters`.`update_priority`"},
 	Etag:             whereHelpernull_String{field: "`characters`.`etag`"},
@@ -155,8 +164,8 @@ type characterL struct{}
 
 var (
 	characterAllColumns            = []string{"id", "name", "security_status", "corporation_id", "alliance_id", "faction_id", "not_modified_count", "update_priority", "etag", "cached_until", "created_at", "updated_at"}
-	characterColumnsWithoutDefault = []string{"id", "name", "corporation_id", "alliance_id", "faction_id", "etag", "cached_until", "created_at", "updated_at"}
-	characterColumnsWithDefault    = []string{"security_status", "not_modified_count", "update_priority"}
+	characterColumnsWithoutDefault = []string{"id", "name", "alliance_id", "faction_id", "etag", "cached_until", "created_at", "updated_at"}
+	characterColumnsWithDefault    = []string{"security_status", "corporation_id", "not_modified_count", "update_priority"}
 	characterPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -334,7 +343,8 @@ func (o *Character) Insert(ctx context.Context, exec boil.ContextExecutor, colum
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `characters` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `characters` () VALUES ()%s%s", insert)
+			format := "%s INTO `characters` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string

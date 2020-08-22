@@ -12,7 +12,7 @@ func ConstellationLoader(ctx context.Context, universe universe.Service) *genera
 	return generated.NewConstellationLoader(generated.ConstellationLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.Constellation, []error) {
+		Fetch: func(ids []uint) ([]*neo.Constellation, []error) {
 			constellations := make([]*neo.Constellation, len(ids))
 			errors := make([]error, len(ids))
 
@@ -22,7 +22,7 @@ func ConstellationLoader(ctx context.Context, universe universe.Service) *genera
 				return nil, errors
 			}
 
-			constellationsByConstellationIDs := make(map[uint64]*neo.Constellation)
+			constellationsByConstellationIDs := make(map[uint]*neo.Constellation)
 			for _, row := range rows {
 				constellationsByConstellationIDs[row.ID] = row
 			}
@@ -40,7 +40,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 	return generated.NewRegionLoader(generated.RegionLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.Region, []error) {
+		Fetch: func(ids []uint) ([]*neo.Region, []error) {
 			regions := make([]*neo.Region, len(ids))
 			errors := make([]error, len(ids))
 
@@ -50,7 +50,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 				return regions, errors
 			}
 
-			regionsByRegionIDs := make(map[uint64]*neo.Region)
+			regionsByRegionIDs := make(map[uint]*neo.Region)
 			for _, row := range rows {
 				regionsByRegionIDs[row.ID] = row
 			}
@@ -68,7 +68,7 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 	return generated.NewSolarSystemLoader(generated.SolarSystemLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.SolarSystem, []error) {
+		Fetch: func(ids []uint) ([]*neo.SolarSystem, []error) {
 			solarSystems := make([]*neo.SolarSystem, len(ids))
 			errors := make([]error, len(ids))
 
@@ -78,7 +78,7 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 				return nil, errors
 			}
 
-			solarSystemsBySolarSystemID := map[uint64]*neo.SolarSystem{}
+			solarSystemsBySolarSystemID := map[uint]*neo.SolarSystem{}
 			for _, row := range rows {
 				solarSystemsBySolarSystemID[row.ID] = row
 			}
@@ -96,7 +96,7 @@ func TypeLoader(ctx context.Context, universe universe.Service) *generated.TypeL
 	return generated.NewTypeLoader(generated.TypeLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.Type, []error) {
+		Fetch: func(ids []uint) ([]*neo.Type, []error) {
 			invTypes := make([]*neo.Type, len(ids))
 			errors := make([]error, len(ids))
 
@@ -106,7 +106,7 @@ func TypeLoader(ctx context.Context, universe universe.Service) *generated.TypeL
 				return nil, errors
 			}
 
-			invTypesByTypeID := map[uint64]*neo.Type{}
+			invTypesByTypeID := map[uint]*neo.Type{}
 			for _, row := range rows {
 				invTypesByTypeID[row.ID] = row
 			}
@@ -124,7 +124,7 @@ func TypeAttributeLoader(ctx context.Context, universe universe.Service) *genera
 	return generated.NewTypeAttributeLoader(generated.TypeAttributeLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([][]*neo.TypeAttribute, []error) {
+		Fetch: func(ids []uint) ([][]*neo.TypeAttribute, []error) {
 			invTypeAttributes := make([][]*neo.TypeAttribute, len(ids))
 			errors := make([]error, len(ids))
 
@@ -134,7 +134,7 @@ func TypeAttributeLoader(ctx context.Context, universe universe.Service) *genera
 				return nil, errors
 			}
 
-			invTypeAttributesByTypeAttributeID := map[uint64][]*neo.TypeAttribute{}
+			invTypeAttributesByTypeAttributeID := map[uint][]*neo.TypeAttribute{}
 			for _, row := range rows {
 				invTypeAttributesByTypeAttributeID[row.TypeID] = append(invTypeAttributesByTypeAttributeID[row.TypeID], row)
 			}
@@ -152,7 +152,7 @@ func TypeCategoryLoader(ctx context.Context, universe universe.Service) *generat
 	return generated.NewTypeCategoryLoader(generated.TypeCategoryLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.TypeCategory, []error) {
+		Fetch: func(ids []uint) ([]*neo.TypeCategory, []error) {
 			invTypeCategories := make([]*neo.TypeCategory, len(ids))
 			errors := make([]error, len(ids))
 
@@ -162,7 +162,7 @@ func TypeCategoryLoader(ctx context.Context, universe universe.Service) *generat
 				return nil, errors
 			}
 
-			invTypeCategoriesByCategoryID := map[uint64]*neo.TypeCategory{}
+			invTypeCategoriesByCategoryID := map[uint]*neo.TypeCategory{}
 			for _, row := range rows {
 				invTypeCategoriesByCategoryID[row.ID] = row
 			}
@@ -180,7 +180,7 @@ func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.T
 	return generated.NewTypeFlagLoader(generated.TypeFlagLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.TypeFlag, []error) {
+		Fetch: func(ids []uint) ([]*neo.TypeFlag, []error) {
 			invTypeFlags := make([]*neo.TypeFlag, len(ids))
 			errors := make([]error, len(ids))
 
@@ -190,7 +190,7 @@ func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.T
 				return nil, errors
 			}
 
-			invTypeFlagsByTypeFlagID := map[uint64]*neo.TypeFlag{}
+			invTypeFlagsByTypeFlagID := map[uint]*neo.TypeFlag{}
 			for _, row := range rows {
 				invTypeFlagsByTypeFlagID[row.ID] = row
 			}
@@ -208,7 +208,7 @@ func TypeGroupLoader(ctx context.Context, universe universe.Service) *generated.
 	return generated.NewTypeGroupLoader(generated.TypeGroupLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.TypeGroup, []error) {
+		Fetch: func(ids []uint) ([]*neo.TypeGroup, []error) {
 			invTypeGroups := make([]*neo.TypeGroup, len(ids))
 			errors := make([]error, len(ids))
 
@@ -218,7 +218,7 @@ func TypeGroupLoader(ctx context.Context, universe universe.Service) *generated.
 				return nil, errors
 			}
 
-			invTypeGroupsByGroupID := map[uint64]*neo.TypeGroup{}
+			invTypeGroupsByGroupID := map[uint]*neo.TypeGroup{}
 			for _, row := range rows {
 				invTypeGroupsByGroupID[row.ID] = row
 			}

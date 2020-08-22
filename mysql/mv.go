@@ -20,12 +20,12 @@ func NewMVRepository(db *sqlx.DB) neo.MVRepository {
 	}
 }
 
-func (r *mvRepository) All(ctx context.Context, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) All(ctx context.Context, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 	err := boiler.Killmails(
 		qm.Where("killmail_time >= CURDATE() - INTERVAL ? DAY", age),
-		qm.Limit(limit),
+		qm.Limit(int(limit)),
 		qm.OrderBy(boiler.KillmailColumns.TotalValue+" DESC"),
 	).Bind(ctx, r.db, &killmails)
 
@@ -33,7 +33,7 @@ func (r *mvRepository) All(ctx context.Context, limit, age int) ([]*neo.Killmail
 
 }
 
-func (r *mvRepository) KillsByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByCharacterID(ctx context.Context, id uint64, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -70,7 +70,7 @@ func (r *mvRepository) KillsByCharacterID(ctx context.Context, id uint64, limit,
 	return killmails, err
 }
 
-func (r *mvRepository) LossesByCharacterID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) LossesByCharacterID(ctx context.Context, id uint64, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -107,7 +107,7 @@ func (r *mvRepository) LossesByCharacterID(ctx context.Context, id uint64, limit
 	return killmails, err
 }
 
-func (r *mvRepository) KillsByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByCorporationID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -144,7 +144,7 @@ func (r *mvRepository) KillsByCorporationID(ctx context.Context, id uint64, limi
 	return killmails, err
 }
 
-func (r *mvRepository) LossesByCorporationID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) LossesByCorporationID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -181,7 +181,7 @@ func (r *mvRepository) LossesByCorporationID(ctx context.Context, id uint64, lim
 	return killmails, err
 }
 
-func (r *mvRepository) KillsByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByAllianceID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -218,7 +218,7 @@ func (r *mvRepository) KillsByAllianceID(ctx context.Context, id uint64, limit, 
 	return killmails, err
 }
 
-func (r *mvRepository) LossesByAllianceID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) LossesByAllianceID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -255,7 +255,7 @@ func (r *mvRepository) LossesByAllianceID(ctx context.Context, id uint64, limit,
 	return killmails, err
 }
 
-func (r *mvRepository) KillsByShipID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByShipID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -293,7 +293,7 @@ func (r *mvRepository) KillsByShipID(ctx context.Context, id uint64, limit, age 
 	return killmails, err
 }
 
-func (r *mvRepository) LossesByShipID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) LossesByShipID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 
@@ -331,7 +331,7 @@ func (r *mvRepository) LossesByShipID(ctx context.Context, id uint64, limit, age
 	return killmails, err
 }
 
-func (r *mvRepository) KillsByShipGroupID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByShipGroupID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -373,7 +373,7 @@ func (r *mvRepository) KillsByShipGroupID(ctx context.Context, id uint64, limit,
 
 }
 
-func (r *mvRepository) LossesByShipGroupID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) LossesByShipGroupID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT
@@ -415,21 +415,21 @@ func (r *mvRepository) LossesByShipGroupID(ctx context.Context, id uint64, limit
 
 }
 
-func (r *mvRepository) KillsBySystemID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsBySystemID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	killmails := make([]*neo.Killmail, 0)
 	err := boiler.Killmails(
 		boiler.KillmailWhere.SolarSystemID.EQ(id),
-		boiler.KillmailWhere.KillmailTime.GTE(time.Now().AddDate(0, 0, 0-age)),
+		boiler.KillmailWhere.KillmailTime.GTE(time.Now().AddDate(0, 0, 0-int(age))),
 		qm.OrderBy(boiler.KillmailColumns.TotalValue+" DESC"),
-		qm.Limit(limit),
+		qm.Limit(int(limit)),
 	).Bind(ctx, r.db, &killmails)
 
 	return killmails, err
 
 }
 
-func (r *mvRepository) KillsByConstellationID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByConstellationID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT 
@@ -466,7 +466,7 @@ func (r *mvRepository) KillsByConstellationID(ctx context.Context, id uint64, li
 
 }
 
-func (r *mvRepository) KillsByRegionID(ctx context.Context, id uint64, limit, age int) ([]*neo.Killmail, error) {
+func (r *mvRepository) KillsByRegionID(ctx context.Context, id uint, limit, age uint) ([]*neo.Killmail, error) {
 
 	query := `
 		SELECT 

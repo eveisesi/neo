@@ -225,17 +225,17 @@ func (s *Server) GracefullyShutdown(ctx context.Context) error {
 	return s.server.Shutdown(ctx)
 }
 
-func (s *Server) WriteSuccess(w http.ResponseWriter, status int, data interface{}) error {
+func (s *Server) WriteSuccess(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 
 	if status != 0 {
 		w.WriteHeader(status)
 	}
 
-	return json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
-func (s *Server) WriteError(w http.ResponseWriter, code int, err error) error {
+func (s *Server) WriteError(w http.ResponseWriter, code int, err error) {
 	w.Header().Set("Content-Type", "application-type/json")
 	w.WriteHeader(code)
 
@@ -249,5 +249,5 @@ func (s *Server) WriteError(w http.ResponseWriter, code int, err error) error {
 		Message: err.Error(),
 	}
 
-	return json.NewEncoder(w).Encode(res)
+	_ = json.NewEncoder(w).Encode(res)
 }

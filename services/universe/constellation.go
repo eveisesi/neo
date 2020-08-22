@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) Constellation(ctx context.Context, id uint64) (*neo.Constellation, error) {
+func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellation, error) {
 
 	var constellation = new(neo.Constellation)
 	var key = fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
@@ -46,7 +46,7 @@ func (s *service) Constellation(ctx context.Context, id uint64) (*neo.Constellat
 
 }
 
-func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*neo.Constellation, error) {
+func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []uint) ([]*neo.Constellation, error) {
 
 	var constellations = make([]*neo.Constellation, 0)
 	for _, id := range ids {
@@ -73,7 +73,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return constellations, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, constellation := range constellations {

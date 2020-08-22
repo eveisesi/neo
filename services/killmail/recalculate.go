@@ -13,7 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint64) {
+func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint) {
 
 	for {
 
@@ -132,7 +132,7 @@ func (s *service) recalculateKillmail(message []byte, workerID int) {
 
 	entry.Debugln()
 
-	killmail, err := s.killmails.Killmail(ctx, payload.ID, payload.Hash)
+	killmail, err := s.killmails.Killmail(ctx, payload.ID)
 	if err != nil {
 		entry.WithError(err).Error("unable to retreive killmail from db")
 		return

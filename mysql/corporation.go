@@ -24,7 +24,7 @@ func NewCorporationRepository(db *sqlx.DB) neo.CorporationRespository {
 	}
 }
 
-func (r *corporationRepository) Corporation(ctx context.Context, id uint64) (*neo.Corporation, error) {
+func (r *corporationRepository) Corporation(ctx context.Context, id uint) (*neo.Corporation, error) {
 
 	var corporation = neo.Corporation{}
 	err := boiler.Corporations(
@@ -67,7 +67,7 @@ func (r *corporationRepository) CreateCorporation(ctx context.Context, corporati
 
 }
 
-func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint64, corporation *neo.Corporation) (*neo.Corporation, error) {
+func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint, corporation *neo.Corporation) (*neo.Corporation, error) {
 
 	var bCorporation = new(boiler.Corporation)
 	err := copier.Copy(bCorporation, corporation)
@@ -88,7 +88,7 @@ func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint64
 
 }
 
-func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*neo.Corporation, error) {
+func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error) {
 
 	var corporations = make([]*neo.Corporation, 0)
 	err := boiler.Corporations(
@@ -97,7 +97,7 @@ func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context
 				"%s IN ?",
 				boiler.CorporationColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &corporations)
 

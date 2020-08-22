@@ -12,7 +12,7 @@ func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *ge
 	return generated.NewKillmailAttackersLoader(generated.KillmailAttackersLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([][]*neo.KillmailAttacker, []error) {
+		Fetch: func(ids []uint) ([][]*neo.KillmailAttacker, []error) {
 
 			attackers := make([][]*neo.KillmailAttacker, len(ids))
 			errors := make([]error, len(ids))
@@ -23,7 +23,7 @@ func KillmailAttackersLoader(ctx context.Context, killmail killmail.Service) *ge
 				return nil, errors
 			}
 
-			attackersByKillmailID := map[uint64][]*neo.KillmailAttacker{}
+			attackersByKillmailID := map[uint][]*neo.KillmailAttacker{}
 			for _, row := range rows {
 				attackersByKillmailID[row.KillmailID] = append(attackersByKillmailID[row.KillmailID], row)
 			}
@@ -42,7 +42,7 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 	return generated.NewKillmailItemsLoader(generated.KillmailItemsLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([][]*neo.KillmailItem, []error) {
+		Fetch: func(ids []uint) ([][]*neo.KillmailItem, []error) {
 
 			items := make([][]*neo.KillmailItem, len(ids))
 			errors := make([]error, len(ids))
@@ -60,7 +60,7 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 				}
 				if row.ParentID.Valid {
 					for i, parent := range parentsWithChildren {
-						if parent.ID == row.ParentID.Uint64 {
+						if parent.ID == row.ParentID.Uint {
 							parentsWithChildren[i].Items = append(parentsWithChildren[i].Items, row)
 							break
 						}
@@ -68,7 +68,7 @@ func KillmailItemsLoader(ctx context.Context, killmail killmail.Service) *genera
 				}
 			}
 
-			var itemsByKillmailID = make(map[uint64][]*neo.KillmailItem)
+			var itemsByKillmailID = make(map[uint][]*neo.KillmailItem)
 			for _, row := range parentsWithChildren {
 				itemsByKillmailID[row.KillmailID] = append(itemsByKillmailID[row.KillmailID], row)
 			}
@@ -86,7 +86,7 @@ func KillmailVictimLoader(ctx context.Context, killmail killmail.Service) *gener
 	return generated.NewKillmailVictimLoader(generated.KillmailVictimLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.KillmailVictim, []error) {
+		Fetch: func(ids []uint) ([]*neo.KillmailVictim, []error) {
 			victims := make([]*neo.KillmailVictim, len(ids))
 			errors := make([]error, len(ids))
 
@@ -96,7 +96,7 @@ func KillmailVictimLoader(ctx context.Context, killmail killmail.Service) *gener
 				return nil, errors
 			}
 
-			victimByKillmailID := map[uint64]*neo.KillmailVictim{}
+			victimByKillmailID := map[uint]*neo.KillmailVictim{}
 			for _, row := range rows {
 				victimByKillmailID[row.KillmailID] = row
 			}

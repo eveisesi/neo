@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 )
 
-func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error) {
+func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) {
 	var alliance = new(neo.Alliance)
 	var key = fmt.Sprintf(neo.REDIS_ALLIANCE, id)
 
@@ -68,7 +69,7 @@ func (s *service) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error
 	return alliance, errors.Wrap(err, "failed to cache solar alliance in redis")
 }
 
-func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Alliance, error) {
+func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error) {
 
 	var alliances = make([]*neo.Alliance, 0)
 	for _, id := range ids {
@@ -95,7 +96,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 		return alliances, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, alliance := range alliances {
@@ -141,8 +142,12 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
+		txn := s.newrelic.StartTransaction("updateExpiredAlliances")
+		ctx = newrelic.NewContext(ctx, txn)
+
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			txn.NoticeError(err)
 			s.logger.WithError(err).Error("Failed to fetch expired alliances")
 			return
 		}
@@ -154,10 +159,14 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		}
 
 		for _, alliance := range expired {
-			s.tracker.GateKeeper()
+			seg := txn.StartSegment("handleAlliance")
+			seg.AddAttribute("id", alliance.ID)
+			s.tracker.GateKeeper(ctx)
+
 			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, alliance.Etag)
 			if m.IsError() {
-				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
+				txn.NoticeError(m.Msg)
+				s.logger.WithError(m.Msg).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
 				continue
 			}
 
@@ -182,21 +191,23 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			}
 
 			if err != nil {
+				txn.NoticeError(err)
 				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to update alliance")
 			}
 
 			s.logger.WithField("alliance_id", alliance.ID).WithField("status_code", m.Code).Debug("alliance successfully updated")
+			seg.End()
 
 			time.Sleep(time.Millisecond * 25)
 		}
 		s.logger.WithField("count", len(expired)).Debug("alliances successfully updated")
-
-		time.Sleep(time.Second * 5)
+		txn.End()
+		time.Sleep(time.Second)
 
 	}
 
 }
 
-func (s *service) MemberCountByAllianceID(ctx context.Context, id uint64) (int, error) {
+func (s *service) MemberCountByAllianceID(ctx context.Context, id uint) (int, error) {
 	return s.AllianceRespository.MemberCountByAllianceID(ctx, id)
 }

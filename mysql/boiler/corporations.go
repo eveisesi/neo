@@ -24,11 +24,11 @@ import (
 
 // Corporation is an object representing the database table.
 type Corporation struct {
-	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID               uint        `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
 	MemberCount      uint        `boil:"member_count" json:"memberCount" toml:"memberCount" yaml:"memberCount"`
-	AllianceID       null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	AllianceID       null.Uint   `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"notModifiedCount" toml:"notModifiedCount" yaml:"notModifiedCount"`
 	UpdatePriority   uint        `boil:"update_priority" json:"updatePriority" toml:"updatePriority" yaml:"updatePriority"`
 	Etag             null.String `boil:"etag" json:"etag,omitempty" toml:"etag" yaml:"etag,omitempty"`
@@ -69,11 +69,11 @@ var CorporationColumns = struct {
 // Generated where
 
 var CorporationWhere = struct {
-	ID               whereHelperuint64
+	ID               whereHelperuint
 	Name             whereHelperstring
 	Ticker           whereHelperstring
 	MemberCount      whereHelperuint
-	AllianceID       whereHelpernull_Uint64
+	AllianceID       whereHelpernull_Uint
 	NotModifiedCount whereHelperuint
 	UpdatePriority   whereHelperuint
 	Etag             whereHelpernull_String
@@ -81,11 +81,11 @@ var CorporationWhere = struct {
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
 }{
-	ID:               whereHelperuint64{field: "`corporations`.`id`"},
+	ID:               whereHelperuint{field: "`corporations`.`id`"},
 	Name:             whereHelperstring{field: "`corporations`.`name`"},
 	Ticker:           whereHelperstring{field: "`corporations`.`ticker`"},
 	MemberCount:      whereHelperuint{field: "`corporations`.`member_count`"},
-	AllianceID:       whereHelpernull_Uint64{field: "`corporations`.`alliance_id`"},
+	AllianceID:       whereHelpernull_Uint{field: "`corporations`.`alliance_id`"},
 	NotModifiedCount: whereHelperuint{field: "`corporations`.`not_modified_count`"},
 	UpdatePriority:   whereHelperuint{field: "`corporations`.`update_priority`"},
 	Etag:             whereHelpernull_String{field: "`corporations`.`etag`"},
@@ -216,7 +216,7 @@ func Corporations(mods ...qm.QueryMod) corporationQuery {
 
 // FindCorporation retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCorporation(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Corporation, error) {
+func FindCorporation(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Corporation, error) {
 	corporationObj := &Corporation{}
 
 	sel := "*"
@@ -291,7 +291,8 @@ func (o *Corporation) Insert(ctx context.Context, exec boil.ContextExecutor, col
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `corporations` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `corporations` () VALUES ()%s%s", insert)
+			format := "%s INTO `corporations` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -743,7 +744,7 @@ func (o *CorporationSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // CorporationExists checks if the Corporation row exists.
-func CorporationExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func CorporationExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `corporations` where `id`=? limit 1)"
 

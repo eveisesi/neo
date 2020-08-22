@@ -23,7 +23,7 @@ import (
 
 // TypeFlag is an object representing the database table.
 type TypeFlag struct {
-	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID        uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Text      string    `boil:"text" json:"text" toml:"text" yaml:"text"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
@@ -50,13 +50,13 @@ var TypeFlagColumns = struct {
 // Generated where
 
 var TypeFlagWhere = struct {
-	ID        whereHelperuint64
+	ID        whereHelperuint
 	Name      whereHelperstring
 	Text      whereHelperstring
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ID:        whereHelperuint64{field: "`type_flags`.`id`"},
+	ID:        whereHelperuint{field: "`type_flags`.`id`"},
 	Name:      whereHelperstring{field: "`type_flags`.`name`"},
 	Text:      whereHelperstring{field: "`type_flags`.`text`"},
 	CreatedAt: whereHelpertime_Time{field: "`type_flags`.`created_at`"},
@@ -185,7 +185,7 @@ func TypeFlags(mods ...qm.QueryMod) typeFlagQuery {
 
 // FindTypeFlag retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTypeFlag(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*TypeFlag, error) {
+func FindTypeFlag(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*TypeFlag, error) {
 	typeFlagObj := &TypeFlag{}
 
 	sel := "*"
@@ -260,7 +260,8 @@ func (o *TypeFlag) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `type_flags` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `type_flags` () VALUES ()%s%s", insert)
+			format := "%s INTO `type_flags` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -712,7 +713,7 @@ func (o *TypeFlagSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 }
 
 // TypeFlagExists checks if the TypeFlag row exists.
-func TypeFlagExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func TypeFlagExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `type_flags` where `id`=? limit 1)"
 

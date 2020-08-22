@@ -12,7 +12,7 @@ import (
 // TypeLoaderConfig captures the config to create a new TypeLoader
 type TypeLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*neo.Type, []error)
+	Fetch func(keys []uint) ([]*neo.Type, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewTypeLoader(config TypeLoaderConfig) *TypeLoader {
 // TypeLoader batches and caches requests
 type TypeLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*neo.Type, []error)
+	fetch func(keys []uint) ([]*neo.Type, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type TypeLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*neo.Type
+	cache map[uint]*neo.Type
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -55,7 +55,7 @@ type TypeLoader struct {
 }
 
 type typeLoaderBatch struct {
-	keys    []uint64
+	keys    []uint
 	data    []*neo.Type
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type typeLoaderBatch struct {
 }
 
 // Load a Type by key, batching and caching will be applied automatically
-func (l *TypeLoader) Load(key uint64) (*neo.Type, error) {
+func (l *TypeLoader) Load(key uint) (*neo.Type, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a Type.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeLoader) LoadThunk(key uint64) func() (*neo.Type, error) {
+func (l *TypeLoader) LoadThunk(key uint) func() (*neo.Type, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -113,7 +113,7 @@ func (l *TypeLoader) LoadThunk(key uint64) func() (*neo.Type, error) {
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *TypeLoader) LoadAll(keys []uint64) ([]*neo.Type, []error) {
+func (l *TypeLoader) LoadAll(keys []uint) ([]*neo.Type, []error) {
 	results := make([]func() (*neo.Type, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *TypeLoader) LoadAll(keys []uint64) ([]*neo.Type, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a Types.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Type, []error) {
+func (l *TypeLoader) LoadAllThunk(keys []uint) func() ([]*neo.Type, []error) {
 	results := make([]func() (*neo.Type, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *TypeLoader) LoadAllThunk(keys []uint64) func() ([]*neo.Type, []error) {
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *TypeLoader) Prime(key uint64, value *neo.Type) bool {
+func (l *TypeLoader) Prime(key uint, value *neo.Type) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *TypeLoader) Prime(key uint64, value *neo.Type) bool {
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *TypeLoader) Clear(key uint64) {
+func (l *TypeLoader) Clear(key uint) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *TypeLoader) unsafeSet(key uint64, value *neo.Type) {
+func (l *TypeLoader) unsafeSet(key uint, value *neo.Type) {
 	if l.cache == nil {
-		l.cache = map[uint64]*neo.Type{}
+		l.cache = map[uint]*neo.Type{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *typeLoaderBatch) keyIndex(l *TypeLoader, key uint64) int {
+func (b *typeLoaderBatch) keyIndex(l *TypeLoader, key uint) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i

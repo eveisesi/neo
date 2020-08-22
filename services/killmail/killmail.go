@@ -14,10 +14,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
+func (s *service) AllKillmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error) {
+	return s.killmails.AllKillmails(ctx, coreMods, vicMods, attMods)
+}
+
+func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) {
 
 	var killmail = new(neo.Killmail)
-	var key = fmt.Sprintf(neo.REDIS_KILLMAIL, id, hash)
+	var key = fmt.Sprintf(neo.REDIS_KILLMAIL, id)
 
 	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -34,7 +38,7 @@ func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Ki
 		return killmail, nil
 	}
 
-	killmail, err = s.killmails.Killmail(ctx, id, hash)
+	killmail, err = s.killmails.Killmail(ctx, id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, errors.Wrap(err, "unable to query database for killmail")
 	}
@@ -51,48 +55,49 @@ func (s *service) Killmail(ctx context.Context, id uint64, hash string) (*neo.Ki
 }
 
 // FullKillmail assume that caller only needs ids. This function is not suitable if name resolution is needed
-func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*neo.Killmail, error) {
+func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*neo.Killmail, error) {
 
 	var entry = s.logger.WithContext(ctx).WithFields(logrus.Fields{
-		"id":   id,
-		"hash": hash,
+		"id": id,
 	})
 
-	killmail, err := s.Killmail(ctx, id, hash)
+	killmail, err := s.Killmail(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	solarSystem, err := s.universe.SolarSystem(ctx, killmail.SolarSystemID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch solar system")
-	}
-	if err == nil {
-		killmail.System = solarSystem
+	if withNames {
+		solarSystem, err := s.universe.SolarSystem(ctx, killmail.SolarSystemID)
+		if err != nil {
+			entry.WithError(err).Error("failed to fetch solar system")
+		}
+		if err == nil {
+			killmail.System = solarSystem
+		}
+
+		constellation, err := s.universe.Constellation(ctx, solarSystem.ConstellationID)
+		if err != nil {
+			entry.WithError(err).Error("failed to fetch constellation")
+		}
+		if err == nil {
+			solarSystem.Constellation = constellation
+		}
+
+		region, err := s.universe.Region(ctx, constellation.RegionID)
+		if err != nil {
+			entry.WithError(err).Error("failed to fetch region")
+		}
+		if err == nil {
+			constellation.Region = region
+		}
 	}
 
-	constellation, err := s.universe.Constellation(ctx, solarSystem.ConstellationID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch constellation")
-	}
-	if err == nil {
-		solarSystem.Constellation = constellation
-	}
-
-	region, err := s.universe.Region(ctx, constellation.RegionID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch region")
-	}
-	if err == nil {
-		constellation.Region = region
-	}
-
-	kmVictim, err := s.VictimByKillmailID(ctx, id, hash)
+	kmVictim, err := s.VictimByKillmailID(ctx, id)
 	if err != nil {
 		entry.WithError(err).Error("Failed to retrieve killmail victim")
 	}
 
-	if kmVictim != nil {
+	if kmVictim != nil && withNames {
 		if kmVictim.CharacterID.Valid {
 			character, err := s.character.Character(ctx, kmVictim.CharacterID.Uint64)
 			if err != nil {
@@ -103,7 +108,7 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 			}
 		}
 		if kmVictim.CorporationID.Valid {
-			corporation, err := s.corporation.Corporation(ctx, kmVictim.CorporationID.Uint64)
+			corporation, err := s.corporation.Corporation(ctx, kmVictim.CorporationID.Uint)
 			if err != nil {
 				entry.WithError(err).Error("failed to fetch victim corporation information")
 			}
@@ -112,7 +117,7 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 			}
 		}
 		if kmVictim.AllianceID.Valid {
-			alliance, err := s.alliance.Alliance(ctx, kmVictim.AllianceID.Uint64)
+			alliance, err := s.alliance.Alliance(ctx, kmVictim.AllianceID.Uint)
 			if err != nil {
 				entry.WithError(err).Error("failed to fetch victim alliance information")
 			}
@@ -124,12 +129,14 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 
 	killmail.Victim = kmVictim
 
-	ship, err := s.universe.Type(ctx, kmVictim.ShipTypeID)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch ship")
-	}
-	if err == nil {
-		killmail.Victim.Ship = ship
+	if withNames {
+		ship, err := s.universe.Type(ctx, kmVictim.ShipTypeID)
+		if err != nil {
+			entry.WithError(err).Error("failed to fetch ship")
+		}
+		if err == nil {
+			killmail.Victim.Ship = ship
+		}
 	}
 
 	items, err := s.items.ByKillmailID(ctx, id)
@@ -140,7 +147,7 @@ func (s *service) FullKillmail(ctx context.Context, id uint64, hash string) (*ne
 		kmVictim.Items = items
 	}
 
-	kmAttackers, err := s.AttackersByKillmailID(ctx, id, hash)
+	kmAttackers, err := s.AttackersByKillmailID(ctx, id)
 	if err != nil {
 		entry.WithError(err).Error("failed to fetch km attackers")
 	}
@@ -156,232 +163,182 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 	return s.killmails.Recent(ctx, neo.KILLMAILS_PER_PAGE, offset)
 }
 
-func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsFromCache(ctx context.Context, key string) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
+	results, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, err
+	}
+
+	if len(results) > 0 {
+		err = json.Unmarshal(results, &killmails)
+
+		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
+	}
+
+	return nil, nil
+
+}
+
+func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails []*neo.Killmail) error {
+
+	bSlice, err := json.Marshal(killmails)
+	if err != nil {
+		s.logger.WithContext(ctx).WithError(err).WithField("key", key).Error("unable to marshal killmails for cache")
+		return err
+	}
+
+	_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*30).Result()
+	if err != nil {
+		s.logger.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to cache killmail chunk in redis")
+	}
+
+	return err
+
+}
+
+func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after int) ([]*neo.Killmail, error) {
+
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "characters",
 		"id":   id,
-		"page": page,
+		"page": after,
 	})
 
-	results, err := s.redis.WithContext(ctx).Get(key).Bytes()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, err
-	}
-
-	if len(results) > 0 {
-		err = json.Unmarshal(results, &killmails)
-
-		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
-	}
-
-	killmails, err = s.killmails.ByCharacterID(ctx, id)
+	killmails, err := s.KillmailsFromCache(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	kmChunk := ChunkSliceKillmails(killmails, 50)
-
-	for i, chunk := range kmChunk {
-
-		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-			"type": "characters",
-			"id":   id,
-			"page": i,
-		})
-
-		bSlice, err := json.Marshal(chunk)
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
-			continue
-		}
-
-		_, err = s.redis.WithContext(ctx).Set(innerKey, bSlice, time.Minute*30).Result()
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
-		}
-
+	if len(killmails) > 0 {
+		return killmails, nil
 	}
 
-	if page >= len(kmChunk) {
-		return nil, nil
+	coreMods := []neo.Modifier{}
+	if after > 0 {
+		coreMods = append(coreMods, neo.LessThanUint64{Column: "id", Value: uint64(after)})
+	}
+	victimMods := []neo.Modifier{neo.EqualToUint64{Column: "character_id", Value: id}}
+	attMods := []neo.Modifier{neo.EqualToUint64{Column: "character_id", Value: id}}
+
+	killmails, err = s.AllKillmails(ctx, coreMods, victimMods, attMods)
+	if err != nil {
+		return nil, err
 	}
 
-	return kmChunk[page], nil
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 
 }
 
-func (s *service) KillmailsByCorporationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, after int) ([]*neo.Killmail, error) {
 
-	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "corporations",
-		"id":   id,
-		"page": page,
+		"type":  "corporations",
+		"id":    id,
+		"after": after,
 	})
 
-	results, err := s.redis.WithContext(ctx).Get(key).Bytes()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, err
-	}
-
-	if len(results) > 0 {
-		err = json.Unmarshal(results, &killmails)
-
-		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
-	}
-
-	killmails, err = s.killmails.ByCorporationID(ctx, id)
+	killmails, err := s.KillmailsFromCache(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	kmChunk := ChunkSliceKillmails(killmails, 50)
-
-	for i, chunk := range kmChunk {
-
-		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-			"type": "corporations",
-			"id":   id,
-			"page": i,
-		})
-
-		bSlice, err := json.Marshal(chunk)
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
-			continue
-		}
-
-		_, err = s.redis.WithContext(ctx).Set(innerKey, bSlice, time.Minute*30).Result()
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
-		}
-
+	if len(killmails) > 0 {
+		return killmails, nil
 	}
 
-	if page > len(kmChunk) {
-		return nil, nil
+	coreMods := []neo.Modifier{}
+	if after > 0 {
+		coreMods = append(coreMods, neo.LessThanUint64{Column: "id", Value: uint64(after)})
+	}
+	victimMods := []neo.Modifier{neo.EqualToUint{Column: "corporation_id", Value: id}}
+	attMods := []neo.Modifier{neo.EqualToUint{Column: "corporation_id", Value: id}}
+
+	killmails, err = s.AllKillmails(ctx, coreMods, victimMods, attMods)
+	if err != nil {
+		return nil, err
 	}
 
-	return kmChunk[page], nil
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 
 }
 
-func (s *service) KillmailsByAllianceID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, after int) ([]*neo.Killmail, error) {
 
-	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "alliances",
-		"id":   id,
-		"page": page,
+		"type":  "alliances",
+		"id":    id,
+		"after": after,
 	})
 
-	results, err := s.redis.WithContext(ctx).Get(key).Bytes()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, err
-	}
-
-	if len(results) > 0 {
-		err = json.Unmarshal(results, &killmails)
-
-		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
-	}
-
-	killmails, err = s.killmails.ByAllianceID(ctx, id)
+	killmails, err := s.KillmailsFromCache(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	kmChunk := ChunkSliceKillmails(killmails, 50)
-
-	for i, chunk := range kmChunk {
-
-		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-			"type": "alliances",
-			"id":   id,
-			"page": i,
-		})
-
-		bSlice, err := json.Marshal(chunk)
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
-			continue
-		}
-
-		_, err = s.redis.WithContext(ctx).Set(innerKey, bSlice, time.Minute*30).Result()
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
-		}
-
+	if len(killmails) > 0 {
+		return killmails, nil
 	}
 
-	if page > len(kmChunk) {
-		return nil, nil
+	coreMods := []neo.Modifier{}
+	if after > 0 {
+		coreMods = append(coreMods, neo.LessThanUint64{Column: "id", Value: uint64(after)})
+	}
+	victimMods := []neo.Modifier{neo.EqualToUint{Column: "alliance_id", Value: id}}
+	attMods := []neo.Modifier{neo.EqualToUint{Column: "alliance_id", Value: id}}
+
+	killmails, err = s.AllKillmails(ctx, coreMods, victimMods, attMods)
+	if err != nil {
+		return nil, err
 	}
 
-	return kmChunk[page], nil
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 
 }
 
-func (s *service) KillmailsByShipID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipID(ctx context.Context, id uint, after int) ([]*neo.Killmail, error) {
 
-	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "ships",
-		"id":   id,
-		"page": page,
+		"type":  "ships",
+		"id":    id,
+		"after": after,
 	})
 
-	results, err := s.redis.Get(key).Bytes()
-	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-		return nil, err
-	}
-
-	if len(results) > 0 {
-		err = json.Unmarshal(results, &killmails)
-
-		return killmails, errors.Wrap(err, "unable to unmarshal killmails from cache")
-	}
-
-	killmails, err = s.killmails.ByShipID(ctx, id)
-
+	killmails, err := s.KillmailsFromCache(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
-	kmChunk := ChunkSliceKillmails(killmails, 50)
-
-	for i, chunk := range kmChunk {
-
-		var innerKey = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-			"type": "ships",
-			"id":   id,
-			"page": i,
-		})
-
-		bSlice, err := json.Marshal(chunk)
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("unable to marshal chunk of killmails")
-			continue
-		}
-
-		_, err = s.redis.Set(innerKey, bSlice, time.Minute*30).Result()
-		if err != nil {
-			s.logger.WithContext(ctx).WithError(err).WithField("key", innerKey).Error("failed to cache killmail chunk in redis")
-		}
-
+	if len(killmails) > 0 {
+		return killmails, nil
 	}
 
-	if page > len(kmChunk) {
-		return nil, nil
+	if after == 0 {
+		after = 999999999
+	}
+	coreMods := []neo.Modifier{neo.LessThanUint{Column: "id", Value: uint(after)}}
+	victimMods := []neo.Modifier{neo.EqualToUint{Column: "ship_type_id", Value: id}}
+	attMods := []neo.Modifier{neo.EqualToUint{Column: "ship_type_id", Value: id}}
+
+	killmails, err = s.AllKillmails(ctx, coreMods, victimMods, attMods)
+	if err != nil {
+		return nil, err
 	}
 
-	return kmChunk[page], nil
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 
 }
 
-func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error) {
 
 	allowed := tools.IsGroupAllowed(id)
 	if !allowed {
@@ -442,7 +399,7 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint64, page in
 
 }
 
-func (s *service) KillmailsBySystemID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
@@ -499,7 +456,7 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint64, page int) 
 
 }
 
-func (s *service) KillmailsByConstellationID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
@@ -556,7 +513,7 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint64, pag
 
 }
 
-func (s *service) KillmailsByRegionID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{

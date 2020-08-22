@@ -24,7 +24,6 @@ import (
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
-	"github.com/eveisesi/neo/services/migration"
 	"github.com/eveisesi/neo/services/notifications"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/stats"
@@ -43,8 +42,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin"
 	"github.com/newrelic/go-agent/v3/integrations/nrlogrus"
-	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/newrelic/go-agent/v3/newrelic"
 
 	sqlDriver "github.com/go-sql-driver/mysql"
 )
@@ -66,7 +66,6 @@ type App struct {
 	Corporation  corporation.Service
 	Killmail     killmail.Service
 	Market       market.Service
-	Migration    migration.Service
 	Search       search.Service
 	Stats        stats.Service
 	Notification notifications.Service
@@ -92,7 +91,7 @@ func New(command string, debug bool) *App {
 		hostname = "unknown"
 	}
 
-	logger, err := makeLogger(hostname, cfg.LogLevel)
+	logger, err := makeLogger(hostname, cfg.LogLevel, cfg.Env)
 	if err != nil {
 		if logger != nil {
 			logger.WithError(err).Fatal("failed to configure logger")
@@ -102,7 +101,7 @@ func New(command string, debug bool) *App {
 
 	nr, err := makeNewRelicApp(cfg, logger, command)
 	if err != nil {
-		logger.WithError(err).Fatal("failed to initialize newrelic application")
+		logger.WithError(err).Warn("failed to initialize newrelic application")
 	}
 
 	db, err := makeDB(cfg)
@@ -133,11 +132,6 @@ func New(command string, debug bool) *App {
 
 	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
 
-	migration := migration.NewService(
-		db,
-		logger,
-	)
-
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
@@ -155,6 +149,7 @@ func New(command string, debug bool) *App {
 	alliance := alliance.NewService(
 		redisClient,
 		logger,
+		nr,
 		esiClient,
 		tracker,
 		mysql.NewAllianceRepository(db),
@@ -163,6 +158,7 @@ func New(command string, debug bool) *App {
 	character := character.NewService(
 		redisClient,
 		logger,
+		nr,
 		esiClient,
 		tracker,
 		mysql.NewCharacterRepository(db),
@@ -171,6 +167,7 @@ func New(command string, debug bool) *App {
 	corporation := corporation.NewService(
 		redisClient,
 		logger,
+		nr,
 		esiClient,
 		tracker,
 		mysql.NewCorporationRepository(db),
@@ -291,7 +288,6 @@ func New(command string, debug bool) *App {
 		Corporation:  corporation,
 		Killmail:     killmail,
 		Market:       market,
-		Migration:    migration,
 		Notification: notifications,
 		Search:       search,
 		Stats:        stats,
@@ -307,7 +303,13 @@ func New(command string, debug bool) *App {
 // name is the command that this instance of the application is executing and is configured at runtime in func main
 func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*newrelic.Application, error) {
 
-	appName := fmt.Sprintf("%s-%s", cfg.NewRelicAppName, cfg.Env)
+	env := ""
+	if cfg.Env != "production" {
+		env = cfg.Env
+	}
+
+	appName := fmt.Sprintf("%s-%s", env, cfg.NewRelicAppName)
+	// appName := fmt.Sprintf("%s-%s-%s", env, cfg.NewRelicAppName, command)
 
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName(appName),
@@ -321,7 +323,7 @@ func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*n
 		},
 	)
 	if err != nil {
-		logger.WithError(err).Fatal("failed to build newrelic application")
+		logger.WithError(err).Warn("failed to build newrelic application")
 	}
 
 	err = app.WaitForConnection(time.Second * 5)
@@ -381,7 +383,7 @@ func loadEnv() (*neo.Config, error) {
 	return &config, err
 }
 
-func makeLogger(hostname, logLevel string) (*logrus.Logger, error) {
+func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
 	logger := logrus.New()
 
 	logger.SetOutput(ioutil.Discard)
@@ -423,13 +425,13 @@ func makeLogger(hostname, logLevel string) (*logrus.Logger, error) {
 	}
 
 	logger.SetLevel(level)
-	logger.SetFormatter(&logrus.TextFormatter{
-		FullTimestamp: true,
-	})
+	logger.SetFormatter(&nrlogrusplugin.ContextFormatter{})
 
-	// logger.SetFormatter(&logrus.JSONFormatter{
-	// 	PrettyPrint: true,
-	// })
+	if env != "production" {
+		logger.SetFormatter(&logrus.TextFormatter{
+			FullTimestamp: true,
+		})
+	}
 
 	return logger, err
 }

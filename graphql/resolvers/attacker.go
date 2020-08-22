@@ -17,14 +17,14 @@ func (r *killmailAttackerResolver) Alliance(ctx context.Context, obj *neo.Killma
 	if !obj.AllianceID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint64)
+	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
 }
 
 func (r *killmailAttackerResolver) Corporation(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Corporation, error) {
 	if !obj.CorporationID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint64)
+	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint)
 }
 
 func (r *killmailAttackerResolver) Character(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Character, error) {
@@ -38,12 +38,12 @@ func (r *killmailAttackerResolver) Ship(ctx context.Context, obj *neo.KillmailAt
 	if !obj.ShipTypeID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID.Uint64)
+	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID.Uint)
 }
 
 func (r *killmailAttackerResolver) Weapon(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error) {
 	if !obj.WeaponTypeID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.WeaponTypeID.Uint64)
+	return r.Dataloader(ctx).TypeLoader.Load(obj.WeaponTypeID.Uint)
 }

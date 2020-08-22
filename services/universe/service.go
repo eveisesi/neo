@@ -9,33 +9,33 @@ import (
 )
 
 type Service interface {
-	BlueprintMaterials(context.Context, uint64) ([]*neo.BlueprintMaterial, error)
-	BlueprintProduct(context.Context, uint64) (*neo.BlueprintProduct, error)
-	BlueprintProductByProductTypeID(context.Context, uint64) (*neo.BlueprintProduct, error)
+	BlueprintMaterials(context.Context, uint) ([]*neo.BlueprintMaterial, error)
+	BlueprintProduct(context.Context, uint) (*neo.BlueprintProduct, error)
+	BlueprintProductByProductTypeID(context.Context, uint) (*neo.BlueprintProduct, error)
 
-	Constellation(ctx context.Context, id uint64) (*neo.Constellation, error)
-	ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*neo.Constellation, error)
+	Constellation(ctx context.Context, id uint) (*neo.Constellation, error)
+	ConstellationsByConstellationIDs(ctx context.Context, ids []uint) ([]*neo.Constellation, error)
 
-	Region(ctx context.Context, id uint64) (*neo.Region, error)
-	RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.Region, error)
+	Region(ctx context.Context, id uint) (*neo.Region, error)
+	RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Region, error)
 
-	SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error)
-	SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*neo.SolarSystem, error)
+	SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, error)
+	SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) ([]*neo.SolarSystem, error)
 
-	Type(ctx context.Context, id uint64) (*neo.Type, error)
-	TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type, error)
+	Type(ctx context.Context, id uint) (*neo.Type, error)
+	TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, error)
 
-	TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAttribute, error)
-	TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.TypeAttribute, error)
+	TypeAttributes(ctx context.Context, id uint) ([]*neo.TypeAttribute, error)
+	TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.TypeAttribute, error)
 
-	TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategory, error)
-	TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64) ([]*neo.TypeCategory, error)
+	TypeCategory(ctx context.Context, id uint) (*neo.TypeCategory, error)
+	TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) ([]*neo.TypeCategory, error)
 
-	TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error)
-	TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*neo.TypeFlag, error)
+	TypeFlag(ctx context.Context, id uint) (*neo.TypeFlag, error)
+	TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*neo.TypeFlag, error)
 
-	TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, error)
-	TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*neo.TypeGroup, error)
+	TypeGroup(ctx context.Context, id uint) (*neo.TypeGroup, error)
+	TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.TypeGroup, error)
 }
 
 type service struct {

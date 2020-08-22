@@ -8,7 +8,7 @@ import (
 )
 
 func (r *queryResolver) CorporationByCorporationID(ctx context.Context, id int) (*neo.Corporation, error) {
-	return r.Services.Corporation.Corporation(ctx, uint64(id))
+	return r.Services.Corporation.Corporation(ctx, uint(id))
 }
 
 func (r *Resolver) Corporation() service.CorporationResolver {
@@ -21,5 +21,5 @@ func (r *corporationResolver) Alliance(ctx context.Context, obj *neo.Corporation
 	if !obj.AllianceID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint64)
+	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
 }

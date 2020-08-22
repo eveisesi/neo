@@ -24,7 +24,7 @@ func NewAllianceRepository(db *sqlx.DB) neo.AllianceRespository {
 	}
 }
 
-func (r *allianceRepository) Alliance(ctx context.Context, id uint64) (*neo.Alliance, error) {
+func (r *allianceRepository) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) {
 
 	var alliance = neo.Alliance{}
 	err := boiler.Alliances(
@@ -67,7 +67,7 @@ func (r *allianceRepository) CreateAlliance(ctx context.Context, alliance *neo.A
 
 }
 
-func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint64, alliance *neo.Alliance) (*neo.Alliance, error) {
+func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint, alliance *neo.Alliance) (*neo.Alliance, error) {
 
 	var bAlliance = new(boiler.Alliance)
 	err := copier.Copy(bAlliance, alliance)
@@ -88,7 +88,7 @@ func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint64, alli
 
 }
 
-func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*neo.Alliance, error) {
+func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error) {
 
 	var alliances = make([]*neo.Alliance, 0)
 	err := boiler.Alliances(
@@ -97,14 +97,14 @@ func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []u
 				"%s IN ?",
 				boiler.AllianceColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &alliances)
 
 	return alliances, err
 }
 
-func (r *allianceRepository) MemberCountByAllianceID(ctx context.Context, id uint64) (int, error) {
+func (r *allianceRepository) MemberCountByAllianceID(ctx context.Context, id uint) (int, error) {
 
 	query := `
 		SELECT SUM(member_count) as count FROM corporations where alliance_id = ?

@@ -51,15 +51,16 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	return str
 }
 
-// Enum values for stats.entity
+// Enum values for stats.entity_type
 const (
-	StatsEntityCharacter     = "character"
-	StatsEntityCorporation   = "corporation"
-	StatsEntityAlliance      = "alliance"
-	StatsEntityShip          = "ship"
-	StatsEntitySystem        = "system"
-	StatsEntityConstellation = "constellation"
-	StatsEntityRegion        = "region"
+	StatsEntityTypeCharacter     = "character"
+	StatsEntityTypeCorporation   = "corporation"
+	StatsEntityTypeAlliance      = "alliance"
+	StatsEntityTypeShip          = "ship"
+	StatsEntityTypeshipGroup     = "shipGroup"
+	StatsEntityTypeSystem        = "system"
+	StatsEntityTypeConstellation = "constellation"
+	StatsEntityTypeRegion        = "region"
 )
 
 // Enum values for stats.category

@@ -23,10 +23,10 @@ import (
 
 // BlueprintMaterial is an object representing the database table.
 type BlueprintMaterial struct {
-	TypeID         uint64    `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
-	ActivityID     uint64    `boil:"activity_id" json:"activityID" toml:"activityID" yaml:"activityID"`
-	MaterialTypeID uint64    `boil:"material_type_id" json:"materialTypeID" toml:"materialTypeID" yaml:"materialTypeID"`
-	Quantity       uint64    `boil:"quantity" json:"quantity" toml:"quantity" yaml:"quantity"`
+	TypeID         uint      `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
+	ActivityID     uint      `boil:"activity_id" json:"activityID" toml:"activityID" yaml:"activityID"`
+	MaterialTypeID uint      `boil:"material_type_id" json:"materialTypeID" toml:"materialTypeID" yaml:"materialTypeID"`
+	Quantity       uint      `boil:"quantity" json:"quantity" toml:"quantity" yaml:"quantity"`
 	CreatedAt      time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt      time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
@@ -53,17 +53,17 @@ var BlueprintMaterialColumns = struct {
 // Generated where
 
 var BlueprintMaterialWhere = struct {
-	TypeID         whereHelperuint64
-	ActivityID     whereHelperuint64
-	MaterialTypeID whereHelperuint64
-	Quantity       whereHelperuint64
+	TypeID         whereHelperuint
+	ActivityID     whereHelperuint
+	MaterialTypeID whereHelperuint
+	Quantity       whereHelperuint
 	CreatedAt      whereHelpertime_Time
 	UpdatedAt      whereHelpertime_Time
 }{
-	TypeID:         whereHelperuint64{field: "`blueprint_materials`.`type_id`"},
-	ActivityID:     whereHelperuint64{field: "`blueprint_materials`.`activity_id`"},
-	MaterialTypeID: whereHelperuint64{field: "`blueprint_materials`.`material_type_id`"},
-	Quantity:       whereHelperuint64{field: "`blueprint_materials`.`quantity`"},
+	TypeID:         whereHelperuint{field: "`blueprint_materials`.`type_id`"},
+	ActivityID:     whereHelperuint{field: "`blueprint_materials`.`activity_id`"},
+	MaterialTypeID: whereHelperuint{field: "`blueprint_materials`.`material_type_id`"},
+	Quantity:       whereHelperuint{field: "`blueprint_materials`.`quantity`"},
 	CreatedAt:      whereHelpertime_Time{field: "`blueprint_materials`.`created_at`"},
 	UpdatedAt:      whereHelpertime_Time{field: "`blueprint_materials`.`updated_at`"},
 }
@@ -86,8 +86,8 @@ type blueprintMaterialL struct{}
 
 var (
 	blueprintMaterialAllColumns            = []string{"type_id", "activity_id", "material_type_id", "quantity", "created_at", "updated_at"}
-	blueprintMaterialColumnsWithoutDefault = []string{"type_id", "activity_id", "material_type_id", "quantity", "created_at", "updated_at"}
-	blueprintMaterialColumnsWithDefault    = []string{}
+	blueprintMaterialColumnsWithoutDefault = []string{"type_id", "activity_id", "material_type_id", "created_at", "updated_at"}
+	blueprintMaterialColumnsWithDefault    = []string{"quantity"}
 	blueprintMaterialPrimaryKeyColumns     = []string{"type_id", "activity_id", "material_type_id"}
 )
 
@@ -190,7 +190,7 @@ func BlueprintMaterials(mods ...qm.QueryMod) blueprintMaterialQuery {
 
 // FindBlueprintMaterial retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindBlueprintMaterial(ctx context.Context, exec boil.ContextExecutor, typeID uint64, activityID uint64, materialTypeID uint64, selectCols ...string) (*BlueprintMaterial, error) {
+func FindBlueprintMaterial(ctx context.Context, exec boil.ContextExecutor, typeID uint, activityID uint, materialTypeID uint, selectCols ...string) (*BlueprintMaterial, error) {
 	blueprintMaterialObj := &BlueprintMaterial{}
 
 	sel := "*"
@@ -265,7 +265,8 @@ func (o *BlueprintMaterial) Insert(ctx context.Context, exec boil.ContextExecuto
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `blueprint_materials` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `blueprint_materials` () VALUES ()%s%s", insert)
+			format := "%s INTO `blueprint_materials` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -717,7 +718,7 @@ func (o *BlueprintMaterialSlice) ReloadAll(ctx context.Context, exec boil.Contex
 }
 
 // BlueprintMaterialExists checks if the BlueprintMaterial row exists.
-func BlueprintMaterialExists(ctx context.Context, exec boil.ContextExecutor, typeID uint64, activityID uint64, materialTypeID uint64) (bool, error) {
+func BlueprintMaterialExists(ctx context.Context, exec boil.ContextExecutor, typeID uint, activityID uint, materialTypeID uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `blueprint_materials` where `type_id`=? AND `activity_id`=? AND `material_type_id`=? limit 1)"
 

@@ -33,10 +33,10 @@ func cronCommand() cli.Command {
 				cron.WithSeconds(),
 			)
 
-			registerAutocompleteCron(c, core.New("cron-autocompleter", false))
-			registerEsiServerStatusCron(c, core.New("cron-esi-server-stats", false))
-			registerMarketDataCron(c, core.New("cron-market-data", false))
-			registerTrackingJanitorCron(c, core.New("cron-tracking-janitor", false))
+			registerAutocompleteCron(c, app)
+			registerEsiServerStatusCron(c, app)
+			registerMarketDataCron(c, app)
+			registerTrackingJanitorCron(c, app)
 
 			c.Run()
 
@@ -48,7 +48,7 @@ func cronCommand() cli.Command {
 func registerAutocompleteCron(c *cron.Cron, app *core.App) {
 
 	_, err := c.AddFunc("0 0 11 * * *", func() {
-		txn := app.NewRelic.StartTransaction(app.Label)
+		txn := app.NewRelic.StartTransaction("cron-autocompleter")
 		ctx := newrelic.NewContext(context.Background(), txn)
 		app.Logger.WithContext(ctx).Info("rebuilding autocompleter index")
 
@@ -68,7 +68,7 @@ func registerAutocompleteCron(c *cron.Cron, app *core.App) {
 func registerEsiServerStatusCron(c *cron.Cron, app *core.App) {
 
 	_, err := c.AddFunc("*/30 * * * * *", func() {
-		txn := app.NewRelic.StartTransaction(app.Label)
+		txn := app.NewRelic.StartTransaction("cron-esi-server-stats")
 		ctx := newrelic.NewContext(context.Background(), txn)
 		app.Logger.WithContext(ctx).Info("checking tq server status")
 
@@ -98,7 +98,7 @@ func registerEsiServerStatusCron(c *cron.Cron, app *core.App) {
 func registerMarketDataCron(c *cron.Cron, app *core.App) {
 
 	_, err := c.AddFunc("0 10 11 * * *", func() {
-		txn := app.NewRelic.StartTransaction(app.Label)
+		txn := app.NewRelic.StartTransaction("cron-market-data")
 		ctx := newrelic.NewContext(context.Background(), txn)
 		app.Logger.Info("starting fetch prices")
 		app.Market.FetchPrices(ctx)
@@ -117,7 +117,7 @@ func registerMarketDataCron(c *cron.Cron, app *core.App) {
 func registerTrackingJanitorCron(c *cron.Cron, app *core.App) {
 
 	_, err := c.AddFunc("0 * * * * *", func() {
-		txn := app.NewRelic.StartTransaction(app.Label)
+		txn := app.NewRelic.StartTransaction("cron-tracking-janitor")
 		ctx := newrelic.NewContext(context.Background(), txn)
 		app.Logger.WithContext(ctx).Info("starting esi tracking set janitor")
 

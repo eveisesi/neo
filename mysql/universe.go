@@ -23,7 +23,7 @@ func NewUniverseRepository(db *sqlx.DB) neo.UniverseRepository {
 	}
 }
 
-func (r *universeRepository) Constellation(ctx context.Context, id uint64) (*neo.Constellation, error) {
+func (r *universeRepository) Constellation(ctx context.Context, id uint) (*neo.Constellation, error) {
 
 	constellation := new(neo.Constellation)
 	err := boiler.Constellations(
@@ -34,7 +34,7 @@ func (r *universeRepository) Constellation(ctx context.Context, id uint64) (*neo
 
 }
 
-func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Context, ids []uint64) ([]*neo.Constellation, error) {
+func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Context, ids []uint) ([]*neo.Constellation, error) {
 
 	constellations := make([]*neo.Constellation, 0)
 	err := boiler.Constellations(
@@ -43,7 +43,7 @@ func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Contex
 				"%s IN ?",
 				boiler.ConstellationColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &constellations)
 
@@ -51,7 +51,7 @@ func (r *universeRepository) ConstellationsByConstellationIDs(ctx context.Contex
 
 }
 
-func (r *universeRepository) Region(ctx context.Context, id uint64) (*neo.Region, error) {
+func (r *universeRepository) Region(ctx context.Context, id uint) (*neo.Region, error) {
 
 	region := new(neo.Region)
 	err := boiler.Regions(
@@ -62,7 +62,7 @@ func (r *universeRepository) Region(ctx context.Context, id uint64) (*neo.Region
 
 }
 
-func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.Region, error) {
+func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Region, error) {
 
 	regions := make([]*neo.Region, 0)
 	err := boiler.Regions(
@@ -71,7 +71,7 @@ func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint6
 				"%s IN ?",
 				boiler.RegionColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &regions)
 
@@ -79,7 +79,7 @@ func (r *universeRepository) RegionsByRegionIDs(ctx context.Context, ids []uint6
 
 }
 
-func (r *universeRepository) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
+func (r *universeRepository) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, error) {
 
 	system := neo.SolarSystem{}
 	err := boiler.SolarSystems(
@@ -109,7 +109,7 @@ func (r *universeRepository) CreateSolarSystem(ctx context.Context, system *neo.
 
 }
 
-func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*neo.SolarSystem, error) {
+func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) ([]*neo.SolarSystem, error) {
 
 	var systems = make([]*neo.SolarSystem, 0)
 	err := boiler.SolarSystems(
@@ -118,7 +118,7 @@ func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, i
 				"%s IN ?",
 				boiler.SolarSystemColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &systems)
 
@@ -126,7 +126,7 @@ func (r *universeRepository) SolarSystemsBySolarSystemIDs(ctx context.Context, i
 
 }
 
-func (r *universeRepository) Type(ctx context.Context, id uint64) (*neo.Type, error) {
+func (r *universeRepository) Type(ctx context.Context, id uint) (*neo.Type, error) {
 
 	var invType = neo.Type{}
 	err := boiler.Types(
@@ -156,7 +156,7 @@ func (r *universeRepository) CreateType(ctx context.Context, invType *neo.Type) 
 
 }
 
-func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type, error) {
+func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, error) {
 
 	var invTypes = make([]*neo.Type, 0)
 	err := boiler.Types(
@@ -165,7 +165,7 @@ func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) (
 				"%s IN ?",
 				boiler.TypeColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &invTypes)
 
@@ -173,7 +173,7 @@ func (r *universeRepository) TypesByTypeIDs(ctx context.Context, ids []uint64) (
 
 }
 
-func (r *universeRepository) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAttribute, error) {
+func (r *universeRepository) TypeAttributes(ctx context.Context, id uint) ([]*neo.TypeAttribute, error) {
 
 	attributes := make([]*neo.TypeAttribute, 0)
 	err := boiler.TypeAttributes(
@@ -223,7 +223,7 @@ func (r *universeRepository) CreateTypeAttributes(ctx context.Context, attribute
 
 }
 
-func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.TypeAttribute, error) {
+func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.TypeAttribute, error) {
 
 	attributes := make([]*neo.TypeAttribute, 0)
 	err := boiler.TypeAttributes(
@@ -232,7 +232,7 @@ func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []
 				"%s IN ?",
 				boiler.TypeAttributeColumns.TypeID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &attributes)
 
@@ -240,7 +240,7 @@ func (r *universeRepository) TypeAttributesByTypeIDs(ctx context.Context, ids []
 
 }
 
-func (r *universeRepository) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategory, error) {
+func (r *universeRepository) TypeCategory(ctx context.Context, id uint) (*neo.TypeCategory, error) {
 
 	category := neo.TypeCategory{}
 	err := boiler.TypeCategories(
@@ -251,7 +251,7 @@ func (r *universeRepository) TypeCategory(ctx context.Context, id uint64) (*neo.
 
 }
 
-func (r *universeRepository) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64) ([]*neo.TypeCategory, error) {
+func (r *universeRepository) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) ([]*neo.TypeCategory, error) {
 
 	categories := make([]*neo.TypeCategory, 0)
 	err := boiler.TypeCategories(
@@ -260,7 +260,7 @@ func (r *universeRepository) TypeCategoriesByCategoryIDs(ctx context.Context, id
 				"%s IN ?",
 				boiler.TypeCategoryColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &categories)
 
@@ -268,7 +268,7 @@ func (r *universeRepository) TypeCategoriesByCategoryIDs(ctx context.Context, id
 
 }
 
-func (r *universeRepository) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error) {
+func (r *universeRepository) TypeFlag(ctx context.Context, id uint) (*neo.TypeFlag, error) {
 
 	flag := neo.TypeFlag{}
 	err := boiler.TypeFlags(
@@ -279,7 +279,7 @@ func (r *universeRepository) TypeFlag(ctx context.Context, id uint64) (*neo.Type
 
 }
 
-func (r *universeRepository) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*neo.TypeFlag, error) {
+func (r *universeRepository) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*neo.TypeFlag, error) {
 
 	flags := make([]*neo.TypeFlag, 0)
 	err := boiler.TypeFlags(
@@ -288,7 +288,7 @@ func (r *universeRepository) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []u
 				"%s IN ?",
 				boiler.TypeFlagColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &flags)
 
@@ -296,7 +296,7 @@ func (r *universeRepository) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []u
 
 }
 
-func (r *universeRepository) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, error) {
+func (r *universeRepository) TypeGroup(ctx context.Context, id uint) (*neo.TypeGroup, error) {
 
 	group := neo.TypeGroup{}
 	err := boiler.TypeGroups(
@@ -307,7 +307,7 @@ func (r *universeRepository) TypeGroup(ctx context.Context, id uint64) (*neo.Typ
 
 }
 
-func (r *universeRepository) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*neo.TypeGroup, error) {
+func (r *universeRepository) TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.TypeGroup, error) {
 
 	groups := make([]*neo.TypeGroup, 0)
 	err := boiler.TypeGroups(
@@ -316,7 +316,7 @@ func (r *universeRepository) TypeGroupsByGroupIDs(ctx context.Context, ids []uin
 				"%s IN ?",
 				boiler.TypeGroupColumns.ID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &groups)
 

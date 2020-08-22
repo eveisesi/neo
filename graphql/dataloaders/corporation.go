@@ -12,7 +12,7 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 	return generated.NewCorporationLoader(generated.CorporationLoaderConfig{
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
-		Fetch: func(ids []uint64) ([]*neo.Corporation, []error) {
+		Fetch: func(ids []uint) ([]*neo.Corporation, []error) {
 			corporations := make([]*neo.Corporation, len(ids))
 			errors := make([]error, len(ids))
 
@@ -22,7 +22,7 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 				return nil, errors
 			}
 
-			corporationByCorporationID := map[uint64]*neo.Corporation{}
+			corporationByCorporationID := map[uint]*neo.Corporation{}
 			for _, c := range rows {
 				corporationByCorporationID[c.ID] = c
 			}

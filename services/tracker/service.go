@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -9,7 +10,7 @@ import (
 
 type Service interface {
 	Run(start, end time.Time)
-	GateKeeper()
+	GateKeeper(ctx context.Context)
 }
 
 type service struct {

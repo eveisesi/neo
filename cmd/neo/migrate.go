@@ -1,36 +1,29 @@
 package main
 
-import (
-	"time"
+// func migrateCommand() cli.Command {
+// 	return cli.Command{
+// 		Name: "migrate",
+// 		Action: func(c *cli.Context) error {
 
-	core "github.com/eveisesi/neo/app"
-	"github.com/urfave/cli"
-)
+// 			app := core.New("db-migrations", false)
 
-func migrateCommand() cli.Command {
-	return cli.Command{
-		Name: "migrate",
-		Action: func(c *cli.Context) error {
+// 			app.Logger.Info("initialize migrations")
 
-			app := core.New("db-migrations", false)
+// 			err := app.Migration.Init()
+// 			if err != nil {
+// 				return cli.NewExitError(err, 1)
+// 			}
 
-			app.Logger.Info("initialize migrations")
+// 			app.Logger.Info("migrations initialized")
 
-			err := app.Migration.Init()
-			if err != nil {
-				return cli.NewExitError(err, 1)
-			}
+// 			app.Logger.Info("running migrations")
 
-			app.Logger.Info("migrations initialized")
+// 			app.Migration.Run()
 
-			app.Logger.Info("running migrations")
+// 			app.Logger.Info("migrations run successfully. exiting application")
+// 			time.Sleep(time.Second * 2)
 
-			app.Migration.Run()
-
-			app.Logger.Info("migrations run successfully. exiting application")
-			time.Sleep(time.Second * 2)
-
-			return nil
-		},
-	}
-}
+// 			return nil
+// 		},
+// 	}
+// }

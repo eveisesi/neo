@@ -24,14 +24,14 @@ import (
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GroupID       uint64      `boil:"group_id" json:"groupID" toml:"groupID" yaml:"groupID"`
-	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description   string      `boil:"description" json:"description" toml:"description" yaml:"description"`
-	Published     bool        `boil:"published" json:"published" toml:"published" yaml:"published"`
-	MarketGroupID null.Uint64 `boil:"market_group_id" json:"marketGroupID,omitempty" toml:"marketGroupID" yaml:"marketGroupID,omitempty"`
-	CreatedAt     null.Time   `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
-	UpdatedAt     null.Time   `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
+	ID            uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GroupID       uint      `boil:"group_id" json:"groupID" toml:"groupID" yaml:"groupID"`
+	Name          string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description   string    `boil:"description" json:"description" toml:"description" yaml:"description"`
+	Published     bool      `boil:"published" json:"published" toml:"published" yaml:"published"`
+	MarketGroupID null.Uint `boil:"market_group_id" json:"marketGroupID,omitempty" toml:"marketGroupID" yaml:"marketGroupID,omitempty"`
+	CreatedAt     null.Time `boil:"created_at" json:"createdAt,omitempty" toml:"createdAt" yaml:"createdAt,omitempty"`
+	UpdatedAt     null.Time `boil:"updated_at" json:"updatedAt,omitempty" toml:"updatedAt" yaml:"updatedAt,omitempty"`
 
 	R *typeR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L typeL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -60,21 +60,21 @@ var TypeColumns = struct {
 // Generated where
 
 var TypeWhere = struct {
-	ID            whereHelperuint64
-	GroupID       whereHelperuint64
+	ID            whereHelperuint
+	GroupID       whereHelperuint
 	Name          whereHelperstring
 	Description   whereHelperstring
 	Published     whereHelperbool
-	MarketGroupID whereHelpernull_Uint64
+	MarketGroupID whereHelpernull_Uint
 	CreatedAt     whereHelpernull_Time
 	UpdatedAt     whereHelpernull_Time
 }{
-	ID:            whereHelperuint64{field: "`types`.`id`"},
-	GroupID:       whereHelperuint64{field: "`types`.`group_id`"},
+	ID:            whereHelperuint{field: "`types`.`id`"},
+	GroupID:       whereHelperuint{field: "`types`.`group_id`"},
 	Name:          whereHelperstring{field: "`types`.`name`"},
 	Description:   whereHelperstring{field: "`types`.`description`"},
 	Published:     whereHelperbool{field: "`types`.`published`"},
-	MarketGroupID: whereHelpernull_Uint64{field: "`types`.`market_group_id`"},
+	MarketGroupID: whereHelpernull_Uint{field: "`types`.`market_group_id`"},
 	CreatedAt:     whereHelpernull_Time{field: "`types`.`created_at`"},
 	UpdatedAt:     whereHelpernull_Time{field: "`types`.`updated_at`"},
 }
@@ -201,7 +201,7 @@ func Types(mods ...qm.QueryMod) typeQuery {
 
 // FindType retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindType(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Type, error) {
+func FindType(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Type, error) {
 	typeObj := &Type{}
 
 	sel := "*"
@@ -276,7 +276,8 @@ func (o *Type) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `types` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `types` () VALUES ()%s%s", insert)
+			format := "%s INTO `types` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -728,7 +729,7 @@ func (o *TypeSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 }
 
 // TypeExists checks if the Type row exists.
-func TypeExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func TypeExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `types` where `id`=? limit 1)"
 

@@ -6,6 +6,6 @@ import (
 	"github.com/eveisesi/neo"
 )
 
-func (s *service) ItemsByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error) {
+func (s *service) ItemsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error) {
 	return s.items.ByKillmailIDs(ctx, ids)
 }

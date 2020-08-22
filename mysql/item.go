@@ -23,7 +23,7 @@ func NewKillmailItemRepository(db *sqlx.DB) neo.KillmailItemRepository {
 	}
 }
 
-func (r *killmailItemRepository) ByKillmailID(ctx context.Context, id uint64) ([]*neo.KillmailItem, error) {
+func (r *killmailItemRepository) ByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailItem, error) {
 
 	var items = make([]*neo.KillmailItem, 0)
 	err := boiler.KillmailItems(
@@ -34,7 +34,7 @@ func (r *killmailItemRepository) ByKillmailID(ctx context.Context, id uint64) ([
 
 }
 
-func (r *killmailItemRepository) ByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailItem, error) {
+func (r *killmailItemRepository) ByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error) {
 
 	var items = make([]*neo.KillmailItem, 0)
 	err := boiler.KillmailItems(
@@ -43,7 +43,7 @@ func (r *killmailItemRepository) ByKillmailIDs(ctx context.Context, ids []uint64
 				"%s IN ?",
 				boiler.KillmailItemColumns.KillmailID,
 			),
-			convertSliceUint64ToSliceInterface(ids)...,
+			convertSliceUintToSliceInterface(ids)...,
 		),
 	).Bind(ctx, r.db, &items)
 

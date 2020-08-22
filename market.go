@@ -8,22 +8,22 @@ import (
 )
 
 type MarketRepository interface {
-	BuiltPrice(ctx context.Context, id uint64, date time.Time) (*PriceBuilt, error)
+	BuiltPrice(ctx context.Context, id uint, date time.Time) (*PriceBuilt, error)
 	InsertBuiltPrice(ctx context.Context, price *PriceBuilt) (*PriceBuilt, error)
-	HistoricalRecord(ctx context.Context, id uint64, date time.Time, limit null.Int) ([]*HistoricalRecord, error)
+	HistoricalRecord(ctx context.Context, id uint, date time.Time, limit null.Int) ([]*HistoricalRecord, error)
 	CreateHistoricalRecord(ctx context.Context, records []*HistoricalRecord) ([]*HistoricalRecord, error)
 
-	AvgOfTypeLowPrice(ctx context.Context, id uint64, days int, date time.Time) (null.Float64, error)
+	AvgOfTypeLowPrice(ctx context.Context, id uint, days int, date time.Time) (null.Float64, error)
 }
 
 type HistoricalRecord struct {
-	TypeID uint64  `db:"type_id" json:"typeID"`
+	TypeID uint    `db:"type_id" json:"typeID"`
 	Date   *Date   `db:"date" json:"date"`
 	Price  float64 `db:"price" json:"average"`
 }
 
 type PriceBuilt struct {
-	TypeID uint64    `db:"type_id" json:"typeID"`
+	TypeID uint      `db:"type_id" json:"typeID"`
 	Date   time.Time `db:"date" json:"date"`
 	Price  float64   `db:"price" json:"price"`
 }
@@ -31,13 +31,13 @@ type PriceBuilt struct {
 type MarketPrices struct {
 	AdjustedPrice float64 `json:"adjusted_price"`
 	AveragePrice  float64 `json:"average_price"`
-	TypeID        uint64  `json:"type_id"`
+	TypeID        uint    `json:"type_id"`
 }
 
 type MarketGroup struct {
-	MarketGroupID uint64   `json:"market_group_id"`
-	ParentGroupID uint64   `json:"parent_group_id"`
-	Name          string   `json:"name"`
-	Description   string   `json:"description"`
-	Types         []uint64 `json:"types"`
+	MarketGroupID uint   `json:"market_group_id"`
+	ParentGroupID uint   `json:"parent_group_id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Types         []uint `json:"types"`
 }

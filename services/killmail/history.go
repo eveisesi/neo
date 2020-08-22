@@ -82,11 +82,14 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 		}
 
 		request.Header.Set("User-Agent", s.config.ZUAgent)
-
+		extSeg := newrelic.StartExternalSegment(txn, request)
 		response, err := s.client.Do(request)
 		if err != nil {
 			s.logger.WithError(err).Warn("unable to execute request to zkillboard history api")
 		}
+		extSeg.Response = response
+		extSeg.End()
+
 		entry = entry.WithField("code", response.StatusCode)
 
 		if response.StatusCode != 200 {
@@ -189,14 +192,14 @@ func (s *service) handleHashes(ctx context.Context, hashes map[string]string) {
 	// Start a loop over the hashes that we got from ZKill
 	for id, hash := range hashes {
 
-		killmailID, err := strconv.ParseUint(id, 10, 64)
+		killmailID, err := strconv.Atoi(id)
 		if err != nil {
 			s.logger.WithFields(logrus.Fields{"id": id, "hash": hash}).Error("unable to parse killmail id to uint")
 			return
 		}
 
 		msg, err := json.Marshal(neo.Message{
-			ID:   killmailID,
+			ID:   uint(killmailID),
 			Hash: hash,
 		})
 		if err != nil {

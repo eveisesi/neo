@@ -24,7 +24,7 @@ import (
 
 // Alliance is an object representing the database table.
 type Alliance struct {
-	ID               uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID               uint        `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name             string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker" toml:"ticker" yaml:"ticker"`
 	IsClosed         bool        `boil:"is_closed" json:"isClosed" toml:"isClosed" yaml:"isClosed"`
@@ -65,14 +65,14 @@ var AllianceColumns = struct {
 
 // Generated where
 
-type whereHelperuint64 struct{ field string }
+type whereHelperuint struct{ field string }
 
-func (w whereHelperuint64) EQ(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperuint64) NEQ(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperuint64) LT(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperuint64) LTE(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperuint64) GT(x uint64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperuint64) GTE(x uint64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperuint) EQ(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperuint) NEQ(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperuint) LT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperuint) LTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperuint) GT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperuint) GTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelperstring struct{ field string }
 
@@ -98,15 +98,6 @@ func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field
 func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
 func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
 func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-
-type whereHelperuint struct{ field string }
-
-func (w whereHelperuint) EQ(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperuint) NEQ(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperuint) LT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperuint) LTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperuint) GT(x uint) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperuint) GTE(x uint) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 type whereHelpernull_String struct{ field string }
 
@@ -153,7 +144,7 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 }
 
 var AllianceWhere = struct {
-	ID               whereHelperuint64
+	ID               whereHelperuint
 	Name             whereHelperstring
 	Ticker           whereHelperstring
 	IsClosed         whereHelperbool
@@ -164,7 +155,7 @@ var AllianceWhere = struct {
 	CreatedAt        whereHelpertime_Time
 	UpdatedAt        whereHelpertime_Time
 }{
-	ID:               whereHelperuint64{field: "`alliances`.`id`"},
+	ID:               whereHelperuint{field: "`alliances`.`id`"},
 	Name:             whereHelperstring{field: "`alliances`.`name`"},
 	Ticker:           whereHelperstring{field: "`alliances`.`ticker`"},
 	IsClosed:         whereHelperbool{field: "`alliances`.`is_closed`"},
@@ -298,7 +289,7 @@ func Alliances(mods ...qm.QueryMod) allianceQuery {
 
 // FindAlliance retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindAlliance(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Alliance, error) {
+func FindAlliance(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Alliance, error) {
 	allianceObj := &Alliance{}
 
 	sel := "*"
@@ -373,7 +364,8 @@ func (o *Alliance) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `alliances` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `alliances` () VALUES ()%s%s", insert)
+			format := "%s INTO `alliances` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -825,7 +817,7 @@ func (o *AllianceSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 }
 
 // AllianceExists checks if the Alliance row exists.
-func AllianceExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func AllianceExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `alliances` where `id`=? limit 1)"
 

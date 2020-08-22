@@ -5,7 +5,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis/v7"
-	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
 type redisHook struct {

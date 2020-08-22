@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem, error) {
+func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, error) {
 
 	var system = new(neo.SolarSystem)
 	var key = fmt.Sprintf(neo.REDIS_SYSTEM, id)
@@ -68,7 +68,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint64) (*neo.SolarSystem,
 	return system, errors.Wrap(err, "failed to cache solar system in redis")
 }
 
-func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64) ([]*neo.SolarSystem, error) {
+func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) ([]*neo.SolarSystem, error) {
 
 	var systems = make([]*neo.SolarSystem, 0)
 	for _, v := range ids {
@@ -96,7 +96,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint64
 		return systems, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, system := range systems {

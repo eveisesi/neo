@@ -14,7 +14,7 @@ import (
 
 type Service interface {
 	FetchHistory(ctx context.Context)
-	FetchTypePrice(id uint64, date time.Time) float64
+	FetchTypePrice(id uint, date time.Time) float64
 	FetchPrices(ctx context.Context)
 	neo.MarketRepository
 }

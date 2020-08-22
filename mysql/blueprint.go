@@ -15,7 +15,7 @@ func NewBlueprintRepository(db *sqlx.DB) neo.BlueprintRepository {
 	return &blueprintRepository{db}
 }
 
-func (r *blueprintRepository) BlueprintMaterials(ctx context.Context, id uint64) ([]*neo.BlueprintMaterial, error) {
+func (r *blueprintRepository) BlueprintMaterials(ctx context.Context, id uint) ([]*neo.BlueprintMaterial, error) {
 
 	materials := make([]*neo.BlueprintMaterial, 0)
 	query := `
@@ -38,7 +38,7 @@ func (r *blueprintRepository) BlueprintMaterials(ctx context.Context, id uint64)
 	return materials, err
 }
 
-func (r *blueprintRepository) BlueprintProduct(ctx context.Context, id uint64) (*neo.BlueprintProduct, error) {
+func (r *blueprintRepository) BlueprintProduct(ctx context.Context, id uint) (*neo.BlueprintProduct, error) {
 
 	var product *neo.BlueprintProduct
 	query := `
@@ -61,7 +61,7 @@ func (r *blueprintRepository) BlueprintProduct(ctx context.Context, id uint64) (
 
 }
 
-func (r *blueprintRepository) BlueprintProductByProductTypeID(ctx context.Context, id uint64) (*neo.BlueprintProduct, error) {
+func (r *blueprintRepository) BlueprintProductByProductTypeID(ctx context.Context, id uint) (*neo.BlueprintProduct, error) {
 
 	product := new(neo.BlueprintProduct)
 	query := `

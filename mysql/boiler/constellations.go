@@ -24,15 +24,15 @@ import (
 
 // Constellation is an object representing the database table.
 type Constellation struct {
-	ID        uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name      string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	RegionID  uint64      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
-	PosX      float64     `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
-	PosY      float64     `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
-	PosZ      float64     `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
-	FactionID null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
-	CreatedAt time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID        uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	RegionID  int       `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
+	PosX      float64   `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
+	PosY      float64   `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
+	PosZ      float64   `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
+	FactionID null.Uint `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *constellationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L constellationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -62,24 +62,40 @@ var ConstellationColumns = struct {
 
 // Generated where
 
+type whereHelperint struct{ field string }
+
+func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+func (w whereHelperint) IN(slice []int) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+
 var ConstellationWhere = struct {
-	ID        whereHelperuint64
+	ID        whereHelperuint
 	Name      whereHelperstring
-	RegionID  whereHelperuint64
+	RegionID  whereHelperint
 	PosX      whereHelperfloat64
 	PosY      whereHelperfloat64
 	PosZ      whereHelperfloat64
-	FactionID whereHelpernull_Uint64
+	FactionID whereHelpernull_Uint
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ID:        whereHelperuint64{field: "`constellations`.`id`"},
+	ID:        whereHelperuint{field: "`constellations`.`id`"},
 	Name:      whereHelperstring{field: "`constellations`.`name`"},
-	RegionID:  whereHelperuint64{field: "`constellations`.`region_id`"},
+	RegionID:  whereHelperint{field: "`constellations`.`region_id`"},
 	PosX:      whereHelperfloat64{field: "`constellations`.`pos_x`"},
 	PosY:      whereHelperfloat64{field: "`constellations`.`pos_y`"},
 	PosZ:      whereHelperfloat64{field: "`constellations`.`pos_z`"},
-	FactionID: whereHelpernull_Uint64{field: "`constellations`.`faction_id`"},
+	FactionID: whereHelpernull_Uint{field: "`constellations`.`faction_id`"},
 	CreatedAt: whereHelpertime_Time{field: "`constellations`.`created_at`"},
 	UpdatedAt: whereHelpertime_Time{field: "`constellations`.`updated_at`"},
 }
@@ -102,8 +118,8 @@ type constellationL struct{}
 
 var (
 	constellationAllColumns            = []string{"id", "name", "region_id", "pos_x", "pos_y", "pos_z", "faction_id", "created_at", "updated_at"}
-	constellationColumnsWithoutDefault = []string{"id", "name", "region_id", "pos_x", "pos_y", "pos_z", "faction_id", "created_at", "updated_at"}
-	constellationColumnsWithDefault    = []string{}
+	constellationColumnsWithoutDefault = []string{"id", "name", "pos_x", "pos_y", "pos_z", "faction_id", "created_at", "updated_at"}
+	constellationColumnsWithDefault    = []string{"region_id"}
 	constellationPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -206,7 +222,7 @@ func Constellations(mods ...qm.QueryMod) constellationQuery {
 
 // FindConstellation retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindConstellation(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Constellation, error) {
+func FindConstellation(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Constellation, error) {
 	constellationObj := &Constellation{}
 
 	sel := "*"
@@ -281,7 +297,8 @@ func (o *Constellation) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `constellations` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `constellations` () VALUES ()%s%s", insert)
+			format := "%s INTO `constellations` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -733,7 +750,7 @@ func (o *ConstellationSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // ConstellationExists checks if the Constellation row exists.
-func ConstellationExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func ConstellationExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `constellations` where `id`=? limit 1)"
 

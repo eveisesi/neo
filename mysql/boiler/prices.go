@@ -23,7 +23,7 @@ import (
 
 // Price is an object representing the database table.
 type Price struct {
-	TypeID    uint64    `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
+	TypeID    uint      `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
 	Date      time.Time `boil:"date" json:"date" toml:"date" yaml:"date"`
 	Price     float64   `boil:"price" json:"price" toml:"price" yaml:"price"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
@@ -50,13 +50,13 @@ var PriceColumns = struct {
 // Generated where
 
 var PriceWhere = struct {
-	TypeID    whereHelperuint64
+	TypeID    whereHelperuint
 	Date      whereHelpertime_Time
 	Price     whereHelperfloat64
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	TypeID:    whereHelperuint64{field: "`prices`.`type_id`"},
+	TypeID:    whereHelperuint{field: "`prices`.`type_id`"},
 	Date:      whereHelpertime_Time{field: "`prices`.`date`"},
 	Price:     whereHelperfloat64{field: "`prices`.`price`"},
 	CreatedAt: whereHelpertime_Time{field: "`prices`.`created_at`"},
@@ -185,7 +185,7 @@ func Prices(mods ...qm.QueryMod) priceQuery {
 
 // FindPrice retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindPrice(ctx context.Context, exec boil.ContextExecutor, typeID uint64, date time.Time, selectCols ...string) (*Price, error) {
+func FindPrice(ctx context.Context, exec boil.ContextExecutor, typeID uint, date time.Time, selectCols ...string) (*Price, error) {
 	priceObj := &Price{}
 
 	sel := "*"
@@ -260,7 +260,8 @@ func (o *Price) Insert(ctx context.Context, exec boil.ContextExecutor, columns b
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `prices` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `prices` () VALUES ()%s%s", insert)
+			format := "%s INTO `prices` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -711,7 +712,7 @@ func (o *PriceSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) e
 }
 
 // PriceExists checks if the Price row exists.
-func PriceExists(ctx context.Context, exec boil.ContextExecutor, typeID uint64, date time.Time) (bool, error) {
+func PriceExists(ctx context.Context, exec boil.ContextExecutor, typeID uint, date time.Time) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `prices` where `type_id`=? AND `date`=? limit 1)"
 

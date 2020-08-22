@@ -24,135 +24,112 @@ import (
 
 // Killmail is an object representing the database table.
 type Killmail struct {
-	ID             uint64     `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Hash           string     `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
-	MoonID         null.Int64 `boil:"moon_id" json:"moonID,omitempty" toml:"moonID" yaml:"moonID,omitempty"`
-	SolarSystemID  uint64     `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
-	WarID          null.Int64 `boil:"war_id" json:"warID,omitempty" toml:"warID" yaml:"warID,omitempty"`
-	IsNPC          bool       `boil:"is_npc" json:"isNPC" toml:"isNPC" yaml:"isNPC"`
-	IsAwox         bool       `boil:"is_awox" json:"isAwox" toml:"isAwox" yaml:"isAwox"`
-	IsSolo         bool       `boil:"is_solo" json:"isSolo" toml:"isSolo" yaml:"isSolo"`
-	DroppedValue   float64    `boil:"dropped_value" json:"droppedValue" toml:"droppedValue" yaml:"droppedValue"`
-	DestroyedValue float64    `boil:"destroyed_value" json:"destroyedValue" toml:"destroyedValue" yaml:"destroyedValue"`
-	FittedValue    float64    `boil:"fitted_value" json:"fittedValue" toml:"fittedValue" yaml:"fittedValue"`
-	TotalValue     float64    `boil:"total_value" json:"totalValue" toml:"totalValue" yaml:"totalValue"`
-	KillmailTime   time.Time  `boil:"killmail_time" json:"killmailTime" toml:"killmailTime" yaml:"killmailTime"`
-	CreatedAt      time.Time  `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt      time.Time  `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID              uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Hash            string    `boil:"hash" json:"hash" toml:"hash" yaml:"hash"`
+	MoonID          null.Uint `boil:"moon_id" json:"moonID,omitempty" toml:"moonID" yaml:"moonID,omitempty"`
+	SolarSystemID   uint      `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
+	ConstellationID uint      `boil:"constellation_id" json:"constellationID" toml:"constellationID" yaml:"constellationID"`
+	RegionID        uint      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
+	WarID           null.Uint `boil:"war_id" json:"warID,omitempty" toml:"warID" yaml:"warID,omitempty"`
+	IsNPC           bool      `boil:"is_npc" json:"isNPC" toml:"isNPC" yaml:"isNPC"`
+	IsAwox          bool      `boil:"is_awox" json:"isAwox" toml:"isAwox" yaml:"isAwox"`
+	IsSolo          bool      `boil:"is_solo" json:"isSolo" toml:"isSolo" yaml:"isSolo"`
+	DroppedValue    float64   `boil:"dropped_value" json:"droppedValue" toml:"droppedValue" yaml:"droppedValue"`
+	DestroyedValue  float64   `boil:"destroyed_value" json:"destroyedValue" toml:"destroyedValue" yaml:"destroyedValue"`
+	FittedValue     float64   `boil:"fitted_value" json:"fittedValue" toml:"fittedValue" yaml:"fittedValue"`
+	TotalValue      float64   `boil:"total_value" json:"totalValue" toml:"totalValue" yaml:"totalValue"`
+	KillmailTime    time.Time `boil:"killmail_time" json:"killmailTime" toml:"killmailTime" yaml:"killmailTime"`
+	CreatedAt       time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt       time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *killmailR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L killmailL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var KillmailColumns = struct {
-	ID             string
-	Hash           string
-	MoonID         string
-	SolarSystemID  string
-	WarID          string
-	IsNPC          string
-	IsAwox         string
-	IsSolo         string
-	DroppedValue   string
-	DestroyedValue string
-	FittedValue    string
-	TotalValue     string
-	KillmailTime   string
-	CreatedAt      string
-	UpdatedAt      string
+	ID              string
+	Hash            string
+	MoonID          string
+	SolarSystemID   string
+	ConstellationID string
+	RegionID        string
+	WarID           string
+	IsNPC           string
+	IsAwox          string
+	IsSolo          string
+	DroppedValue    string
+	DestroyedValue  string
+	FittedValue     string
+	TotalValue      string
+	KillmailTime    string
+	CreatedAt       string
+	UpdatedAt       string
 }{
-	ID:             "id",
-	Hash:           "hash",
-	MoonID:         "moon_id",
-	SolarSystemID:  "solar_system_id",
-	WarID:          "war_id",
-	IsNPC:          "is_npc",
-	IsAwox:         "is_awox",
-	IsSolo:         "is_solo",
-	DroppedValue:   "dropped_value",
-	DestroyedValue: "destroyed_value",
-	FittedValue:    "fitted_value",
-	TotalValue:     "total_value",
-	KillmailTime:   "killmail_time",
-	CreatedAt:      "created_at",
-	UpdatedAt:      "updated_at",
+	ID:              "id",
+	Hash:            "hash",
+	MoonID:          "moon_id",
+	SolarSystemID:   "solar_system_id",
+	ConstellationID: "constellation_id",
+	RegionID:        "region_id",
+	WarID:           "war_id",
+	IsNPC:           "is_npc",
+	IsAwox:          "is_awox",
+	IsSolo:          "is_solo",
+	DroppedValue:    "dropped_value",
+	DestroyedValue:  "destroyed_value",
+	FittedValue:     "fitted_value",
+	TotalValue:      "total_value",
+	KillmailTime:    "killmail_time",
+	CreatedAt:       "created_at",
+	UpdatedAt:       "updated_at",
 }
 
 // Generated where
 
-type whereHelpernull_Int64 struct{ field string }
-
-func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var KillmailWhere = struct {
-	ID             whereHelperuint64
-	Hash           whereHelperstring
-	MoonID         whereHelpernull_Int64
-	SolarSystemID  whereHelperuint64
-	WarID          whereHelpernull_Int64
-	IsNPC          whereHelperbool
-	IsAwox         whereHelperbool
-	IsSolo         whereHelperbool
-	DroppedValue   whereHelperfloat64
-	DestroyedValue whereHelperfloat64
-	FittedValue    whereHelperfloat64
-	TotalValue     whereHelperfloat64
-	KillmailTime   whereHelpertime_Time
-	CreatedAt      whereHelpertime_Time
-	UpdatedAt      whereHelpertime_Time
+	ID              whereHelperuint
+	Hash            whereHelperstring
+	MoonID          whereHelpernull_Uint
+	SolarSystemID   whereHelperuint
+	ConstellationID whereHelperuint
+	RegionID        whereHelperuint
+	WarID           whereHelpernull_Uint
+	IsNPC           whereHelperbool
+	IsAwox          whereHelperbool
+	IsSolo          whereHelperbool
+	DroppedValue    whereHelperfloat64
+	DestroyedValue  whereHelperfloat64
+	FittedValue     whereHelperfloat64
+	TotalValue      whereHelperfloat64
+	KillmailTime    whereHelpertime_Time
+	CreatedAt       whereHelpertime_Time
+	UpdatedAt       whereHelpertime_Time
 }{
-	ID:             whereHelperuint64{field: "`killmails`.`id`"},
-	Hash:           whereHelperstring{field: "`killmails`.`hash`"},
-	MoonID:         whereHelpernull_Int64{field: "`killmails`.`moon_id`"},
-	SolarSystemID:  whereHelperuint64{field: "`killmails`.`solar_system_id`"},
-	WarID:          whereHelpernull_Int64{field: "`killmails`.`war_id`"},
-	IsNPC:          whereHelperbool{field: "`killmails`.`is_npc`"},
-	IsAwox:         whereHelperbool{field: "`killmails`.`is_awox`"},
-	IsSolo:         whereHelperbool{field: "`killmails`.`is_solo`"},
-	DroppedValue:   whereHelperfloat64{field: "`killmails`.`dropped_value`"},
-	DestroyedValue: whereHelperfloat64{field: "`killmails`.`destroyed_value`"},
-	FittedValue:    whereHelperfloat64{field: "`killmails`.`fitted_value`"},
-	TotalValue:     whereHelperfloat64{field: "`killmails`.`total_value`"},
-	KillmailTime:   whereHelpertime_Time{field: "`killmails`.`killmail_time`"},
-	CreatedAt:      whereHelpertime_Time{field: "`killmails`.`created_at`"},
-	UpdatedAt:      whereHelpertime_Time{field: "`killmails`.`updated_at`"},
+	ID:              whereHelperuint{field: "`killmails`.`id`"},
+	Hash:            whereHelperstring{field: "`killmails`.`hash`"},
+	MoonID:          whereHelpernull_Uint{field: "`killmails`.`moon_id`"},
+	SolarSystemID:   whereHelperuint{field: "`killmails`.`solar_system_id`"},
+	ConstellationID: whereHelperuint{field: "`killmails`.`constellation_id`"},
+	RegionID:        whereHelperuint{field: "`killmails`.`region_id`"},
+	WarID:           whereHelpernull_Uint{field: "`killmails`.`war_id`"},
+	IsNPC:           whereHelperbool{field: "`killmails`.`is_npc`"},
+	IsAwox:          whereHelperbool{field: "`killmails`.`is_awox`"},
+	IsSolo:          whereHelperbool{field: "`killmails`.`is_solo`"},
+	DroppedValue:    whereHelperfloat64{field: "`killmails`.`dropped_value`"},
+	DestroyedValue:  whereHelperfloat64{field: "`killmails`.`destroyed_value`"},
+	FittedValue:     whereHelperfloat64{field: "`killmails`.`fitted_value`"},
+	TotalValue:      whereHelperfloat64{field: "`killmails`.`total_value`"},
+	KillmailTime:    whereHelpertime_Time{field: "`killmails`.`killmail_time`"},
+	CreatedAt:       whereHelpertime_Time{field: "`killmails`.`created_at`"},
+	UpdatedAt:       whereHelpertime_Time{field: "`killmails`.`updated_at`"},
 }
 
 // KillmailRels is where relationship names are stored.
 var KillmailRels = struct {
-	KillmailAttackers string
-	KillmailItems     string
-	KillmailVictims   string
-}{
-	KillmailAttackers: "KillmailAttackers",
-	KillmailItems:     "KillmailItems",
-	KillmailVictims:   "KillmailVictims",
-}
+}{}
 
 // killmailR is where relationships are stored.
 type killmailR struct {
-	KillmailAttackers KillmailAttackerSlice
-	KillmailItems     KillmailItemSlice
-	KillmailVictims   KillmailVictimSlice
 }
 
 // NewStruct creates a new relationship struct
@@ -164,10 +141,10 @@ func (*killmailR) NewStruct() *killmailR {
 type killmailL struct{}
 
 var (
-	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value", "killmail_time", "created_at", "updated_at"}
-	killmailColumnsWithoutDefault = []string{"id", "hash", "moon_id", "solar_system_id", "war_id", "killmail_time", "created_at", "updated_at"}
-	killmailColumnsWithDefault    = []string{"is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value"}
-	killmailPrimaryKeyColumns     = []string{"id", "hash"}
+	killmailAllColumns            = []string{"id", "hash", "moon_id", "solar_system_id", "constellation_id", "region_id", "war_id", "is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value", "killmail_time", "created_at", "updated_at"}
+	killmailColumnsWithoutDefault = []string{"id", "hash", "moon_id", "constellation_id", "region_id", "war_id", "killmail_time", "created_at", "updated_at"}
+	killmailColumnsWithDefault    = []string{"solar_system_id", "is_npc", "is_awox", "is_solo", "dropped_value", "destroyed_value", "fitted_value", "total_value"}
+	killmailPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
@@ -261,492 +238,6 @@ func (q killmailQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (b
 	return count > 0, nil
 }
 
-// KillmailAttackers retrieves all the killmail_attacker's KillmailAttackers with an executor.
-func (o *Killmail) KillmailAttackers(mods ...qm.QueryMod) killmailAttackerQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("`killmail_attackers`.`killmail_id`=?", o.ID),
-	)
-
-	query := KillmailAttackers(queryMods...)
-	queries.SetFrom(query.Query, "`killmail_attackers`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`killmail_attackers`.*"})
-	}
-
-	return query
-}
-
-// KillmailItems retrieves all the killmail_item's KillmailItems with an executor.
-func (o *Killmail) KillmailItems(mods ...qm.QueryMod) killmailItemQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("`killmail_items`.`killmail_id`=?", o.ID),
-	)
-
-	query := KillmailItems(queryMods...)
-	queries.SetFrom(query.Query, "`killmail_items`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`killmail_items`.*"})
-	}
-
-	return query
-}
-
-// KillmailVictims retrieves all the killmail_victim's KillmailVictims with an executor.
-func (o *Killmail) KillmailVictims(mods ...qm.QueryMod) killmailVictimQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("`killmail_victim`.`killmail_id`=?", o.ID),
-	)
-
-	query := KillmailVictims(queryMods...)
-	queries.SetFrom(query.Query, "`killmail_victim`")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"`killmail_victim`.*"})
-	}
-
-	return query
-}
-
-// LoadKillmailAttackers allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (killmailL) LoadKillmailAttackers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeKillmail interface{}, mods queries.Applicator) error {
-	var slice []*Killmail
-	var object *Killmail
-
-	if singular {
-		object = maybeKillmail.(*Killmail)
-	} else {
-		slice = *maybeKillmail.(*[]*Killmail)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &killmailR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &killmailR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`killmail_attackers`), qm.WhereIn(`killmail_attackers.killmail_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load killmail_attackers")
-	}
-
-	var resultSlice []*KillmailAttacker
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice killmail_attackers")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on killmail_attackers")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for killmail_attackers")
-	}
-
-	if singular {
-		object.R.KillmailAttackers = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &killmailAttackerR{}
-			}
-			foreign.R.Killmail = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.KillmailID {
-				local.R.KillmailAttackers = append(local.R.KillmailAttackers, foreign)
-				if foreign.R == nil {
-					foreign.R = &killmailAttackerR{}
-				}
-				foreign.R.Killmail = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadKillmailItems allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (killmailL) LoadKillmailItems(ctx context.Context, e boil.ContextExecutor, singular bool, maybeKillmail interface{}, mods queries.Applicator) error {
-	var slice []*Killmail
-	var object *Killmail
-
-	if singular {
-		object = maybeKillmail.(*Killmail)
-	} else {
-		slice = *maybeKillmail.(*[]*Killmail)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &killmailR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &killmailR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`killmail_items`), qm.WhereIn(`killmail_items.killmail_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load killmail_items")
-	}
-
-	var resultSlice []*KillmailItem
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice killmail_items")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on killmail_items")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for killmail_items")
-	}
-
-	if singular {
-		object.R.KillmailItems = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &killmailItemR{}
-			}
-			foreign.R.Killmail = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.KillmailID {
-				local.R.KillmailItems = append(local.R.KillmailItems, foreign)
-				if foreign.R == nil {
-					foreign.R = &killmailItemR{}
-				}
-				foreign.R.Killmail = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadKillmailVictims allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (killmailL) LoadKillmailVictims(ctx context.Context, e boil.ContextExecutor, singular bool, maybeKillmail interface{}, mods queries.Applicator) error {
-	var slice []*Killmail
-	var object *Killmail
-
-	if singular {
-		object = maybeKillmail.(*Killmail)
-	} else {
-		slice = *maybeKillmail.(*[]*Killmail)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &killmailR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &killmailR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`killmail_victim`), qm.WhereIn(`killmail_victim.killmail_id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load killmail_victim")
-	}
-
-	var resultSlice []*KillmailVictim
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice killmail_victim")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on killmail_victim")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for killmail_victim")
-	}
-
-	if singular {
-		object.R.KillmailVictims = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &killmailVictimR{}
-			}
-			foreign.R.Killmail = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.KillmailID {
-				local.R.KillmailVictims = append(local.R.KillmailVictims, foreign)
-				if foreign.R == nil {
-					foreign.R = &killmailVictimR{}
-				}
-				foreign.R.Killmail = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// AddKillmailAttackers adds the given related objects to the existing relationships
-// of the killmail, optionally inserting them as new records.
-// Appends related to o.R.KillmailAttackers.
-// Sets related.R.Killmail appropriately.
-func (o *Killmail) AddKillmailAttackers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*KillmailAttacker) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE `killmail_attackers` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"killmail_id"}),
-				strmangle.WhereClause("`", "`", 0, killmailAttackerPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.KillmailID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &killmailR{
-			KillmailAttackers: related,
-		}
-	} else {
-		o.R.KillmailAttackers = append(o.R.KillmailAttackers, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &killmailAttackerR{
-				Killmail: o,
-			}
-		} else {
-			rel.R.Killmail = o
-		}
-	}
-	return nil
-}
-
-// AddKillmailItems adds the given related objects to the existing relationships
-// of the killmail, optionally inserting them as new records.
-// Appends related to o.R.KillmailItems.
-// Sets related.R.Killmail appropriately.
-func (o *Killmail) AddKillmailItems(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*KillmailItem) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE `killmail_items` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"killmail_id"}),
-				strmangle.WhereClause("`", "`", 0, killmailItemPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.KillmailID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &killmailR{
-			KillmailItems: related,
-		}
-	} else {
-		o.R.KillmailItems = append(o.R.KillmailItems, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &killmailItemR{
-				Killmail: o,
-			}
-		} else {
-			rel.R.Killmail = o
-		}
-	}
-	return nil
-}
-
-// AddKillmailVictims adds the given related objects to the existing relationships
-// of the killmail, optionally inserting them as new records.
-// Appends related to o.R.KillmailVictims.
-// Sets related.R.Killmail appropriately.
-func (o *Killmail) AddKillmailVictims(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*KillmailVictim) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.KillmailID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer(), false); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE `killmail_victim` SET %s WHERE %s",
-				strmangle.SetParamNames("`", "`", 0, []string{"killmail_id"}),
-				strmangle.WhereClause("`", "`", 0, killmailVictimPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.KillmailID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &killmailR{
-			KillmailVictims: related,
-		}
-	} else {
-		o.R.KillmailVictims = append(o.R.KillmailVictims, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &killmailVictimR{
-				Killmail: o,
-			}
-		} else {
-			rel.R.Killmail = o
-		}
-	}
-	return nil
-}
-
 // Killmails retrieves all the records using an executor.
 func Killmails(mods ...qm.QueryMod) killmailQuery {
 	mods = append(mods, qm.From("`killmails`"))
@@ -755,7 +246,7 @@ func Killmails(mods ...qm.QueryMod) killmailQuery {
 
 // FindKillmail retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindKillmail(ctx context.Context, exec boil.ContextExecutor, iD uint64, hash string, selectCols ...string) (*Killmail, error) {
+func FindKillmail(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Killmail, error) {
 	killmailObj := &Killmail{}
 
 	sel := "*"
@@ -763,10 +254,10 @@ func FindKillmail(ctx context.Context, exec boil.ContextExecutor, iD uint64, has
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from `killmails` where `id`=? AND `hash`=?", sel,
+		"select %s from `killmails` where `id`=?", sel,
 	)
 
-	q := queries.Raw(query, iD, hash)
+	q := queries.Raw(query, iD)
 
 	err := q.Bind(ctx, exec, killmailObj)
 	if err != nil {
@@ -830,7 +321,8 @@ func (o *Killmail) Insert(ctx context.Context, exec boil.ContextExecutor, column
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `killmails` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `killmails` () VALUES ()%s%s", insert)
+			format := "%s INTO `killmails` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -864,7 +356,6 @@ func (o *Killmail) Insert(ctx context.Context, exec boil.ContextExecutor, column
 
 	identifierCols = []interface{}{
 		o.ID,
-		o.Hash,
 	}
 
 	if boil.IsDebug(ctx) {
@@ -1018,7 +509,9 @@ func (o KillmailSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor,
 	return rowsAff, nil
 }
 
-var mySQLKillmailUniqueColumns = []string{}
+var mySQLKillmailUniqueColumns = []string{
+	"id",
+}
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
@@ -1165,7 +658,7 @@ func (o *Killmail) Delete(ctx context.Context, exec boil.ContextExecutor) (int64
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), killmailPrimaryKeyMapping)
-	sql := "DELETE FROM `killmails` WHERE `id`=? AND `hash`=?"
+	sql := "DELETE FROM `killmails` WHERE `id`=?"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1242,7 +735,7 @@ func (o KillmailSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor)
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *Killmail) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindKillmail(ctx, exec, o.ID, o.Hash)
+	ret, err := FindKillmail(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1281,16 +774,16 @@ func (o *KillmailSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor
 }
 
 // KillmailExists checks if the Killmail row exists.
-func KillmailExists(ctx context.Context, exec boil.ContextExecutor, iD uint64, hash string) (bool, error) {
+func KillmailExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from `killmails` where `id`=? AND `hash`=? limit 1)"
+	sql := "select exists(select 1 from `killmails` where `id`=? limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, iD, hash)
+		fmt.Fprintln(writer, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, iD, hash)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

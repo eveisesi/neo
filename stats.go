@@ -10,20 +10,22 @@ import (
 )
 
 type StatsRepository interface {
-	Apply(id uint64, entity StatEntity, category StatCategory, frequency StatFrequency, date time.Time, value float64) error
-	Save(ctx context.Context, stats []*Stat) error
+	AllStats(ctx context.Context, mods ...Modifier) ([]*Stat, error)
+	CreateStats(ctx context.Context, stats []*Stat) error
+	DeleteStats(ctx context.Context, mods ...Modifier) error
 }
 
 // Stat is an object representing the database table.
 type Stat struct {
-	ID        uint64        `db:"id" json:"id"`
-	Entity    StatEntity    `db:"entity" json:"entity"`
-	Category  StatCategory  `db:"category" json:"category"`
-	Frequency StatFrequency `db:"frequency" json:"frequency"`
-	Date      *Date         `db:"date" json:"date"`
-	Value     float64       `db:"value" json:"value"`
-	CreatedAt time.Time     `db:"created_at" json:"createdAt"`
-	UpdatedAt time.Time     `db:"updated_at" json:"updatedAt"`
+	ID         uint64        `db:"id" json:"id"`
+	EntityID   uint64        `db:"entity_id" json:"entityID"`
+	EntityType StatEntity    `db:"entity_type" json:"entityType"`
+	Category   StatCategory  `db:"category" json:"category"`
+	Frequency  StatFrequency `db:"frequency" json:"frequency"`
+	Date       *Date         `db:"date" json:"date"`
+	Value      float64       `db:"value" json:"value"`
+	CreatedAt  time.Time     `db:"created_at" json:"createdAt"`
+	UpdatedAt  time.Time     `db:"updated_at" json:"updatedAt"`
 }
 
 type StatCategory string
@@ -95,6 +97,7 @@ const (
 	StatEntityCorporation   StatEntity = "corporation"
 	StatEntityAlliance      StatEntity = "alliance"
 	StatEntityShip          StatEntity = "ship"
+	StatEntityShipGroup     StatEntity = "shipGroup"
 	StatEntitySystem        StatEntity = "system"
 	StatEntityConstellation StatEntity = "constellation"
 	StatEntityRegion        StatEntity = "region"
@@ -105,6 +108,7 @@ var AllCategories = []StatEntity{
 	StatEntityCorporation,
 	StatEntityAlliance,
 	StatEntityShip,
+	StatEntityShipGroup,
 	StatEntitySystem,
 	StatEntityConstellation,
 	StatEntityRegion,
@@ -113,7 +117,7 @@ var AllCategories = []StatEntity{
 func (e StatEntity) IsValid() bool {
 	switch e {
 	case StatEntityCharacter, StatEntityCorporation, StatEntityAlliance,
-		StatEntityShip, StatEntitySystem, StatEntityConstellation, StatEntityRegion:
+		StatEntityShip, StatEntityShipGroup, StatEntitySystem, StatEntityConstellation, StatEntityRegion:
 		return true
 	}
 	return false

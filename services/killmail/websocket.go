@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/newrelic/go-agent/v3/newrelic"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/gorilla/websocket"
@@ -69,7 +69,7 @@ func (s *service) Websocket() error {
 			}
 
 			neoMsg := &neo.Message{
-				ID:   uint64(message["killID"].(float64)),
+				ID:   uint(message["killID"].(float64)),
 				Hash: message["hash"].(string),
 			}
 
@@ -113,7 +113,8 @@ func (s *service) DispatchPayload(msg *neo.Message) {
 func (s *service) connect(ctx context.Context) (*websocket.Conn, error) {
 	address := url.URL{
 		Scheme: "wss",
-		Host:   "zkillboard.com:2096",
+		Host:   "zkillboard.com",
+		Path:   "/websocket/",
 	}
 
 	body := struct {

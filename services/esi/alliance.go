@@ -17,7 +17,7 @@ import (
 // Documentation: https://esi.evetech.net/ui/#/Alliance/get_alliances_alliance_id
 // Version: v3
 // Cache: 3600 sec (1 Hour)
-func (s *service) GetAlliancesAllianceID(ctx context.Context, id uint64, etag null.String) (*neo.Alliance, *Meta) {
+func (s *service) GetAlliancesAllianceID(ctx context.Context, id uint, etag null.String) (*neo.Alliance, *Meta) {
 
 	path := fmt.Sprintf("/v3/alliances/%d/", id)
 	headers := make(map[string]string)

@@ -19,14 +19,14 @@ func (r *killmailVictimResolver) Alliance(ctx context.Context, obj *neo.Killmail
 	if !obj.AllianceID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint64)
+	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
 }
 
 func (r *killmailVictimResolver) Corporation(ctx context.Context, obj *neo.KillmailVictim) (*neo.Corporation, error) {
 	if !obj.CorporationID.Valid {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint64)
+	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint)
 }
 
 func (r *killmailVictimResolver) Character(ctx context.Context, obj *neo.KillmailVictim) (*neo.Character, error) {
@@ -77,13 +77,13 @@ func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVic
 	}
 
 	// itemID => slotSection => destroyed/dropped => item
-	store := make(map[uint64]map[string]map[string]*neo.KillmailItem)
+	store := make(map[uint]map[string]map[string]*neo.KillmailItem)
 	for _, item := range items {
 
 		action := ""
-		if item.QuantityDestroyed.Valid && item.QuantityDestroyed.Uint64 > 0 {
+		if item.QuantityDestroyed.Valid && item.QuantityDestroyed.Uint > 0 {
 			action = "destroyed"
-		} else if item.QuantityDropped.Valid && item.QuantityDropped.Uint64 > 0 {
+		} else if item.QuantityDropped.Valid && item.QuantityDropped.Uint > 0 {
 			action = "dropped"
 		}
 
@@ -99,8 +99,8 @@ func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVic
 		if store[item.ItemTypeID][slot][action] == nil {
 			store[item.ItemTypeID][slot][action] = item
 		} else {
-			store[item.ItemTypeID][slot][action].QuantityDestroyed.Uint64 += item.QuantityDestroyed.Uint64
-			store[item.ItemTypeID][slot][action].QuantityDropped.Uint64 += item.QuantityDropped.Uint64
+			store[item.ItemTypeID][slot][action].QuantityDestroyed.Uint += item.QuantityDestroyed.Uint
+			store[item.ItemTypeID][slot][action].QuantityDropped.Uint += item.QuantityDropped.Uint
 		}
 
 	}
@@ -109,7 +109,7 @@ func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVic
 	for _, item := range store {
 		for _, slot := range item {
 			for _, slotItem := range slot {
-				slotItem.TotalValue = float64(slotItem.QuantityDropped.Uint64+slotItem.QuantityDestroyed.Uint64) * slotItem.ItemValue
+				slotItem.TotalValue = float64(slotItem.QuantityDropped.Uint+slotItem.QuantityDestroyed.Uint) * slotItem.ItemValue
 				items = append(items, slotItem)
 			}
 		}

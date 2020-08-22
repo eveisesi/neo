@@ -13,21 +13,21 @@ import (
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint64           `json:"type_id"`
-	GroupID       uint64           `json:"group_id"`
+	ID            uint             `json:"type_id"`
+	GroupID       uint             `json:"group_id"`
 	Name          string           `json:"name"`
 	Description   string           `json:"description"`
 	Published     bool             `json:"published"`
-	MarketGroupID null.Uint64      `json:"marketGroupID"`
+	MarketGroupID null.Uint        `json:"marketGroupID"`
 	Attributes    []*TypeAttribute `json:"dogma_attributes"`
 }
 
 type TypeAttribute struct {
-	AttributeID uint64  `json:"attribute_id"`
+	AttributeID uint    `json:"attribute_id"`
 	Value       float64 `json:"value"`
 }
 
-func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta) {
+func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, *Meta) {
 
 	var esitype = new(Type)
 

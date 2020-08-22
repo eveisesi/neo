@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,37 +28,37 @@ var (
 type (
 	Service interface {
 		// Alliances
-		GetAlliancesAllianceID(ctx context.Context, id uint64, etag null.String) (*neo.Alliance, *Meta)
+		GetAlliancesAllianceID(ctx context.Context, id uint, etag null.String) (*neo.Alliance, *Meta)
 
 		// Characters
 		GetCharactersCharacterID(ctx context.Context, id uint64, etag null.String) (*neo.Character, *Meta)
 
 		// Corporations
-		GetCorporationsCorporationID(ctx context.Context, id uint64, etag null.String) (*neo.Corporation, *Meta)
+		GetCorporationsCorporationID(ctx context.Context, id uint, etag null.String) (*neo.Corporation, *Meta)
 
 		// Killmails
-		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint64, hash string) (*neo.Killmail, *Meta)
+		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint, hash string) (*neo.Killmail, *Meta)
 
 		// Market
-		HeadMarketsRegionIDTypes(ctx context.Context, regionID uint64) *Meta
+		HeadMarketsRegionIDTypes(ctx context.Context, regionID uint) *Meta
 		GetMarketGroups(ctx context.Context) ([]int, *Meta)
 		GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*neo.MarketGroup, *Meta)
-		GetMarketsRegionIDTypes(ctx context.Context, regionID uint64, page null.String) ([]int, *Meta)
-		GetMarketsRegionIDHistory(ctx context.Context, regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta)
+		GetMarketsRegionIDTypes(ctx context.Context, regionID uint, page null.String) ([]int, *Meta)
+		GetMarketsRegionIDHistory(ctx context.Context, regionID uint, typeID uint) ([]*neo.HistoricalRecord, *Meta)
 		GetMarketsPrices(ctx context.Context) ([]*neo.MarketPrices, *Meta)
 
 		// Status
 		GetStatus(ctx context.Context) (*neo.ServerStatus, *Meta)
 
 		// Universe
-		GetUniverseSystemsSystemID(ctx context.Context, id uint64) (*neo.SolarSystem, *Meta)
-		GetUniverseTypesTypeID(ctx context.Context, id uint64) (*neo.Type, []*neo.TypeAttribute, *Meta)
+		GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, *Meta)
+		GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, *Meta)
 	}
 	service struct {
 		client      *http.Client
 		redis       *redis.Client
 		ua          string
-		maxattempts uint64
+		maxattempts uint
 	}
 
 	request struct {
@@ -129,7 +130,7 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 
 	m := newMeta(r.method, r.path, r.query, -1, map[string]string{}, nil)
 
-	attempts := uint64(0)
+	attempts := uint(0)
 	var httpResponse *http.Response
 
 	for {
@@ -141,7 +142,14 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 
 		httpResponse, err = s.client.Do(req)
 		if err != nil {
+			if _, ok := err.(net.Error); ok {
+				attempts++
+				time.Sleep(time.Second * 2)
+				continue
+			}
+
 			err = errors.Wrap(err, "failed to make esi request")
+
 			return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, err)
 		}
 

@@ -24,17 +24,19 @@ import (
 
 // KillmailAttacker is an object representing the database table.
 type KillmailAttacker struct {
-	ID             uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	KillmailID     uint64      `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
-	AllianceID     null.Uint64 `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
+	ID             uint        `boil:"id" json:"id" toml:"id" yaml:"id"`
+	KillmailID     uint        `boil:"killmail_id" json:"killmailID" toml:"killmailID" yaml:"killmailID"`
+	AllianceID     null.Uint   `boil:"alliance_id" json:"allianceID,omitempty" toml:"allianceID" yaml:"allianceID,omitempty"`
 	CharacterID    null.Uint64 `boil:"character_id" json:"characterID,omitempty" toml:"characterID" yaml:"characterID,omitempty"`
-	CorporationID  null.Uint64 `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
-	FactionID      null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
-	DamageDone     uint64      `boil:"damage_done" json:"damageDone" toml:"damageDone" yaml:"damageDone"`
+	CorporationID  null.Uint   `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
+	FactionID      null.Uint   `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	DamageDone     uint        `boil:"damage_done" json:"damageDone" toml:"damageDone" yaml:"damageDone"`
 	FinalBlow      bool        `boil:"final_blow" json:"finalBlow" toml:"finalBlow" yaml:"finalBlow"`
 	SecurityStatus float64     `boil:"security_status" json:"securityStatus" toml:"securityStatus" yaml:"securityStatus"`
-	ShipTypeID     null.Uint64 `boil:"ship_type_id" json:"shipTypeID,omitempty" toml:"shipTypeID" yaml:"shipTypeID,omitempty"`
-	WeaponTypeID   null.Uint64 `boil:"weapon_type_id" json:"weaponTypeID,omitempty" toml:"weaponTypeID" yaml:"weaponTypeID,omitempty"`
+	ShipTypeID     null.Uint   `boil:"ship_type_id" json:"shipTypeID,omitempty" toml:"shipTypeID" yaml:"shipTypeID,omitempty"`
+	ShipGroupID    null.Uint   `boil:"ship_group_id" json:"shipGroupID,omitempty" toml:"shipGroupID" yaml:"shipGroupID,omitempty"`
+	WeaponTypeID   null.Uint   `boil:"weapon_type_id" json:"weaponTypeID,omitempty" toml:"weaponTypeID" yaml:"weaponTypeID,omitempty"`
+	WeaponGroupID  null.Uint   `boil:"weapon_group_id" json:"weaponGroupID,omitempty" toml:"weaponGroupID" yaml:"weaponGroupID,omitempty"`
 	CreatedAt      time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt      time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
@@ -53,7 +55,9 @@ var KillmailAttackerColumns = struct {
 	FinalBlow      string
 	SecurityStatus string
 	ShipTypeID     string
+	ShipGroupID    string
 	WeaponTypeID   string
+	WeaponGroupID  string
 	CreatedAt      string
 	UpdatedAt      string
 }{
@@ -67,53 +71,78 @@ var KillmailAttackerColumns = struct {
 	FinalBlow:      "final_blow",
 	SecurityStatus: "security_status",
 	ShipTypeID:     "ship_type_id",
+	ShipGroupID:    "ship_group_id",
 	WeaponTypeID:   "weapon_type_id",
+	WeaponGroupID:  "weapon_group_id",
 	CreatedAt:      "created_at",
 	UpdatedAt:      "updated_at",
 }
 
 // Generated where
 
+type whereHelpernull_Uint64 struct{ field string }
+
+func (w whereHelpernull_Uint64) EQ(x null.Uint64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Uint64) NEQ(x null.Uint64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Uint64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Uint64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Uint64) LT(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Uint64) LTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Uint64) GT(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Uint64) GTE(x null.Uint64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var KillmailAttackerWhere = struct {
-	ID             whereHelperuint64
-	KillmailID     whereHelperuint64
-	AllianceID     whereHelpernull_Uint64
+	ID             whereHelperuint
+	KillmailID     whereHelperuint
+	AllianceID     whereHelpernull_Uint
 	CharacterID    whereHelpernull_Uint64
-	CorporationID  whereHelpernull_Uint64
-	FactionID      whereHelpernull_Uint64
-	DamageDone     whereHelperuint64
+	CorporationID  whereHelpernull_Uint
+	FactionID      whereHelpernull_Uint
+	DamageDone     whereHelperuint
 	FinalBlow      whereHelperbool
 	SecurityStatus whereHelperfloat64
-	ShipTypeID     whereHelpernull_Uint64
-	WeaponTypeID   whereHelpernull_Uint64
+	ShipTypeID     whereHelpernull_Uint
+	ShipGroupID    whereHelpernull_Uint
+	WeaponTypeID   whereHelpernull_Uint
+	WeaponGroupID  whereHelpernull_Uint
 	CreatedAt      whereHelpertime_Time
 	UpdatedAt      whereHelpertime_Time
 }{
-	ID:             whereHelperuint64{field: "`killmail_attackers`.`id`"},
-	KillmailID:     whereHelperuint64{field: "`killmail_attackers`.`killmail_id`"},
-	AllianceID:     whereHelpernull_Uint64{field: "`killmail_attackers`.`alliance_id`"},
+	ID:             whereHelperuint{field: "`killmail_attackers`.`id`"},
+	KillmailID:     whereHelperuint{field: "`killmail_attackers`.`killmail_id`"},
+	AllianceID:     whereHelpernull_Uint{field: "`killmail_attackers`.`alliance_id`"},
 	CharacterID:    whereHelpernull_Uint64{field: "`killmail_attackers`.`character_id`"},
-	CorporationID:  whereHelpernull_Uint64{field: "`killmail_attackers`.`corporation_id`"},
-	FactionID:      whereHelpernull_Uint64{field: "`killmail_attackers`.`faction_id`"},
-	DamageDone:     whereHelperuint64{field: "`killmail_attackers`.`damage_done`"},
+	CorporationID:  whereHelpernull_Uint{field: "`killmail_attackers`.`corporation_id`"},
+	FactionID:      whereHelpernull_Uint{field: "`killmail_attackers`.`faction_id`"},
+	DamageDone:     whereHelperuint{field: "`killmail_attackers`.`damage_done`"},
 	FinalBlow:      whereHelperbool{field: "`killmail_attackers`.`final_blow`"},
 	SecurityStatus: whereHelperfloat64{field: "`killmail_attackers`.`security_status`"},
-	ShipTypeID:     whereHelpernull_Uint64{field: "`killmail_attackers`.`ship_type_id`"},
-	WeaponTypeID:   whereHelpernull_Uint64{field: "`killmail_attackers`.`weapon_type_id`"},
+	ShipTypeID:     whereHelpernull_Uint{field: "`killmail_attackers`.`ship_type_id`"},
+	ShipGroupID:    whereHelpernull_Uint{field: "`killmail_attackers`.`ship_group_id`"},
+	WeaponTypeID:   whereHelpernull_Uint{field: "`killmail_attackers`.`weapon_type_id`"},
+	WeaponGroupID:  whereHelpernull_Uint{field: "`killmail_attackers`.`weapon_group_id`"},
 	CreatedAt:      whereHelpertime_Time{field: "`killmail_attackers`.`created_at`"},
 	UpdatedAt:      whereHelpertime_Time{field: "`killmail_attackers`.`updated_at`"},
 }
 
 // KillmailAttackerRels is where relationship names are stored.
 var KillmailAttackerRels = struct {
-	Killmail string
-}{
-	Killmail: "Killmail",
-}
+}{}
 
 // killmailAttackerR is where relationships are stored.
 type killmailAttackerR struct {
-	Killmail *Killmail
 }
 
 // NewStruct creates a new relationship struct
@@ -125,9 +154,9 @@ func (*killmailAttackerR) NewStruct() *killmailAttackerR {
 type killmailAttackerL struct{}
 
 var (
-	killmailAttackerAllColumns            = []string{"id", "killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_done", "final_blow", "security_status", "ship_type_id", "weapon_type_id", "created_at", "updated_at"}
-	killmailAttackerColumnsWithoutDefault = []string{"killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_done", "security_status", "ship_type_id", "weapon_type_id", "created_at", "updated_at"}
-	killmailAttackerColumnsWithDefault    = []string{"id", "final_blow"}
+	killmailAttackerAllColumns            = []string{"id", "killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "damage_done", "final_blow", "security_status", "ship_type_id", "ship_group_id", "weapon_type_id", "weapon_group_id", "created_at", "updated_at"}
+	killmailAttackerColumnsWithoutDefault = []string{"killmail_id", "alliance_id", "character_id", "corporation_id", "faction_id", "security_status", "ship_type_id", "ship_group_id", "weapon_type_id", "created_at", "updated_at"}
+	killmailAttackerColumnsWithDefault    = []string{"id", "damage_done", "final_blow", "weapon_group_id"}
 	killmailAttackerPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -222,160 +251,6 @@ func (q killmailAttackerQuery) Exists(ctx context.Context, exec boil.ContextExec
 	return count > 0, nil
 }
 
-// Killmail pointed to by the foreign key.
-func (o *KillmailAttacker) Killmail(mods ...qm.QueryMod) killmailQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("`id` = ?", o.KillmailID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Killmails(queryMods...)
-	queries.SetFrom(query.Query, "`killmails`")
-
-	return query
-}
-
-// LoadKillmail allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (killmailAttackerL) LoadKillmail(ctx context.Context, e boil.ContextExecutor, singular bool, maybeKillmailAttacker interface{}, mods queries.Applicator) error {
-	var slice []*KillmailAttacker
-	var object *KillmailAttacker
-
-	if singular {
-		object = maybeKillmailAttacker.(*KillmailAttacker)
-	} else {
-		slice = *maybeKillmailAttacker.(*[]*KillmailAttacker)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &killmailAttackerR{}
-		}
-		args = append(args, object.KillmailID)
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &killmailAttackerR{}
-			}
-
-			for _, a := range args {
-				if a == obj.KillmailID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.KillmailID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(qm.From(`killmails`), qm.WhereIn(`killmails.id in ?`, args...))
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Killmail")
-	}
-
-	var resultSlice []*Killmail
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Killmail")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for killmails")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for killmails")
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Killmail = foreign
-		if foreign.R == nil {
-			foreign.R = &killmailR{}
-		}
-		foreign.R.KillmailAttackers = append(foreign.R.KillmailAttackers, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.KillmailID == foreign.ID {
-				local.R.Killmail = foreign
-				if foreign.R == nil {
-					foreign.R = &killmailR{}
-				}
-				foreign.R.KillmailAttackers = append(foreign.R.KillmailAttackers, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// SetKillmail of the killmailAttacker to the related item.
-// Sets o.R.Killmail to related.
-// Adds o to related.R.KillmailAttackers.
-func (o *KillmailAttacker) SetKillmail(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Killmail) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer(), false); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE `killmail_attackers` SET %s WHERE %s",
-		strmangle.SetParamNames("`", "`", 0, []string{"killmail_id"}),
-		strmangle.WhereClause("`", "`", 0, killmailAttackerPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.KillmailID = related.ID
-	if o.R == nil {
-		o.R = &killmailAttackerR{
-			Killmail: related,
-		}
-	} else {
-		o.R.Killmail = related
-	}
-
-	if related.R == nil {
-		related.R = &killmailR{
-			KillmailAttackers: KillmailAttackerSlice{o},
-		}
-	} else {
-		related.R.KillmailAttackers = append(related.R.KillmailAttackers, o)
-	}
-
-	return nil
-}
-
 // KillmailAttackers retrieves all the records using an executor.
 func KillmailAttackers(mods ...qm.QueryMod) killmailAttackerQuery {
 	mods = append(mods, qm.From("`killmail_attackers`"))
@@ -384,7 +259,7 @@ func KillmailAttackers(mods ...qm.QueryMod) killmailAttackerQuery {
 
 // FindKillmailAttacker retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindKillmailAttacker(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*KillmailAttacker, error) {
+func FindKillmailAttacker(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*KillmailAttacker, error) {
 	killmailAttackerObj := &KillmailAttacker{}
 
 	sel := "*"
@@ -459,7 +334,8 @@ func (o *KillmailAttacker) Insert(ctx context.Context, exec boil.ContextExecutor
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `killmail_attackers` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `killmail_attackers` () VALUES ()%s%s", insert)
+			format := "%s INTO `killmail_attackers` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -497,7 +373,7 @@ func (o *KillmailAttacker) Insert(ctx context.Context, exec boil.ContextExecutor
 		return ErrSyncFail
 	}
 
-	o.ID = uint64(lastID)
+	o.ID = uint(lastID)
 	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == killmailAttackerMapping["id"] {
 		goto CacheNoHooks
 	}
@@ -778,7 +654,7 @@ func (o *KillmailAttacker) Upsert(ctx context.Context, exec boil.ContextExecutor
 		return ErrSyncFail
 	}
 
-	o.ID = uint64(lastID)
+	o.ID = uint(lastID)
 	if lastID != 0 && len(cache.retMapping) == 1 && cache.retMapping[0] == killmailAttackerMapping["id"] {
 		goto CacheNoHooks
 	}
@@ -933,7 +809,7 @@ func (o *KillmailAttackerSlice) ReloadAll(ctx context.Context, exec boil.Context
 }
 
 // KillmailAttackerExists checks if the KillmailAttacker row exists.
-func KillmailAttackerExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func KillmailAttackerExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `killmail_attackers` where `id`=? limit 1)"
 

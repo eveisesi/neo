@@ -25,7 +25,7 @@ func NewMarketRepository(db *sqlx.DB) neo.MarketRepository {
 	return &marketRepository{db}
 }
 
-func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint64, date time.Time, limit null.Int) ([]*neo.HistoricalRecord, error) {
+func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint, date time.Time, limit null.Int) ([]*neo.HistoricalRecord, error) {
 
 	mods := make([]qm.QueryMod, 0)
 	mods = append(mods,
@@ -46,7 +46,7 @@ func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint64, date
 
 }
 
-func (r *marketRepository) BuiltPrice(ctx context.Context, id uint64, date time.Time) (*neo.PriceBuilt, error) {
+func (r *marketRepository) BuiltPrice(ctx context.Context, id uint, date time.Time) (*neo.PriceBuilt, error) {
 
 	query := `
 		SELECT
@@ -113,7 +113,7 @@ func (r *marketRepository) CreateHistoricalRecord(ctx context.Context, records [
 
 }
 
-func (r *marketRepository) AvgOfTypeLowPrice(ctx context.Context, id uint64, days int, date time.Time) (null.Float64, error) {
+func (r *marketRepository) AvgOfTypeLowPrice(ctx context.Context, id uint, days int, date time.Time) (null.Float64, error) {
 
 	query := `
 		SELECT 

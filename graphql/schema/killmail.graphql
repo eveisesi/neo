@@ -1,5 +1,5 @@
 extend type Query {
-    killmail(id: Int!, hash: String!): Killmail!
+    killmail(id: Int!): Killmail!
     killmailRecent(page: Int = 1): [Killmail]!
 
     mvByEntityID(

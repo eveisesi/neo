@@ -22,7 +22,7 @@ func Connect(conf *sqlDriver.Config) (db *sqlx.DB, err error) {
 	return
 }
 
-func convertSliceUint64ToSliceInterface(n []uint64) []interface{} {
+func convertSliceUintToSliceInterface(n []uint) []interface{} {
 
 	newSlice := make([]interface{}, len(n))
 	for i, v := range n {
@@ -32,3 +32,14 @@ func convertSliceUint64ToSliceInterface(n []uint64) []interface{} {
 	return newSlice
 
 }
+
+// func convertSliceUint64ToSliceInterface(n []uint64) []interface{} {
+
+// 	newSlice := make([]interface{}, len(n))
+// 	for i, v := range n {
+// 		newSlice[i] = v
+// 	}
+
+// 	return newSlice
+
+// }

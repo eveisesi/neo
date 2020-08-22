@@ -1,0 +1,51 @@
+output="mysql/boiler"
+pkgname="boiler"
+templates = [
+  "mysql/templates"
+]
+
+[mysql]
+	dbname  = "killboard"
+	host    = "localhost"
+	port    = 3306
+	sslmode = "false"
+	whitelist = [
+    "alliances",
+    "blueprint_products",
+    "blueprint_materials",
+    "characters",
+    "constellations",
+    "corporations",
+    "factions",
+    "killmail_attackers",
+    "killmail_items",
+    "killmail_victim",
+    "killmails",
+    "orders",
+    "prices",
+    "prices_built",
+    "regions",
+    "stats",
+    "solar_systems",
+    "tokens",
+    "type_flags",
+    "type_attributes",
+    "type_categories",
+    "type_groups",
+    "types"
+  ]
+
+[[types]]
+  [types.match]
+    type = "types.NullDecimal"
+    nullable = true
+  [types.replace]
+    type = "null.Float64"
+  [types.imports]
+    third_party = ['"github.com/volatiletech/null"']
+
+[[types]]
+  [types.match]
+    type = "types.Decimal"    
+  [types.replace]
+    type = "float64"

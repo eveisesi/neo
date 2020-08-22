@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"context"
 	"time"
 
 	"github.com/eveisesi/neo"
@@ -133,31 +134,31 @@ func (s *service) Run(start, end time.Time) {
 
 }
 
-func (s *service) GateKeeper() {
+func (s *service) GateKeeper(ctx context.Context) {
 
 	for {
-		status, err := s.redis.Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
+		status, err := s.redis.WithContext(ctx).Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			break
 		}
 
 		if status == neo.COUNT_STATUS_DOWNTIME {
-			s.logger.WithField("status", status).Info("loop manager blocking process due to downtime")
+			s.logger.WithContext(ctx).WithField("status", status).Info("loop manager blocking process due to downtime")
 			time.Sleep(time.Second)
 			continue
 		} else if status == neo.COUNT_STATUS_RED {
-			s.logger.WithField("status", status).Error("loop manager blocking process due to red alert")
+			s.logger.WithContext(ctx).WithField("status", status).Error("loop manager blocking process due to red alert")
 			time.Sleep(time.Second)
 			continue
 		} else if status == neo.COUNT_STATUS_YELLOW {
-			s.logger.WithField("status", status).Warning("slowing down due to status")
+			s.logger.WithContext(ctx).WithField("status", status).Warning("slowing down due to status")
 			time.Sleep(time.Millisecond * 250)
 			break
 		} else if status == neo.COUNT_STATUS_GREEN {
 			break
 		}
 
-		s.logger.Info("Gatekeeper preventing process for proceeding")
+		s.logger.WithContext(ctx).Info("Gatekeeper preventing process for proceeding")
 		time.Sleep(time.Second)
 
 	}

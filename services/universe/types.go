@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
+func (s *service) Type(ctx context.Context, id uint) (*neo.Type, error) {
 
 	var invType = new(neo.Type)
 	var key = fmt.Sprintf(neo.REDIS_TYPE, id)
@@ -74,7 +74,7 @@ func (s *service) Type(ctx context.Context, id uint64) (*neo.Type, error) {
 	return invType, errors.Wrap(err, "failed to cache solar type in redis")
 }
 
-func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type, error) {
+func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, error) {
 
 	var types = make([]*neo.Type, 0)
 	for _, id := range ids {
@@ -101,7 +101,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 		return types, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, invType := range types {
@@ -144,7 +144,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.Type
 
 }
 
-func (s *service) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAttribute, error) {
+func (s *service) TypeAttributes(ctx context.Context, id uint) ([]*neo.TypeAttribute, error) {
 
 	var attributes = make([]*neo.TypeAttribute, 0)
 	var key = fmt.Sprintf(neo.REDIS_TYPE_ATTRIBUTES, id)
@@ -177,10 +177,10 @@ func (s *service) TypeAttributes(ctx context.Context, id uint64) ([]*neo.TypeAtt
 	return attributes, errors.Wrap(err, "failed to cache type in redis")
 }
 
-func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]*neo.TypeAttribute, error) {
+func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.TypeAttribute, error) {
 	var final = make([]*neo.TypeAttribute, 0)
 
-	var attributes = make(map[uint64][]*neo.TypeAttribute)
+	var attributes = make(map[uint][]*neo.TypeAttribute)
 
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_TYPE_ATTRIBUTES, id)
@@ -209,7 +209,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 		return final, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		if _, ok := attributes[id]; !ok {
 			missing = append(missing, id)
@@ -257,7 +257,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint64) ([]
 
 }
 
-func (s *service) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategory, error) {
+func (s *service) TypeCategory(ctx context.Context, id uint) (*neo.TypeCategory, error) {
 
 	var invCategory = new(neo.TypeCategory)
 	var key = fmt.Sprintf(neo.REDIS_TYPE_CATEGORY, id)
@@ -292,7 +292,7 @@ func (s *service) TypeCategory(ctx context.Context, id uint64) (*neo.TypeCategor
 
 }
 
-func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64) ([]*neo.TypeCategory, error) {
+func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) ([]*neo.TypeCategory, error) {
 
 	var categories = make([]*neo.TypeCategory, 0)
 	for _, id := range ids {
@@ -319,7 +319,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 		return categories, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, invCategory := range categories {
@@ -362,7 +362,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint64)
 
 }
 
-func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error) {
+func (s *service) TypeFlag(ctx context.Context, id uint) (*neo.TypeFlag, error) {
 
 	var invFlag = new(neo.TypeFlag)
 	var key = fmt.Sprintf(neo.REDIS_TYPE_FLAG, id)
@@ -397,7 +397,7 @@ func (s *service) TypeFlag(ctx context.Context, id uint64) (*neo.TypeFlag, error
 
 }
 
-func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*neo.TypeFlag, error) {
+func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*neo.TypeFlag, error) {
 
 	var flags = make([]*neo.TypeFlag, 0)
 	for _, id := range ids {
@@ -424,7 +424,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 		return flags, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, invFlag := range flags {
@@ -467,7 +467,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint64) ([]*
 
 }
 
-func (s *service) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, error) {
+func (s *service) TypeGroup(ctx context.Context, id uint) (*neo.TypeGroup, error) {
 
 	var invGroup = new(neo.TypeGroup)
 	var key = fmt.Sprintf(neo.REDIS_TYPE_GROUP, id)
@@ -502,7 +502,7 @@ func (s *service) TypeGroup(ctx context.Context, id uint64) (*neo.TypeGroup, err
 
 }
 
-func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*neo.TypeGroup, error) {
+func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.TypeGroup, error) {
 
 	var groups = make([]*neo.TypeGroup, 0)
 	for _, id := range ids {
@@ -529,7 +529,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint64) ([]*ne
 		return groups, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, invGroup := range groups {

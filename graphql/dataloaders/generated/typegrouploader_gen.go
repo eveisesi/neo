@@ -12,7 +12,7 @@ import (
 // TypeGroupLoaderConfig captures the config to create a new TypeGroupLoader
 type TypeGroupLoaderConfig struct {
 	// Fetch is a method that provides the data for the loader
-	Fetch func(keys []uint64) ([]*neo.TypeGroup, []error)
+	Fetch func(keys []uint) ([]*neo.TypeGroup, []error)
 
 	// Wait is how long wait before sending a batch
 	Wait time.Duration
@@ -33,7 +33,7 @@ func NewTypeGroupLoader(config TypeGroupLoaderConfig) *TypeGroupLoader {
 // TypeGroupLoader batches and caches requests
 type TypeGroupLoader struct {
 	// this method provides the data for the loader
-	fetch func(keys []uint64) ([]*neo.TypeGroup, []error)
+	fetch func(keys []uint) ([]*neo.TypeGroup, []error)
 
 	// how long to done before sending a batch
 	wait time.Duration
@@ -44,7 +44,7 @@ type TypeGroupLoader struct {
 	// INTERNAL
 
 	// lazily created cache
-	cache map[uint64]*neo.TypeGroup
+	cache map[uint]*neo.TypeGroup
 
 	// the current batch. keys will continue to be collected until timeout is hit,
 	// then everything will be sent to the fetch method and out to the listeners
@@ -55,7 +55,7 @@ type TypeGroupLoader struct {
 }
 
 type typeGroupLoaderBatch struct {
-	keys    []uint64
+	keys    []uint
 	data    []*neo.TypeGroup
 	error   []error
 	closing bool
@@ -63,14 +63,14 @@ type typeGroupLoaderBatch struct {
 }
 
 // Load a TypeGroup by key, batching and caching will be applied automatically
-func (l *TypeGroupLoader) Load(key uint64) (*neo.TypeGroup, error) {
+func (l *TypeGroupLoader) Load(key uint) (*neo.TypeGroup, error) {
 	return l.LoadThunk(key)()
 }
 
 // LoadThunk returns a function that when called will block waiting for a TypeGroup.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeGroupLoader) LoadThunk(key uint64) func() (*neo.TypeGroup, error) {
+func (l *TypeGroupLoader) LoadThunk(key uint) func() (*neo.TypeGroup, error) {
 	l.mu.Lock()
 	if it, ok := l.cache[key]; ok {
 		l.mu.Unlock()
@@ -113,7 +113,7 @@ func (l *TypeGroupLoader) LoadThunk(key uint64) func() (*neo.TypeGroup, error) {
 
 // LoadAll fetches many keys at once. It will be broken into appropriate sized
 // sub batches depending on how the loader is configured
-func (l *TypeGroupLoader) LoadAll(keys []uint64) ([]*neo.TypeGroup, []error) {
+func (l *TypeGroupLoader) LoadAll(keys []uint) ([]*neo.TypeGroup, []error) {
 	results := make([]func() (*neo.TypeGroup, error), len(keys))
 
 	for i, key := range keys {
@@ -131,7 +131,7 @@ func (l *TypeGroupLoader) LoadAll(keys []uint64) ([]*neo.TypeGroup, []error) {
 // LoadAllThunk returns a function that when called will block waiting for a TypeGroups.
 // This method should be used if you want one goroutine to make requests to many
 // different data loaders without blocking until the thunk is called.
-func (l *TypeGroupLoader) LoadAllThunk(keys []uint64) func() ([]*neo.TypeGroup, []error) {
+func (l *TypeGroupLoader) LoadAllThunk(keys []uint) func() ([]*neo.TypeGroup, []error) {
 	results := make([]func() (*neo.TypeGroup, error), len(keys))
 	for i, key := range keys {
 		results[i] = l.LoadThunk(key)
@@ -149,7 +149,7 @@ func (l *TypeGroupLoader) LoadAllThunk(keys []uint64) func() ([]*neo.TypeGroup, 
 // Prime the cache with the provided key and value. If the key already exists, no change is made
 // and false is returned.
 // (To forcefully prime the cache, clear the key first with loader.clear(key).prime(key, value).)
-func (l *TypeGroupLoader) Prime(key uint64, value *neo.TypeGroup) bool {
+func (l *TypeGroupLoader) Prime(key uint, value *neo.TypeGroup) bool {
 	l.mu.Lock()
 	var found bool
 	if _, found = l.cache[key]; !found {
@@ -163,22 +163,22 @@ func (l *TypeGroupLoader) Prime(key uint64, value *neo.TypeGroup) bool {
 }
 
 // Clear the value at key from the cache, if it exists
-func (l *TypeGroupLoader) Clear(key uint64) {
+func (l *TypeGroupLoader) Clear(key uint) {
 	l.mu.Lock()
 	delete(l.cache, key)
 	l.mu.Unlock()
 }
 
-func (l *TypeGroupLoader) unsafeSet(key uint64, value *neo.TypeGroup) {
+func (l *TypeGroupLoader) unsafeSet(key uint, value *neo.TypeGroup) {
 	if l.cache == nil {
-		l.cache = map[uint64]*neo.TypeGroup{}
+		l.cache = map[uint]*neo.TypeGroup{}
 	}
 	l.cache[key] = value
 }
 
 // keyIndex will return the location of the key in the batch, if its not found
 // it will add the key to the batch
-func (b *typeGroupLoaderBatch) keyIndex(l *TypeGroupLoader, key uint64) int {
+func (b *typeGroupLoaderBatch) keyIndex(l *TypeGroupLoader, key uint) int {
 	for i, existingKey := range b.keys {
 		if key == existingKey {
 			return i

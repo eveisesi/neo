@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) Region(ctx context.Context, id uint64) (*neo.Region, error) {
+func (s *service) Region(ctx context.Context, id uint) (*neo.Region, error) {
 
 	var region = new(neo.Region)
 	var key = fmt.Sprintf(neo.REDIS_REGION, id)
@@ -46,7 +46,7 @@ func (s *service) Region(ctx context.Context, id uint64) (*neo.Region, error) {
 
 }
 
-func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.Region, error) {
+func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Region, error) {
 
 	var regions = make([]*neo.Region, 0)
 	for _, id := range ids {
@@ -73,7 +73,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint64) ([]*neo.
 		return regions, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, region := range regions {

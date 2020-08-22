@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint64, hash string) (*neo.Killmail, *Meta) {
+func (s *service) GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint, hash string) (*neo.Killmail, *Meta) {
 
 	path := fmt.Sprintf("/v1/killmails/%d/%s/", id, hash)
 

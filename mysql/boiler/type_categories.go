@@ -23,7 +23,7 @@ import (
 
 // TypeCategory is an object representing the database table.
 type TypeCategory struct {
-	ID        uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ID        uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
 	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Published bool      `boil:"published" json:"published" toml:"published" yaml:"published"`
 	CreatedAt time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
@@ -50,13 +50,13 @@ var TypeCategoryColumns = struct {
 // Generated where
 
 var TypeCategoryWhere = struct {
-	ID        whereHelperuint64
+	ID        whereHelperuint
 	Name      whereHelperstring
 	Published whereHelperbool
 	CreatedAt whereHelpertime_Time
 	UpdatedAt whereHelpertime_Time
 }{
-	ID:        whereHelperuint64{field: "`type_categories`.`id`"},
+	ID:        whereHelperuint{field: "`type_categories`.`id`"},
 	Name:      whereHelperstring{field: "`type_categories`.`name`"},
 	Published: whereHelperbool{field: "`type_categories`.`published`"},
 	CreatedAt: whereHelpertime_Time{field: "`type_categories`.`created_at`"},
@@ -185,7 +185,7 @@ func TypeCategories(mods ...qm.QueryMod) typeCategoryQuery {
 
 // FindTypeCategory retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTypeCategory(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*TypeCategory, error) {
+func FindTypeCategory(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*TypeCategory, error) {
 	typeCategoryObj := &TypeCategory{}
 
 	sel := "*"
@@ -260,7 +260,8 @@ func (o *TypeCategory) Insert(ctx context.Context, exec boil.ContextExecutor, co
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `type_categories` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `type_categories` () VALUES ()%s%s", insert)
+			format := "%s INTO `type_categories` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -712,7 +713,7 @@ func (o *TypeCategorySlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 }
 
 // TypeCategoryExists checks if the TypeCategory row exists.
-func TypeCategoryExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func TypeCategoryExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `type_categories` where `id`=? limit 1)"
 

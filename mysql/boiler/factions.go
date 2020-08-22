@@ -24,14 +24,14 @@ import (
 
 // Faction is an object representing the database table.
 type Faction struct {
-	ID            uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Description   string      `boil:"description" json:"description" toml:"description" yaml:"description"`
-	RaceID        uint64      `boil:"race_id" json:"raceID" toml:"raceID" yaml:"raceID"`
-	SolarSystemID uint64      `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
-	CorporationID null.Uint64 `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
-	CreatedAt     time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt     time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID            uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name          string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Description   string    `boil:"description" json:"description" toml:"description" yaml:"description"`
+	RaceID        uint      `boil:"race_id" json:"raceID" toml:"raceID" yaml:"raceID"`
+	SolarSystemID uint      `boil:"solar_system_id" json:"solarSystemID" toml:"solarSystemID" yaml:"solarSystemID"`
+	CorporationID null.Uint `boil:"corporation_id" json:"corporationID,omitempty" toml:"corporationID" yaml:"corporationID,omitempty"`
+	CreatedAt     time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt     time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *factionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L factionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -60,21 +60,21 @@ var FactionColumns = struct {
 // Generated where
 
 var FactionWhere = struct {
-	ID            whereHelperuint64
+	ID            whereHelperuint
 	Name          whereHelperstring
 	Description   whereHelperstring
-	RaceID        whereHelperuint64
-	SolarSystemID whereHelperuint64
-	CorporationID whereHelpernull_Uint64
+	RaceID        whereHelperuint
+	SolarSystemID whereHelperuint
+	CorporationID whereHelpernull_Uint
 	CreatedAt     whereHelpertime_Time
 	UpdatedAt     whereHelpertime_Time
 }{
-	ID:            whereHelperuint64{field: "`factions`.`id`"},
+	ID:            whereHelperuint{field: "`factions`.`id`"},
 	Name:          whereHelperstring{field: "`factions`.`name`"},
 	Description:   whereHelperstring{field: "`factions`.`description`"},
-	RaceID:        whereHelperuint64{field: "`factions`.`race_id`"},
-	SolarSystemID: whereHelperuint64{field: "`factions`.`solar_system_id`"},
-	CorporationID: whereHelpernull_Uint64{field: "`factions`.`corporation_id`"},
+	RaceID:        whereHelperuint{field: "`factions`.`race_id`"},
+	SolarSystemID: whereHelperuint{field: "`factions`.`solar_system_id`"},
+	CorporationID: whereHelpernull_Uint{field: "`factions`.`corporation_id`"},
 	CreatedAt:     whereHelpertime_Time{field: "`factions`.`created_at`"},
 	UpdatedAt:     whereHelpertime_Time{field: "`factions`.`updated_at`"},
 }
@@ -97,8 +97,8 @@ type factionL struct{}
 
 var (
 	factionAllColumns            = []string{"id", "name", "description", "race_id", "solar_system_id", "corporation_id", "created_at", "updated_at"}
-	factionColumnsWithoutDefault = []string{"id", "name", "description", "race_id", "solar_system_id", "corporation_id", "created_at", "updated_at"}
-	factionColumnsWithDefault    = []string{}
+	factionColumnsWithoutDefault = []string{"id", "name", "description", "corporation_id", "created_at", "updated_at"}
+	factionColumnsWithDefault    = []string{"race_id", "solar_system_id"}
 	factionPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -201,7 +201,7 @@ func Factions(mods ...qm.QueryMod) factionQuery {
 
 // FindFaction retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindFaction(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*Faction, error) {
+func FindFaction(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*Faction, error) {
 	factionObj := &Faction{}
 
 	sel := "*"
@@ -276,7 +276,8 @@ func (o *Faction) Insert(ctx context.Context, exec boil.ContextExecutor, columns
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `factions` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `factions` () VALUES ()%s%s", insert)
+			format := "%s INTO `factions` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -728,7 +729,7 @@ func (o *FactionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor)
 }
 
 // FactionExists checks if the Faction row exists.
-func FactionExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func FactionExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `factions` where `id`=? limit 1)"
 

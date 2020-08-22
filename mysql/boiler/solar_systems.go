@@ -24,17 +24,18 @@ import (
 
 // SolarSystem is an object representing the database table.
 type SolarSystem struct {
-	ID              uint64      `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name            string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	ConstellationID uint64      `boil:"constellation_id" json:"constellationID" toml:"constellationID" yaml:"constellationID"`
-	FactionID       null.Uint64 `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
-	SunTypeID       null.Uint64 `boil:"sun_type_id" json:"sunTypeID,omitempty" toml:"sunTypeID" yaml:"sunTypeID,omitempty"`
-	PosX            float64     `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
-	PosY            float64     `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
-	PosZ            float64     `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
-	Security        float64     `boil:"security" json:"security" toml:"security" yaml:"security"`
-	CreatedAt       time.Time   `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
-	UpdatedAt       time.Time   `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
+	ID              uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name            string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	ConstellationID uint      `boil:"constellation_id" json:"constellationID" toml:"constellationID" yaml:"constellationID"`
+	RegionID        uint      `boil:"region_id" json:"regionID" toml:"regionID" yaml:"regionID"`
+	FactionID       null.Uint `boil:"faction_id" json:"factionID,omitempty" toml:"factionID" yaml:"factionID,omitempty"`
+	SunTypeID       null.Uint `boil:"sun_type_id" json:"sunTypeID,omitempty" toml:"sunTypeID" yaml:"sunTypeID,omitempty"`
+	PosX            float64   `boil:"pos_x" json:"posX" toml:"posX" yaml:"posX"`
+	PosY            float64   `boil:"pos_y" json:"posY" toml:"posY" yaml:"posY"`
+	PosZ            float64   `boil:"pos_z" json:"posZ" toml:"posZ" yaml:"posZ"`
+	Security        float64   `boil:"security" json:"security" toml:"security" yaml:"security"`
+	CreatedAt       time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
+	UpdatedAt       time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
 
 	R *solarSystemR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L solarSystemL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,6 +45,7 @@ var SolarSystemColumns = struct {
 	ID              string
 	Name            string
 	ConstellationID string
+	RegionID        string
 	FactionID       string
 	SunTypeID       string
 	PosX            string
@@ -56,6 +58,7 @@ var SolarSystemColumns = struct {
 	ID:              "id",
 	Name:            "name",
 	ConstellationID: "constellation_id",
+	RegionID:        "region_id",
 	FactionID:       "faction_id",
 	SunTypeID:       "sun_type_id",
 	PosX:            "pos_x",
@@ -69,11 +72,12 @@ var SolarSystemColumns = struct {
 // Generated where
 
 var SolarSystemWhere = struct {
-	ID              whereHelperuint64
+	ID              whereHelperuint
 	Name            whereHelperstring
-	ConstellationID whereHelperuint64
-	FactionID       whereHelpernull_Uint64
-	SunTypeID       whereHelpernull_Uint64
+	ConstellationID whereHelperuint
+	RegionID        whereHelperuint
+	FactionID       whereHelpernull_Uint
+	SunTypeID       whereHelpernull_Uint
 	PosX            whereHelperfloat64
 	PosY            whereHelperfloat64
 	PosZ            whereHelperfloat64
@@ -81,11 +85,12 @@ var SolarSystemWhere = struct {
 	CreatedAt       whereHelpertime_Time
 	UpdatedAt       whereHelpertime_Time
 }{
-	ID:              whereHelperuint64{field: "`solar_systems`.`id`"},
+	ID:              whereHelperuint{field: "`solar_systems`.`id`"},
 	Name:            whereHelperstring{field: "`solar_systems`.`name`"},
-	ConstellationID: whereHelperuint64{field: "`solar_systems`.`constellation_id`"},
-	FactionID:       whereHelpernull_Uint64{field: "`solar_systems`.`faction_id`"},
-	SunTypeID:       whereHelpernull_Uint64{field: "`solar_systems`.`sun_type_id`"},
+	ConstellationID: whereHelperuint{field: "`solar_systems`.`constellation_id`"},
+	RegionID:        whereHelperuint{field: "`solar_systems`.`region_id`"},
+	FactionID:       whereHelpernull_Uint{field: "`solar_systems`.`faction_id`"},
+	SunTypeID:       whereHelpernull_Uint{field: "`solar_systems`.`sun_type_id`"},
 	PosX:            whereHelperfloat64{field: "`solar_systems`.`pos_x`"},
 	PosY:            whereHelperfloat64{field: "`solar_systems`.`pos_y`"},
 	PosZ:            whereHelperfloat64{field: "`solar_systems`.`pos_z`"},
@@ -111,9 +116,9 @@ func (*solarSystemR) NewStruct() *solarSystemR {
 type solarSystemL struct{}
 
 var (
-	solarSystemAllColumns            = []string{"id", "name", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
-	solarSystemColumnsWithoutDefault = []string{"id", "name", "constellation_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
-	solarSystemColumnsWithDefault    = []string{}
+	solarSystemAllColumns            = []string{"id", "name", "constellation_id", "region_id", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
+	solarSystemColumnsWithoutDefault = []string{"id", "name", "faction_id", "sun_type_id", "pos_x", "pos_y", "pos_z", "security", "created_at", "updated_at"}
+	solarSystemColumnsWithDefault    = []string{"constellation_id", "region_id"}
 	solarSystemPrimaryKeyColumns     = []string{"id"}
 )
 
@@ -216,7 +221,7 @@ func SolarSystems(mods ...qm.QueryMod) solarSystemQuery {
 
 // FindSolarSystem retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindSolarSystem(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*SolarSystem, error) {
+func FindSolarSystem(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*SolarSystem, error) {
 	solarSystemObj := &SolarSystem{}
 
 	sel := "*"
@@ -291,7 +296,8 @@ func (o *SolarSystem) Insert(ctx context.Context, exec boil.ContextExecutor, col
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `solar_systems` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `solar_systems` () VALUES ()%s%s", insert)
+			format := "%s INTO `solar_systems` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -743,7 +749,7 @@ func (o *SolarSystemSlice) ReloadAll(ctx context.Context, exec boil.ContextExecu
 }
 
 // SolarSystemExists checks if the SolarSystem row exists.
-func SolarSystemExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func SolarSystemExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `solar_systems` where `id`=? limit 1)"
 

@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 )
 
-func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation, error) {
+func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, error) {
 	var corporation = new(neo.Corporation)
 	var key = fmt.Sprintf(neo.REDIS_CORPORATION, id)
 
@@ -69,7 +70,7 @@ func (s *service) Corporation(ctx context.Context, id uint64) (*neo.Corporation,
 	return corporation, errors.Wrap(err, "failed to cache solar corporation in redis")
 }
 
-func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*neo.Corporation, error) {
+func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error) {
 
 	var corporations = make([]*neo.Corporation, 0)
 	for _, id := range ids {
@@ -96,7 +97,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64
 		return corporations, nil
 	}
 
-	var missing []uint64
+	var missing []uint
 	for _, id := range ids {
 		found := false
 		for _, corporation := range corporations {
@@ -142,6 +143,8 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint64
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
+		txn := s.newrelic.StartTransaction("updateExpiredCorporations")
+		ctx = newrelic.NewContext(ctx, txn)
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			s.logger.WithError(err).Error("Failed to fetch expired corporations")
@@ -155,10 +158,13 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		}
 
 		for _, corporation := range expired {
-			s.tracker.GateKeeper()
+			seg := txn.StartSegment("handleCorporation")
+			seg.AddAttribute("id", corporation.ID)
+			s.tracker.GateKeeper(ctx)
 			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, corporation.Etag)
 			if m.IsError() {
-				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
+				txn.NoticeError(m.Msg)
+				s.logger.WithContext(ctx).WithError(m.Msg).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
 				continue
 			}
 
@@ -179,21 +185,22 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				_, err = s.UpdateCorporation(ctx, corporation.ID, newCorporation)
 			default:
-				s.logger.WithField("status_code", m.Code).WithField("corporation_id", corporation.ID).Error("unaccounted for status code received from esi service")
+				s.logger.WithContext(ctx).WithField("status_code", m.Code).WithField("corporation_id", corporation.ID).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {
-				s.logger.WithError(err).WithField("corporation_id", corporation.ID).Error("failed to update corporation")
+				txn.NoticeError(err)
+				s.logger.WithContext(ctx).WithError(err).WithField("corporation_id", corporation.ID).Error("failed to update corporation")
 				continue
 			}
 
-			s.logger.WithField("corporation_id", corporation.ID).WithField("status_code", m.Code).Debug("corporation successfully updated")
-
+			s.logger.WithContext(ctx).WithField("corporation_id", corporation.ID).WithField("status_code", m.Code).Debug("corporation successfully updated")
+			seg.End()
 			time.Sleep(time.Millisecond * 25)
 		}
-		s.logger.WithField("count", len(expired)).Info("corporations successfully updated")
-
-		time.Sleep(time.Second * 5)
+		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("corporations successfully updated")
+		txn.End()
+		time.Sleep(time.Second)
 
 	}
 

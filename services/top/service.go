@@ -10,7 +10,6 @@ import (
 	"github.com/inancgumus/screen"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/urfave/cli"
 )
 
@@ -56,6 +55,9 @@ type (
 
 		InvalidQueue     int64
 		PrevInvalidQueue int64
+
+		AttributionQueue   int64
+		PrevAttributeQueue int64
 	}
 )
 
@@ -65,62 +67,62 @@ func NewService(redis *redis.Client) Service {
 		redis: redis,
 	}
 
-	esi200 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "esi_http_200",
-		Help: "Number of 200s received from ESI",
-	}, s.fetchESI200Stat)
+	// esi200 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "esi_http_200",
+	// 	Help: "Number of 200s received from ESI",
+	// }, s.fetchESI200Stat)
 
-	esi304 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "esi_http_304",
-		Help: "Number of 304s received from ESI",
-	}, s.fetchESI304Stat)
+	// esi304 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "esi_http_304",
+	// 	Help: "Number of 304s received from ESI",
+	// }, s.fetchESI304Stat)
 
-	esi420 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "esi_http_420",
-		Help: "Number of 420 received from ESI",
-	}, s.fetchESI420Stat)
+	// esi420 := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "esi_http_420",
+	// 	Help: "Number of 420 received from ESI",
+	// }, s.fetchESI420Stat)
 
-	esi4xx := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "esi_http_4xx",
-		Help: "Number of 400s, other than 420, received from ESI",
-	}, s.fetchESI4XXStat)
+	// esi4xx := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "esi_http_4xx",
+	// 	Help: "Number of 400s, other than 420, received from ESI",
+	// }, s.fetchESI4XXStat)
 
-	esi5xx := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "esi_http_5xx",
-		Help: "Number of 500s, received from ESI",
-	}, s.fetchESI5XXStat)
+	// esi5xx := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "esi_http_5xx",
+	// 	Help: "Number of 500s, received from ESI",
+	// }, s.fetchESI5XXStat)
 
-	queueProcessing := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_processing",
-		Help: "Number of killmails currently being processed",
-	}, s.fetchProcessingQueueStat)
+	// queueProcessing := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_processing",
+	// 	Help: "Number of killmails currently being processed",
+	// }, s.fetchProcessingQueueStat)
 
-	queueRecalculating := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_recalculating",
-		Help: "Number of killmails pending recalculation",
-	}, s.fetchRecalculatingQueueStat)
+	// queueRecalculating := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_recalculating",
+	// 	Help: "Number of killmails pending recalculation",
+	// }, s.fetchRecalculatingQueueStat)
 
-	queueBackup := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_backup",
-		Help: "Number of killmails waiting to be sent to DigitalOcean",
-	}, s.fetchBackupQueueStat)
+	// queueBackup := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_backup",
+	// 	Help: "Number of killmails waiting to be sent to DigitalOcean",
+	// }, s.fetchBackupQueueStat)
 
-	queueStats := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_stats",
-		Help: "Number of killmails pending stats calculation",
-	}, s.fetchStatsQueueStat)
+	// queueStats := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_stats",
+	// 	Help: "Number of killmails pending stats calculation",
+	// }, s.fetchStatsQueueStat)
 
-	queueInvalid := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_invalid",
-		Help: "Number of invalid killmail id and/or hashes received from ZKillboard",
-	}, s.fetchInvalidQueueStat)
+	// queueInvalid := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_invalid",
+	// 	Help: "Number of invalid killmail id and/or hashes received from ZKillboard",
+	// }, s.fetchInvalidQueueStat)
 
-	queueNotifications := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "queue_notifications",
-		Help: "Number of killmails pending processing by our notification service",
-	}, s.fetchNotificationQueueStat)
+	// queueNotifications := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+	// 	Name: "queue_notifications",
+	// 	Help: "Number of killmails pending processing by our notification service",
+	// }, s.fetchNotificationQueueStat)
 
-	prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid, queueStats, queueNotifications)
+	// prometheus.MustRegister(esi200, esi304, esi420, esi4xx, esi5xx, queueProcessing, queueRecalculating, queueBackup, queueInvalid, queueStats, queueNotifications)
 
 	return s
 }
@@ -268,6 +270,19 @@ func (s *service) fetchInvalidQueueStat() float64 {
 	return float64(i)
 }
 
+func (s *service) fetchAttributeQueue() (int64, error) {
+	return s.redis.ZCount(neo.QUEUES_KILLMAIL_ATTRIBUTES, "-inf", "+inf").Result()
+}
+
+// func (s *service) fetchAttributeQueueStat() float64 {
+// 	i, err := s.fetchAttributeQueue()
+// 	if err != nil {
+// 		return 0.00
+// 	}
+
+// 	return float64(i)
+// }
+
 func (s *service) EvaluateParams(param *stat) error {
 	var err error
 
@@ -299,6 +314,11 @@ func (s *service) EvaluateParams(param *stat) error {
 	param.ProcessingQueue, err = s.fetchProcessingQueue()
 	if err != nil {
 		return errors.Wrap(err, "fetchProcessingQueue failed")
+	}
+
+	param.AttributionQueue, err = s.fetchAttributeQueue()
+	if err != nil {
+		return errors.Wrap(err, "fetchAttributeQueue failed")
 	}
 
 	param.RecalculatingQueue, err = s.fetchRecalculatingQueue()
@@ -342,6 +362,7 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevStatsQueue = params.StatsQueue
 	params.PrevNotificationsQueue = params.NotificationsQueue
 	params.PrevInvalidQueue = params.InvalidQueue
+	params.PrevAttributeQueue = params.AttributionQueue
 }
 
 func (s *service) Run() error {
@@ -363,6 +384,11 @@ func (s *service) Run() error {
 					"%d: Queue Processing (%d)",
 					params.ProcessingQueue,
 					params.ProcessingQueue-params.PrevProcessingQueue,
+				),
+				fmt.Sprintf(
+					"%d: Queue Attribution (%d)",
+					params.AttributionQueue,
+					params.AttributionQueue-params.PrevAttributeQueue,
 				),
 				fmt.Sprintf(
 					"%d: Queue Recalculating (%d)",

@@ -23,8 +23,8 @@ import (
 
 // TypeGroup is an object representing the database table.
 type TypeGroup struct {
-	ID         uint64    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CategoryID uint64    `boil:"category_id" json:"categoryID" toml:"categoryID" yaml:"categoryID"`
+	ID         uint      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CategoryID uint      `boil:"category_id" json:"categoryID" toml:"categoryID" yaml:"categoryID"`
 	Name       string    `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Published  bool      `boil:"published" json:"published" toml:"published" yaml:"published"`
 	CreatedAt  time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
@@ -53,15 +53,15 @@ var TypeGroupColumns = struct {
 // Generated where
 
 var TypeGroupWhere = struct {
-	ID         whereHelperuint64
-	CategoryID whereHelperuint64
+	ID         whereHelperuint
+	CategoryID whereHelperuint
 	Name       whereHelperstring
 	Published  whereHelperbool
 	CreatedAt  whereHelpertime_Time
 	UpdatedAt  whereHelpertime_Time
 }{
-	ID:         whereHelperuint64{field: "`type_groups`.`id`"},
-	CategoryID: whereHelperuint64{field: "`type_groups`.`category_id`"},
+	ID:         whereHelperuint{field: "`type_groups`.`id`"},
+	CategoryID: whereHelperuint{field: "`type_groups`.`category_id`"},
 	Name:       whereHelperstring{field: "`type_groups`.`name`"},
 	Published:  whereHelperbool{field: "`type_groups`.`published`"},
 	CreatedAt:  whereHelpertime_Time{field: "`type_groups`.`created_at`"},
@@ -190,7 +190,7 @@ func TypeGroups(mods ...qm.QueryMod) typeGroupQuery {
 
 // FindTypeGroup retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTypeGroup(ctx context.Context, exec boil.ContextExecutor, iD uint64, selectCols ...string) (*TypeGroup, error) {
+func FindTypeGroup(ctx context.Context, exec boil.ContextExecutor, iD uint, selectCols ...string) (*TypeGroup, error) {
 	typeGroupObj := &TypeGroup{}
 
 	sel := "*"
@@ -265,7 +265,8 @@ func (o *TypeGroup) Insert(ctx context.Context, exec boil.ContextExecutor, colum
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `type_groups` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `type_groups` () VALUES ()%s%s", insert)
+			format := "%s INTO `type_groups` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -717,7 +718,7 @@ func (o *TypeGroupSlice) ReloadAll(ctx context.Context, exec boil.ContextExecuto
 }
 
 // TypeGroupExists checks if the TypeGroup row exists.
-func TypeGroupExists(ctx context.Context, exec boil.ContextExecutor, iD uint64) (bool, error) {
+func TypeGroupExists(ctx context.Context, exec boil.ContextExecutor, iD uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `type_groups` where `id`=? limit 1)"
 

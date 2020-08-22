@@ -81,7 +81,8 @@ func (o *{{$alias.UpSingular}}) Insert({{if .NoContext}}exec boil.Executor{{else
 			{{if .Dialect.UseDefaultKeyword -}}
 			cache.query = fmt.Sprintf("%s INTO {{$schemaTable}} %sDEFAULT VALUES%s", insert)
 			{{else -}}
-			cache.query = fmt.Sprintf("%s INTO {{$schemaTable}} () VALUES ()%s%s", insert)
+			format := "%s INTO {{$schemaTable}} () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 			{{end -}}
 		}
 

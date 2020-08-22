@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/eveisesi/neo"
+
 	"github.com/davecgh/go-spew/spew"
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
@@ -137,15 +139,13 @@ func init() {
 			Name:        "notifications",
 			Description: "Notifications subscribe to the a Redis PubSub. When the importer detects a killmail with a value greater than the configured notification value, it publishes the id and hash to this pubsub and this service will format the message for slack and post the killmail to slack",
 			Action: func(c *cli.Context) error {
-				app := core.New("notifier", true)
+				app := core.New("notifier", false)
 
 				if !app.Config.SlackNotifierEnabled {
 					return nil
 				}
-				txn := app.NewRelic.StartTransaction(app.Label)
-				defer txn.End()
-				ctx := newrelic.NewContext(context.Background(), txn)
-				app.Notification.Run(ctx)
+
+				app.Notification.Run(context.Background())
 				return nil
 			},
 		},
@@ -154,13 +154,12 @@ func init() {
 			Description: "Updater ensures that all updatable records in the database are update date according to their CacheUntil timestamp.",
 			Action: func(c *cli.Context) error {
 				app := core.New("updater", false)
-				var ctx = context.Background()
 
 				ch := make(chan int, 3)
 
-				go app.Character.UpdateExpired(ctx)
-				go app.Corporation.UpdateExpired(ctx)
-				go app.Alliance.UpdateExpired(ctx)
+				go app.Character.UpdateExpired(context.Background())
+				go app.Corporation.UpdateExpired(context.Background())
+				go app.Alliance.UpdateExpired(context.Background())
 
 				<-ch
 
@@ -168,66 +167,91 @@ func init() {
 
 			},
 		},
-		migrateCommand(),
-		cli.Command{
-			Name:  "recalculate",
-			Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
-			Action: func(c *cli.Context) error {
+		// migrateCommand(),
+		// cli.Command{
+		// 	Name:  "recalculate",
+		// 	Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
+		// 	Action: func(c *cli.Context) error {
 
-				debug := c.Bool("debug")
-				workers := c.Int64("workers")
+		// 		debug := c.Bool("debug")
+		// 		workers := c.Int64("workers")
 
-				core.New("recalculate", debug).Killmail.Recalculator(workers)
+		// 		core.New("recalculate", debug).Killmail.Recalculator(workers)
 
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.IntFlag{
-					Name:  "workers",
-					Usage: "Number of Go Routines to that should be used to process messages.",
-					Value: 10,
-				},
-				cli.BoolFlag{
-					Name:  "debug",
-					Usage: "Outputs Debug Logs",
-				},
-			},
-		},
-		cli.Command{
-			Name:  "recalculable",
-			Usage: "Finds Killmails where the DestroyedValue and the DroppedValue do not equal the TotalValue and dispatches them to a queue to have these properties recalculated",
-			Action: func(c *cli.Context) error {
+		// 		return nil
+		// 	},
+		// 	Flags: []cli.Flag{
+		// 		cli.IntFlag{
+		// 			Name:  "workers",
+		// 			Usage: "Number of Go Routines to that should be used to process messages.",
+		// 			Value: 10,
+		// 		},
+		// 		cli.BoolFlag{
+		// 			Name:  "debug",
+		// 			Usage: "Outputs Debug Logs",
+		// 		},
+		// 	},
+		// },
+		// cli.Command{
+		// 	Name:  "recalculable",
+		// 	Usage: "Finds Killmails where the DestroyedValue and the DroppedValue do not equal the TotalValue and dispatches them to a queue to have these properties recalculated",
+		// 	Action: func(c *cli.Context) error {
 
-				limit := c.Int64("limit")
-				trigger := c.Int64("trigger")
-				after := c.Uint64("after")
+		// 		limit := c.Int64("limit")
+		// 		trigger := c.Int64("trigger")
+		// 		after := c.Uint64("after")
 
-				core.New("recalculable", false).Killmail.RecalculatorDispatcher(limit, trigger, after)
+		// 		core.New("recalculable", false).Killmail.RecalculatorDispatcher(limit, trigger, after)
 
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.IntFlag{
-					Name:  "limit",
-					Usage: "number of records to fetch from the db",
-					Value: 10000,
-				},
-				cli.IntFlag{
-					Name:  "trigger",
-					Usage: "this number of less must remain on the queue before triggering another pull from the db",
-					Value: 2500,
-				},
-				cli.Int64Flag{
-					Name:  "after",
-					Usage: "Start at a specific killmail id",
-					Value: 0,
-				},
-			},
-		},
+		// 		return nil
+		// 	},
+		// 	Flags: []cli.Flag{
+		// 		cli.IntFlag{
+		// 			Name:  "limit",
+		// 			Usage: "number of records to fetch from the db",
+		// 			Value: 10000,
+		// 		},
+		// 		cli.IntFlag{
+		// 			Name:  "trigger",
+		// 			Usage: "this number of less must remain on the queue before triggering another pull from the db",
+		// 			Value: 2500,
+		// 		},
+		// 		cli.Int64Flag{
+		// 			Name:  "after",
+		// 			Usage: "Start at a specific killmail id",
+		// 			Value: 0,
+		// 		},
+		// 	},
+		// },
 		cli.Command{
 			Name:        "market",
 			Usage:       "Updates market prices in the Db",
 			Subcommands: marketCommands(),
+		},
+		cli.Command{
+			Name: "testing",
+			Action: func(c *cli.Context) error {
+				app := core.New("test-stats", false)
+
+				coreMods := []neo.Modifier{neo.LimitModifier(100), neo.OrderModifier{Column: "id", Sort: "DESC"}}
+				vicMods := []neo.Modifier{neo.EqualToUint64{Column: "alliance_id", Value: 99005338}}
+				attMods := make([]neo.Modifier, 0)
+				// attMods := []neo.Modifier{neo.EqualToUint64{Column: "alliance_id", Value: 1354830081}}
+
+				killmails, err := app.Killmail.AllKillmails(context.Background(), coreMods, vicMods, attMods)
+				if err != nil {
+					app.Logger.WithError(err).Error("encountered error querying killmails")
+				}
+
+				spew.Dump(len(killmails))
+
+				return nil
+			},
+			Flags: []cli.Flag{
+				cli.Uint64Flag{
+					Name: "id",
+				},
+			},
 		},
 	}
 }

@@ -14,10 +14,11 @@ func CharacterLoader(ctx context.Context, character character.Service) *generate
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint64) ([]*neo.Character, []error) {
 
-			characters := make([]*neo.Character, len(ids))
 			errors := make([]error, len(ids))
 
-			rows, err := character.CharactersByCharacterIDs(ctx, ids)
+			mods := []neo.Modifier{neo.InUint64{Column: "id", Value: ids}}
+
+			rows, err := character.Characters(ctx, mods)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors
@@ -28,6 +29,7 @@ func CharacterLoader(ctx context.Context, character character.Service) *generate
 				characterByCharacterID[c.ID] = c
 			}
 
+			characters := make([]*neo.Character, len(ids))
 			for i, x := range ids {
 				characters[i] = characterByCharacterID[x]
 			}

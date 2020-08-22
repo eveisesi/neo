@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/volatiletech/null"
@@ -15,9 +14,9 @@ import (
 	"github.com/eveisesi/neo"
 )
 
-var region = uint64(10000002)
+var region = uint(10000002)
 
-func (s *service) FetchTypePrice(id uint64, date time.Time) float64 {
+func (s *service) FetchTypePrice(id uint, date time.Time) float64 {
 
 	var price float64 = 0.01
 
@@ -126,7 +125,7 @@ func getPriceFromHistorySlice(history []*neo.HistoricalRecord, day time.Time) *n
 	return nil
 }
 
-func (s *service) getBuildPrice(id uint64, date time.Time) float64 {
+func (s *service) getBuildPrice(id uint, date time.Time) float64 {
 
 	built, err := s.MarketRepository.BuiltPrice(context.Background(), id, date)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -159,7 +158,7 @@ func (s *service) getBuildPrice(id uint64, date time.Time) float64 {
 	return total
 }
 
-func (s *service) getFixedPrice(id uint64, date time.Time) float64 {
+func (s *service) getFixedPrice(id uint, date time.Time) float64 {
 	// TODO: Build out engine or something for looking up fixed prices. Maybe a query to the DB, possibly to redis.
 	// Not sure
 
@@ -173,7 +172,7 @@ func (s *service) getFixedPrice(id uint64, date time.Time) float64 {
 	return 0.00
 }
 
-func (s *service) getCalculatedPrice(id uint64, date time.Time) float64 {
+func (s *service) getCalculatedPrice(id uint, date time.Time) float64 {
 
 	// TODO: Same as TODO in getFixedPrice
 
@@ -203,7 +202,7 @@ func (s *service) FetchHistory(ctx context.Context) {
 	limiter := limiter.NewConcurrencyLimiter(20)
 
 	for _, v := range groups {
-		s.tracker.GateKeeper()
+		s.tracker.GateKeeper(ctx)
 		limiter.Execute(func() {
 			s.processGroup(ctx, v)
 		})
@@ -237,7 +236,7 @@ func (s *service) processGroup(ctx context.Context, v int) {
 			continue
 		}
 
-		records, m := s.esi.GetMarketsRegionIDHistory(ctx, region, strconv.FormatUint(t, 10))
+		records, m := s.esi.GetMarketsRegionIDHistory(ctx, region, t)
 		if m.IsError() {
 			s.logger.WithError(m.Msg).WithField("type_id", t).Error("failed to pull market history for type")
 			continue

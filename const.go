@@ -48,11 +48,11 @@ const ZKB_INVALID_HASH = "zkb:invalid" // zkb:invalid
 const REDIS_ALLIANCE = "neo:alliance:%d"
 const REDIS_CHARACTER = "neo:character:%d"
 const REDIS_CORPORATION = "neo:corporation:%d"
-const REDIS_KILLMAIL = "neo:killmail:%d:%s"
-const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:%s:attackers"
-const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:%s:victim"
-const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:%s:victim:items"
-const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${page}"
+const REDIS_KILLMAIL = "neo:killmail:%d"
+const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:attackers"
+const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:victim"
+const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:victim:items"
+const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${after}"
 const REDIS_BLUEPRINT_MATERIALS = "neo:blueprint:materials:%d"
 const REDIS_BLUEPRINT_PRODUCT = "neo:blueprint:product:%d"
 const REDIS_BLUEPRINT_PRODUCTTYPEID = "neo:blueprint:producttypeid:%d"
@@ -71,55 +71,56 @@ const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
 const QUEUES_KILLMAIL_RECALCULATE = "neo:killmails:recalculate"
 const QUEUES_KILLMAIL_BACKUP = "neo:killmails:backup"
 const QUEUES_KILLMAIL_STATS = "neo:killmails:stats"
+const QUEUES_KILLMAIL_ATTRIBUTES = "neo:killmails:attributes"
 const QUEUES_KILLMAIL_NOTIFICATION = "neo:notifications"
 
 // FlagIDs to FittingSlots
 
-var SLOT_TO_FLAGIDS = map[string]map[uint64]bool{
-	"low": map[uint64]bool{
+var SLOT_TO_FLAGIDS = map[string]map[uint]bool{
+	"low": map[uint]bool{
 		11: true, 12: true, 13: true, 14: true, 15: true, 16: true, 17: true, 18: true,
 	},
 
-	"mid": map[uint64]bool{
+	"mid": map[uint]bool{
 		19: true, 20: true, 21: true, 22: true, 23: true, 24: true, 25: true, 26: true,
 	},
 
-	"hi": map[uint64]bool{
+	"hi": map[uint]bool{
 		27: true, 28: true, 29: true, 30: true, 31: true, 32: true, 33: true, 34: true,
 	},
 
-	"drone": map[uint64]bool{
+	"drone": map[uint]bool{
 		87: true,
 	},
 
-	"implants": map[uint64]bool{
+	"implants": map[uint]bool{
 		89: true,
 	},
 
-	"rigs": map[uint64]bool{
+	"rigs": map[uint]bool{
 		92: true, 93: true, 94: true, 95: true, 96: true, 97: true, 98: true, 99: true,
 	},
 
-	"cargo": map[uint64]bool{
+	"cargo": map[uint]bool{
 		5: true,
 	},
 
-	"subsystem": map[uint64]bool{
+	"subsystem": map[uint]bool{
 		125: true, 126: true, 127: true, 128: true, 129: true, 130: true, 131: true, 132: true,
 	},
 
-	"fighter_tubes": map[uint64]bool{
+	"fighter_tubes": map[uint]bool{
 		159: true, 160: true, 161: true, 162: true, 163: true,
 	},
 
-	"structure_service": map[uint64]bool{
+	"structure_service": map[uint]bool{
 		164: true, 165: true, 166: true, 167: true, 168: true, 169: true, 170: true, 171: true,
 	},
 }
 
 const KILLMAILS_PER_PAGE = 50
 
-var ALLOWED_SHIP_GROUPS = []uint64{
+var ALLOWED_SHIP_GROUPS = []uint{
 	25,   // Frigate
 	26,   // Cruiser
 	27,   // Battleship

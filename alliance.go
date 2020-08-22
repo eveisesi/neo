@@ -8,18 +8,18 @@ import (
 )
 
 type AllianceRespository interface {
-	Alliance(ctx context.Context, id uint64) (*Alliance, error)
+	Alliance(ctx context.Context, id uint) (*Alliance, error)
 	CreateAlliance(ctx context.Context, alliance *Alliance) (*Alliance, error)
-	UpdateAlliance(ctx context.Context, id uint64, alliance *Alliance) (*Alliance, error)
-	AlliancesByAllianceIDs(ctx context.Context, ids []uint64) ([]*Alliance, error)
+	UpdateAlliance(ctx context.Context, id uint, alliance *Alliance) (*Alliance, error)
+	AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*Alliance, error)
 
 	Expired(ctx context.Context) ([]*Alliance, error)
-	MemberCountByAllianceID(ctx context.Context, id uint64) (int, error)
+	MemberCountByAllianceID(ctx context.Context, id uint) (int, error)
 }
 
 // Alliance is an object representing the database table.
 type Alliance struct {
-	ID               uint64      `boil:"id" json:"id"`
+	ID               uint        `boil:"id" json:"id"`
 	Name             string      `boil:"name" json:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker"`
 	IsClosed         bool        `boil:"is_closed" json:"is_closed"`

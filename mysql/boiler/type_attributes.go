@@ -23,8 +23,8 @@ import (
 
 // TypeAttribute is an object representing the database table.
 type TypeAttribute struct {
-	TypeID      uint64    `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
-	AttributeID uint64    `boil:"attribute_id" json:"attributeID" toml:"attributeID" yaml:"attributeID"`
+	TypeID      uint      `boil:"type_id" json:"typeID" toml:"typeID" yaml:"typeID"`
+	AttributeID uint      `boil:"attribute_id" json:"attributeID" toml:"attributeID" yaml:"attributeID"`
 	Value       int64     `boil:"value" json:"value" toml:"value" yaml:"value"`
 	CreatedAt   time.Time `boil:"created_at" json:"createdAt" toml:"createdAt" yaml:"createdAt"`
 	UpdatedAt   time.Time `boil:"updated_at" json:"updatedAt" toml:"updatedAt" yaml:"updatedAt"`
@@ -66,14 +66,14 @@ func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
 }
 
 var TypeAttributeWhere = struct {
-	TypeID      whereHelperuint64
-	AttributeID whereHelperuint64
+	TypeID      whereHelperuint
+	AttributeID whereHelperuint
 	Value       whereHelperint64
 	CreatedAt   whereHelpertime_Time
 	UpdatedAt   whereHelpertime_Time
 }{
-	TypeID:      whereHelperuint64{field: "`type_attributes`.`type_id`"},
-	AttributeID: whereHelperuint64{field: "`type_attributes`.`attribute_id`"},
+	TypeID:      whereHelperuint{field: "`type_attributes`.`type_id`"},
+	AttributeID: whereHelperuint{field: "`type_attributes`.`attribute_id`"},
 	Value:       whereHelperint64{field: "`type_attributes`.`value`"},
 	CreatedAt:   whereHelpertime_Time{field: "`type_attributes`.`created_at`"},
 	UpdatedAt:   whereHelpertime_Time{field: "`type_attributes`.`updated_at`"},
@@ -97,8 +97,8 @@ type typeAttributeL struct{}
 
 var (
 	typeAttributeAllColumns            = []string{"type_id", "attribute_id", "value", "created_at", "updated_at"}
-	typeAttributeColumnsWithoutDefault = []string{"type_id", "attribute_id", "value", "created_at", "updated_at"}
-	typeAttributeColumnsWithDefault    = []string{}
+	typeAttributeColumnsWithoutDefault = []string{"type_id", "attribute_id", "created_at", "updated_at"}
+	typeAttributeColumnsWithDefault    = []string{"value"}
 	typeAttributePrimaryKeyColumns     = []string{"type_id", "attribute_id"}
 )
 
@@ -201,7 +201,7 @@ func TypeAttributes(mods ...qm.QueryMod) typeAttributeQuery {
 
 // FindTypeAttribute retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindTypeAttribute(ctx context.Context, exec boil.ContextExecutor, typeID uint64, attributeID uint64, selectCols ...string) (*TypeAttribute, error) {
+func FindTypeAttribute(ctx context.Context, exec boil.ContextExecutor, typeID uint, attributeID uint, selectCols ...string) (*TypeAttribute, error) {
 	typeAttributeObj := &TypeAttribute{}
 
 	sel := "*"
@@ -276,7 +276,8 @@ func (o *TypeAttribute) Insert(ctx context.Context, exec boil.ContextExecutor, c
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `type_attributes` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `type_attributes` () VALUES ()%s%s", insert)
+			format := "%s INTO `type_attributes` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string
@@ -727,7 +728,7 @@ func (o *TypeAttributeSlice) ReloadAll(ctx context.Context, exec boil.ContextExe
 }
 
 // TypeAttributeExists checks if the TypeAttribute row exists.
-func TypeAttributeExists(ctx context.Context, exec boil.ContextExecutor, typeID uint64, attributeID uint64) (bool, error) {
+func TypeAttributeExists(ctx context.Context, exec boil.ContextExecutor, typeID uint, attributeID uint) (bool, error) {
 	var exists bool
 	sql := "select exists(select 1 from `type_attributes` where `type_id`=? AND `attribute_id`=? limit 1)"
 

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo/tools"
-	newrelic "github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/newrelic/go-agent/v3/newrelic"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
@@ -81,17 +81,19 @@ func NewService(
 func (s *service) Run(ctx context.Context) {
 
 	for {
-		txn := newrelic.FromContext(ctx)
+		txn := s.newrelic.StartTransaction("process notification queue")
 		entry := s.logger.WithContext(ctx)
 		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
 		if err != nil {
+			txn.NoticeError(err)
+
 			entry.WithError(err).Error("unable to determine count of message queue")
 			time.Sleep(time.Second * 2)
 			continue
 		}
 
 		if count == 0 {
-			txn.Ignore()
+
 			entry.Info("notification queue is empty")
 			time.Sleep(time.Second * 15)
 			continue
@@ -130,8 +132,9 @@ func (s *service) processMessage(msg neo.Message) {
 	})
 
 	// Build Killmail
-	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, msg.Hash)
+	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, true)
 	if err != nil {
+		txn.NoticeError(err)
 		entry.WithError(err).Error("Failed to retrieve killmail from DB")
 		return
 	}
@@ -156,7 +159,7 @@ func (s *service) processMessage(msg neo.Message) {
 			goslack.NewTextBlockObject(goslack.MarkdownType, "*Killtime*", false, false),
 			goslack.NewTextBlockObject(goslack.MarkdownType, killmail.KillmailTime.Format("2006-01-02 15:04:05"), false, false),
 			goslack.NewTextBlockObject(goslack.MarkdownType, "*Damage Taken*", false, false),
-			goslack.NewTextBlockObject(goslack.MarkdownType, strconv.FormatUint(killmail.Victim.DamageTaken, 10), false, false),
+			goslack.NewTextBlockObject(goslack.MarkdownType, strconv.FormatUint(uint64(killmail.Victim.DamageTaken), 10), false, false),
 		},
 		goslack.NewAccessory(
 			goslack.NewImageBlockElement(
@@ -241,31 +244,35 @@ func (s *service) processMessage(msg neo.Message) {
 
 	b, err := json.Marshal(attachment)
 	if err != nil {
+		txn.NoticeError(err)
 		entry.WithError(err).Error("failed to build payload for webhook")
 		return
 	}
 
 	body := bytes.NewBuffer(b)
 
-	req, err := http.NewRequestWithContext(ctx, s.config.SlackNotifierWebhookURL, "application/json", body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.config.SlackNotifierWebhookURL, body)
 	if err != nil {
+		txn.NoticeError(err)
 		entry.WithError(err).Error("failed to build webhook request to slack webhook")
 		return
 	}
-
+	extSeg := newrelic.StartExternalSegment(txn, req)
 	response, err := s.client.Do(req)
 	if err != nil {
+		txn.NoticeError(err)
 		entry.WithError(err).Error("failed to make request to slack webhook")
 		return
 	}
+	extSeg.Response = response
+	extSeg.End()
 
 	if response.StatusCode > 200 {
 		data, _ := ioutil.ReadAll(response.Body)
-		entry.WithError(err).WithFields(logrus.Fields{
+		entry.WithFields(logrus.Fields{
 			"response": string(data),
 			"request":  string(b),
 		}).Error("webhook request to slack failed")
-		fmt.Println(string(b))
 	}
 
 	entry.Info("notification processed successfully")
@@ -334,5 +341,5 @@ func (s *service) buildSlackVictimImageString(victim *neo.KillmailVictim) string
 		return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "characters", victim.CharacterID.Uint64, "portrait", 128)
 	}
 
-	return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "corporations", victim.CorporationID.Uint64, "logo", 128)
+	return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "corporations", victim.CorporationID.Uint, "logo", 128)
 }

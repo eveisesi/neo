@@ -8,23 +8,23 @@ import (
 )
 
 func (r *queryResolver) GroupByGroupID(ctx context.Context, id int) (*neo.TypeGroup, error) {
-	return r.Services.TypeGroup(ctx, uint64(id))
+	return r.Services.TypeGroup(ctx, uint(id))
 }
 
 func (r *queryResolver) CategoryByGroupID(ctx context.Context, id int) (*neo.TypeCategory, error) {
-	return r.Services.TypeCategory(ctx, uint64(id))
+	return r.Services.TypeCategory(ctx, uint(id))
 }
 
 func (r *queryResolver) SolarSystemBySolarSystemID(ctx context.Context, id int) (*neo.SolarSystem, error) {
-	return r.Services.SolarSystem(ctx, uint64(id))
+	return r.Services.SolarSystem(ctx, uint(id))
 }
 
 func (r *queryResolver) ConstellationByConstellationID(ctx context.Context, id int) (*neo.Constellation, error) {
-	return r.Services.Constellation(ctx, uint64(id))
+	return r.Services.Constellation(ctx, uint(id))
 }
 
 func (r *queryResolver) RegionByRegionID(ctx context.Context, id int) (*neo.Region, error) {
-	return r.Services.Region(ctx, uint64(id))
+	return r.Services.Region(ctx, uint(id))
 }
 
 func (r *Resolver) Constellation() service.ConstellationResolver {

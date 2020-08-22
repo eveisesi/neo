@@ -8,20 +8,20 @@ import (
 )
 
 type CorporationRespository interface {
-	Corporation(ctx context.Context, id uint64) (*Corporation, error)
+	Corporation(ctx context.Context, id uint) (*Corporation, error)
 	CreateCorporation(ctx context.Context, corporation *Corporation) (*Corporation, error)
-	UpdateCorporation(ctx context.Context, id uint64, corporation *Corporation) (*Corporation, error)
-	CorporationsByCorporationIDs(ctx context.Context, ids []uint64) ([]*Corporation, error)
+	UpdateCorporation(ctx context.Context, id uint, corporation *Corporation) (*Corporation, error)
+	CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*Corporation, error)
 
 	Expired(ctx context.Context) ([]*Corporation, error)
 }
 
 type Corporation struct {
-	ID               uint64      `boil:"id" json:"id"`
+	ID               uint        `boil:"id" json:"id"`
 	Name             string      `boil:"name" json:"name"`
 	Ticker           string      `boil:"ticker" json:"ticker"`
 	MemberCount      uint        `boil:"member_count" json:"member_count"`
-	AllianceID       null.Uint64 `boil:"alliance_id" json:"alliance_id,omitempty"`
+	AllianceID       null.Uint `boil:"alliance_id" json:"alliance_id,omitempty"`
 	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
 	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`
 	Etag             null.String `boil:"etag" json:"etag"`

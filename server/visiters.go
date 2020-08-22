@@ -40,7 +40,7 @@ func (s *Server) RateLimiter(next http.Handler) http.Handler {
 }
 
 func addVisitor(ip string) *rate.Limiter {
-	limiter := rate.NewLimiter(5, 10)
+	limiter := rate.NewLimiter(1, 3)
 	mtx.Lock()
 	visitors[ip] = &visitor{limiter, time.Now()}
 	mtx.Unlock()
@@ -65,7 +65,7 @@ func cleanUpVisitors() {
 		time.Sleep(time.Minute)
 		mtx.Lock()
 		for ip, v := range visitors {
-			if time.Since(v.lastSeen) > 3*time.Minute {
+			if time.Since(v.lastSeen) > 5*time.Minute {
 				delete(visitors, ip)
 			}
 		}

@@ -10,10 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) AttackersByKillmailID(ctx context.Context, id uint64, hash string) ([]*neo.KillmailAttacker, error) {
+func (s *service) AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error) {
 
 	var attackers = make([]*neo.KillmailAttacker, 0)
-	var key = fmt.Sprintf(neo.REDIS_KILLMAIL_ATTACKERS, id, hash)
+	var key = fmt.Sprintf(neo.REDIS_KILLMAIL_ATTACKERS, id)
 
 	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
@@ -45,6 +45,6 @@ func (s *service) AttackersByKillmailID(ctx context.Context, id uint64, hash str
 
 }
 
-func (s *service) AttackersByKillmailIDs(ctx context.Context, ids []uint64) ([]*neo.KillmailAttacker, error) {
+func (s *service) AttackersByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailAttacker, error) {
 	return s.attackers.ByKillmailIDs(ctx, ids)
 }

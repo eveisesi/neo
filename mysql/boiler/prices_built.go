@@ -260,7 +260,8 @@ func (o *PricesBuilt) Insert(ctx context.Context, exec boil.ContextExecutor, col
 		if len(wl) != 0 {
 			cache.query = fmt.Sprintf("%s INTO `prices_built` (`%s`) %%sVALUES (%s)%%s", insert, strings.Join(wl, "`,`"), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = fmt.Sprintf("%s INTO `prices_built` () VALUES ()%s%s", insert)
+			format := "%s INTO `prices_built` () VALUES ()%s%s"
+			cache.query = fmt.Sprintf(format, insert)
 		}
 
 		var queryOutput, queryReturning string

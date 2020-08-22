@@ -64,68 +64,73 @@ func killmailCommands() []cli.Command {
 				},
 			},
 		},
-		// cli.Command{
-		// 	Name:  "stats",
-		// 	Usage: "Monitors the stats queue and calculates stats as new killmails get processed",
-		// 	Action: func(c *cli.Context) error {
-		// 		app := core.New("killmail-stats", false)
-		// 		_ = app.Stats.Run()
-		// 		return nil
-		// 	},
-		// 	Subcommands: []cli.Command{
-		// 		cli.Command{
-		// 			Name:  "recalculate",
-		// 			Usage: "Something Something",
-		// 			Action: func(c *cli.Context) error {
-		// 				app := core.New("killmail-recalculate", true)
+		cli.Command{
+			Name:  "stats",
+			Usage: "Monitors the stats queue and calculates stats as new killmails get processed",
+			Action: func(c *cli.Context) error {
+				app := core.New("killmail-stats", false)
+				_ = app.Stats.Run()
+				return nil
+			},
+			// Subcommands: []cli.Command{
+			// 	cli.Command{
+			// 		Name:  "recalculate",
+			// 		Usage: "Something Something",
+			// 		Action: func(c *cli.Context) error {
+			// 			app := core.New("killmail-recalculate", false)
 
-		// 				var id int64
-		// 				var entity string
+			// 			var id int64
+			// 			var entity neo.StatEntity
 
-		// 				dateStr := c.String("date")
-		// 				now := time.Now()
-		// 				date, err := time.Parse("20060102", dateStr)
-		// 				if err != nil {
-		// 					date = time.Date(now.Year(), now.Month(), now.Day()-90, 0, 0, 0, 0, time.UTC)
-		// 				}
+			// 			dateStr := c.String("date")
+			// 			now := time.Now()
+			// 			date, err := time.Parse("20060102", dateStr)
+			// 			if err != nil {
+			// 				date = time.Date(now.Year(), now.Month(), now.Day()-90, 0, 0, 0, 0, time.UTC)
+			// 			}
 
-		// 				if c.Int64("id") != 0 {
-		// 					id = c.Int64("id")
-		// 				}
-		// 				if c.String("entity") != "" {
-		// 					for _, v := range app.Config.AllowedStatsEntities {
-		// 						if v == c.String("entity") {
-		// 							entity = c.String("entity")
-		// 							break
-		// 						}
-		// 					}
-		// 					if entity == "" {
-		// 						app.Logger.Info("invalid type submitted. defaulting to empty string")
-		// 					}
-		// 				}
+			// 			if c.Int64("id") != 0 {
+			// 				id = c.Int64("id")
+			// 			}
+			// 			if c.String("entity") != "" {
+			// 				for _, v := range app.Config.AllowedStatsEntities {
+			// 					if v == c.String("entity") {
+			// 						entity = neo.StatEntity(c.String("entity"))
+			// 						break
+			// 					}
+			// 				}
+			// 				if !entity.IsValid() {
+			// 					app.Logger.Fatal("invalid type submitted. defaulting to empty string")
+			// 				}
+			// 			}
 
-		// 				app.Stats.Recalculate(context.Background(), id, entity, date)
+			// 			err = app.Stats.Recalculate(id, entity, date)
+			// 			if err != nil {
+			// 				return cli.NewExitError(err, 1)
+			// 			}
 
-		// 				return nil
+			// 			return nil
 
-		// 			},
-		// 			Flags: []cli.Flag{
-		// 				cli.StringFlag{
-		// 					Name:  "entity",
-		// 					Usage: "declare the entity for this stats operations",
-		// 				},
-		// 				cli.Int64Flag{
-		// 					Name:  "id",
-		// 					Usage: "id of the type this stats operations is for",
-		// 				},
-		// 				cli.StringFlag{
-		// 					Name:  "date",
-		// 					Usage: "limit to a specific date. If ommitted, operation will be data from within the past 90 days (Format: YYYYMMDD)",
-		// 				},
-		// 			},
-		// 		},
-		// 	},
-		// },
+			// 		},
+			// 		Flags: []cli.Flag{
+			// 			cli.StringFlag{
+			// 				Name:     "entity",
+			// 				Usage:    "declare the entity for this stats operations",
+			// 				Required: true,
+			// 			},
+			// 			cli.Int64Flag{
+			// 				Name:     "id",
+			// 				Usage:    "id of the type this stats operations is for",
+			// 				Required: true,
+			// 			},
+			// 			cli.StringFlag{
+			// 				Name:  "date",
+			// 				Usage: "limit to a specific date. If ommitted, operation will be data from within the past 90 days (Format: YYYYMMDD)",
+			// 			},
+			// 		},
+			// 	},
+			// },
+		},
 		cli.Command{
 			Name:  "add",
 			Usage: "Adds a Killmail ID and Hash to the queue",
@@ -140,7 +145,7 @@ func killmailCommands() []cli.Command {
 				})
 
 				inSlc := strings.Split(in, ":")
-				id, err := strconv.ParseUint(inSlc[0], 10, 64)
+				id, err := strconv.ParseUint(inSlc[0], 10, 32)
 				if err != nil {
 					entry.WithError(err).Error("failed to parse id")
 				}
@@ -154,7 +159,7 @@ func killmailCommands() []cli.Command {
 					}
 				}
 
-				app.Killmail.DispatchPayload(&neo.Message{ID: id, Hash: hash})
+				app.Killmail.DispatchPayload(&neo.Message{ID: uint(id), Hash: hash})
 
 				return nil
 

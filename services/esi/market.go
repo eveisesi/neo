@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
@@ -56,12 +57,12 @@ func (s *service) GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*ne
 
 }
 
-func (s *service) GetMarketsRegionIDHistory(ctx context.Context, regionID uint64, typeID string) ([]*neo.HistoricalRecord, *Meta) {
+func (s *service) GetMarketsRegionIDHistory(ctx context.Context, regionID uint, typeID uint) ([]*neo.HistoricalRecord, *Meta) {
 
 	path := fmt.Sprintf("/v1/markets/%d/history/", regionID)
 
 	query := url.Values{}
-	query.Set("type_id", typeID)
+	query.Set("type_id", strconv.Itoa(int(typeID)))
 
 	response, m := s.request(ctx, request{
 		method: http.MethodGet,
@@ -83,7 +84,7 @@ func (s *service) GetMarketsRegionIDHistory(ctx context.Context, regionID uint64
 	return records, m
 }
 
-func (s *service) HeadMarketsRegionIDTypes(ctx context.Context, regionID uint64) *Meta {
+func (s *service) HeadMarketsRegionIDTypes(ctx context.Context, regionID uint) *Meta {
 
 	_, m := s.request(ctx, request{
 		method: http.MethodHead,
@@ -93,7 +94,7 @@ func (s *service) HeadMarketsRegionIDTypes(ctx context.Context, regionID uint64)
 
 }
 
-func (s *service) GetMarketsRegionIDTypes(ctx context.Context, regionID uint64, page null.String) ([]int, *Meta) {
+func (s *service) GetMarketsRegionIDTypes(ctx context.Context, regionID uint, page null.String) ([]int, *Meta) {
 
 	path := fmt.Sprintf("/v1/markets/%d/types/", regionID)
 

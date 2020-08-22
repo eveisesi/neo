@@ -8,7 +8,7 @@ import (
 )
 
 func (r *queryResolver) AllianceByAllianceID(ctx context.Context, id int) (*neo.Alliance, error) {
-	return r.Services.Alliance.Alliance(ctx, uint64(id))
+	return r.Services.Alliance.Alliance(ctx, uint(id))
 }
 
 func (r *Resolver) Alliance() service.AllianceResolver {

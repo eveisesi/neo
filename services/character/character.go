@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 )
@@ -114,7 +115,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return characters, nil
 	}
 
-	dbTypes, err := s.CharacterRespository.CharactersByCharacterIDs(ctx, missing)
+	dbTypes, err := s.CharacterRespository.Characters(ctx, []neo.Modifier{neo.InUint64{Column: "id", Value: missing}}...)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -142,6 +143,9 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
+		txn := s.newrelic.StartTransaction("updateExpiredCharacters")
+		ctx = newrelic.NewContext(ctx, txn)
+
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			s.logger.WithError(err).Error("Failed to fetch expired characters")
@@ -155,10 +159,13 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		}
 
 		for _, character := range expired {
-			s.tracker.GateKeeper()
+			seg := txn.StartSegment("handleCharacter")
+			seg.AddAttribute("id", character.ID)
+			s.tracker.GateKeeper(ctx)
 			newCharacter, m := s.esi.GetCharactersCharacterID(ctx, character.ID, character.Etag)
 			if m.IsError() {
-				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to fetch character from esi")
+				txn.NoticeError(m.Msg)
+				s.logger.WithContext(ctx).WithError(m.Msg).WithField("character_id", character.ID).Error("failed to fetch character from esi")
 				continue
 			}
 
@@ -179,21 +186,22 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				_, err = s.UpdateCharacter(ctx, character.ID, newCharacter)
 			default:
-				s.logger.WithField("status_code", m.Code).WithField("character_id", character.ID).Error("unaccounted for status code received from esi service")
+				s.logger.WithContext(ctx).WithField("status_code", m.Code).WithField("character_id", character.ID).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {
-				s.logger.WithError(err).WithField("character_id", character.ID).Error("failed to update character")
+				txn.NoticeError(m.Msg)
+				s.logger.WithContext(ctx).WithError(err).WithField("character_id", character.ID).Error("failed to update character")
 				continue
 			}
 
-			s.logger.WithField("character_id", character.ID).WithField("status_code", m.Code).Debug("character successfully updated")
-
+			s.logger.WithContext(ctx).WithField("character_id", character.ID).WithField("status_code", m.Code).Debug("character successfully updated")
+			seg.End()
 			time.Sleep(time.Millisecond * 25)
 		}
-		s.logger.WithField("count", len(expired)).Info("characters successfully updated")
-
-		time.Sleep(time.Second * 5)
+		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("characters successfully updated")
+		txn.End()
+		time.Sleep(time.Second)
 
 	}
 
