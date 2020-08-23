@@ -12,11 +12,9 @@ import (
 )
 
 type Service interface {
-	Alliance(ctx context.Context, id uint) (*neo.Alliance, error)
-	AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error)
-
 	UpdateExpired(ctx context.Context)
-	MemberCountByAllianceID(ctx context.Context, id uint) (int, error)
+	AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error)
+	neo.AllianceRespository
 }
 
 type service struct {

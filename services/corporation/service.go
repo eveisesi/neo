@@ -12,10 +12,9 @@ import (
 )
 
 type Service interface {
-	Corporation(ctx context.Context, id uint) (*neo.Corporation, error)
-	CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error)
-
 	UpdateExpired(ctx context.Context)
+	CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error)
+	neo.CorporationRespository
 }
 
 type service struct {

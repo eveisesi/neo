@@ -12,9 +12,8 @@ import (
 )
 
 type Service interface {
-	CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error)
-
 	UpdateExpired(ctx context.Context)
+	CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error)
 	neo.CharacterRespository
 }
 
