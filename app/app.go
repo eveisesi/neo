@@ -235,7 +235,6 @@ func New(command string, debug bool) *App {
 		mysql.NewKillmailAttackerRepository(db),
 		mysql.NewKillmailItemRepository(db),
 		mysql.NewKillmailVictimRepository(db),
-		mysql.NewMVRepository(db),
 	)
 
 	stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(db))
