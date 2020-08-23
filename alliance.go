@@ -9,9 +9,9 @@ import (
 
 type AllianceRespository interface {
 	Alliance(ctx context.Context, id uint) (*Alliance, error)
+	Alliances(ctx context.Context, mods ...Modifier) ([]*Alliance, error)
 	CreateAlliance(ctx context.Context, alliance *Alliance) (*Alliance, error)
 	UpdateAlliance(ctx context.Context, id uint, alliance *Alliance) (*Alliance, error)
-	AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*Alliance, error)
 
 	Expired(ctx context.Context) ([]*Alliance, error)
 	MemberCountByAllianceID(ctx context.Context, id uint) (int, error)

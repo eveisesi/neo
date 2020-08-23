@@ -53,6 +53,9 @@ const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:attackers"
 const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:victim"
 const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:victim:items"
 const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${after}"
+
+// action = kill/lose; type = CharacterID/CorporationID/etc;
+const REDIS_MV_KILLMAILS = "neo:mv:killmails:${action}:${type}:${id}"
 const REDIS_BLUEPRINT_MATERIALS = "neo:blueprint:materials:%d"
 const REDIS_BLUEPRINT_PRODUCT = "neo:blueprint:product:%d"
 const REDIS_BLUEPRINT_PRODUCTTYPEID = "neo:blueprint:producttypeid:%d"
@@ -64,7 +67,6 @@ const REDIS_TYPE_CATEGORY = "neo:type:category:%d"
 const REDIS_TYPE_ATTRIBUTES = "neo:type:attributes:%d"
 const REDIS_TYPE_FLAG = "neo:type:flag:%d"
 const REDIS_TYPE_GROUP = "neo:type:group:%d"
-const REDIS_GRAPHQL_APQ_CACHE = "neo:graphql:apq"
 
 // NEO Queues
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
