@@ -204,11 +204,21 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 		if attacker.ShipTypeID.Valid {
 			attackerShipType, err := s.universe.Type(ctx, attacker.ShipTypeID.Uint)
 			if err != nil {
-				entry.WithError(err).WithField("ship_type_id", attacker.ShipTypeID).Error("encountered looking up type information for attacker ship")
+				entry.WithError(err).WithField("ship_type_id", attacker.ShipTypeID.Uint).Error("encountered looking up type information for attacker ship")
 				continue
 			}
 
 			attacker.ShipGroupID.SetValid(attackerShipType.GroupID)
+		}
+
+		if attacker.WeaponTypeID.Valid {
+			attackerWeaponType, err := s.universe.Type(ctx, attacker.WeaponTypeID.Uint)
+			if err != nil {
+				entry.WithError(err).WithField("weapon_type_id", attacker.WeaponTypeID.Uint).Error("encountered looking up type information for attacker weapon")
+				continue
+			}
+
+			attacker.WeaponGroupID.SetValid(attackerWeaponType.GroupID)
 		}
 	}
 
