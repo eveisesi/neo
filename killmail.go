@@ -8,8 +8,8 @@ import (
 )
 
 type KillmailRepository interface {
-	AllKillmails(ctx context.Context, coreMods []Modifier, vicMods []Modifier, attMods []Modifier) ([]*Killmail, error)
 	Killmail(ctx context.Context, id uint) (*Killmail, error)
+	Killmails(ctx context.Context, coreMods []Modifier, vicMods []Modifier, attMods []Modifier) ([]*Killmail, error)
 	Create(ctx context.Context, killmail *Killmail) (*Killmail, error)
 	CreateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
 	Update(ctx context.Context, id uint, killmail *Killmail) error
@@ -18,33 +18,6 @@ type KillmailRepository interface {
 	Exists(ctx context.Context, id uint) (bool, error)
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
 	Recalculable(ctx context.Context, limit int, after uint) ([]*Killmail, error)
-
-	ByIDs(ctx context.Context, ids []uint) ([]*Killmail, error)
-	ByCharacterID(ctx context.Context, id uint64) ([]*Killmail, error)
-	ByCorporationID(ctx context.Context, id uint) ([]*Killmail, error)
-	ByAllianceID(ctx context.Context, id uint) ([]*Killmail, error)
-	ByShipID(ctx context.Context, id uint) ([]*Killmail, error)
-	ByShipGroupID(ctx context.Context, id uint) ([]*Killmail, error)
-	BySystemID(ctx context.Context, id uint) ([]*Killmail, error)
-	ByConstellationID(ctx context.Context, id uint) ([]*Killmail, error)
-	ByRegionID(ctx context.Context, id uint) ([]*Killmail, error)
-}
-
-type MVRepository interface {
-	All(ctx context.Context, limit, age uint) ([]*Killmail, error)
-	KillsByCharacterID(ctx context.Context, id uint64, limit, age uint) ([]*Killmail, error)
-	LossesByCharacterID(ctx context.Context, id uint64, limit, age uint) ([]*Killmail, error)
-	KillsByCorporationID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	LossesByCorporationID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsByAllianceID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	LossesByAllianceID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsByShipID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	LossesByShipID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsByShipGroupID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	LossesByShipGroupID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsBySystemID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsByConstellationID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
-	KillsByRegionID(ctx context.Context, id uint, limit, age uint) ([]*Killmail, error)
 }
 
 type KillmailAttackerRepository interface {

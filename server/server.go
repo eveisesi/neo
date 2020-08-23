@@ -17,7 +17,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-redis/redis/v7"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vektah/gqlparser/v2/ast"
 
 	core "github.com/eveisesi/neo/app"
@@ -158,9 +157,6 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		gqlhandler.AddTransport(transport.POST{})
 		gqlhandler.AddTransport(transport.Websocket{})
 		gqlhandler.Use(extension.Introspection{})
-		gqlhandler.Use(extension.AutomaticPersistedQuery{
-			Cache: &GQLCache{client: s.redis, ttl: time.Minute * 30},
-		})
 
 		gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
 
@@ -212,8 +208,6 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		r.Use(s.RateLimiter)
 		r.Get("/auth/state", s.handleGetState)
 		r.Post("/auth/token", s.handlePostCode)
-		r.Handle("/top/metrics", promhttp.Handler())
-
 	})
 
 	return r
