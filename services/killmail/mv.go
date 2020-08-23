@@ -2,74 +2,114 @@ package killmail
 
 import (
 	"context"
+	"time"
+
+	"github.com/iancoleman/strcase"
+	"github.com/sirkon/go-format"
 
 	"github.com/eveisesi/neo"
-	"github.com/eveisesi/neo/tools"
-	"github.com/pkg/errors"
 )
 
-func (s *service) MVKAll(ctx context.Context, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.All(ctx, limit, age)
+var coreModFunc = func(age, limit uint) []neo.Modifier {
+	return []neo.Modifier{
+		neo.GreaterThanTime{Column: "killmail_time", Value: time.Now().AddDate(0, 0, 0-int(age))},
+		neo.LimitModifier(int(limit)),
+		neo.OrderModifier{Column: "total_value", Sort: neo.SortDesc},
+	}
 }
 
-func (s *service) MVKByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.LossesByCharacterID(ctx, id, limit, age)
-}
+func (s *service) MostValuable(ctx context.Context, column string, id, age, limit uint) ([]*neo.Killmail, error) {
+	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
+		"action": "all",
+		"type":   strcase.ToLowerCamel(column),
+		"id":     id,
+	})
 
-func (s *service) MVLByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByCharacterID(ctx, id, limit, age)
-}
-
-func (s *service) MVLByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.LossesByCorporationID(ctx, id, limit, age)
-}
-
-func (s *service) MVKByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByCorporationID(ctx, id, limit, age)
-}
-
-func (s *service) MVLByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.LossesByAllianceID(ctx, id, limit, age)
-}
-
-func (s *service) MVKByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByAllianceID(ctx, id, limit, age)
-}
-
-func (s *service) MVKByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByShipID(ctx, id, limit, age)
-}
-
-func (s *service) MVLByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.LossesByShipID(ctx, id, limit, age)
-}
-
-func (s *service) MVKByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	allowed := tools.IsGroupAllowed(id)
-	if !allowed {
-		return nil, errors.New("invalid group id. Only published group ids are allowed")
+	killmails, err := s.KillmailsFromCache(ctx, key)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.mvks.KillsByShipGroupID(ctx, id, limit, age)
-}
-
-func (s *service) MVLByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	allowed := tools.IsGroupAllowed(id)
-	if !allowed {
-		return nil, errors.New("invalid group id. Only published group ids are allowed")
+	if len(killmails) > 0 {
+		return killmails, nil
 	}
 
-	return s.mvks.LossesByShipGroupID(ctx, id, limit, age)
+	mods := coreModFunc(age, limit)
+	if column != "none" && id > 0 {
+		mods = append(mods, neo.EqualToUint{Column: column, Value: id})
+	}
+
+	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, []neo.Modifier{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
+
 }
 
-func (s *service) MVKBySystemID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsBySystemID(ctx, id, limit, age)
+func (s *service) MostValuableKills(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error) {
+
+	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
+		"action": "kills",
+		"type":   strcase.ToLowerCamel(column),
+		"id":     id,
+	})
+
+	killmails, err := s.KillmailsFromCache(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(killmails) > 0 {
+		return killmails, nil
+	}
+
+	mods := coreModFunc(age, limit)
+	attMods := []neo.Modifier{
+		neo.EqualToUint64{Column: column, Value: id},
+	}
+
+	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, attMods)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 }
 
-func (s *service) MVKByConstellationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByConstellationID(ctx, id, limit, age)
-}
+func (s *service) MostValuableLosses(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error) {
 
-func (s *service) MVKByRegionID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error) {
-	return s.mvks.KillsByRegionID(ctx, id, limit, age)
+	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
+		"action": "loses",
+		"type":   strcase.ToLowerCamel(column),
+		"id":     id,
+	})
+
+	killmails, err := s.KillmailsFromCache(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(killmails) > 0 {
+		return killmails, nil
+	}
+
+	mods := coreModFunc(age, limit)
+	vicMods := []neo.Modifier{
+		neo.EqualToUint64{Column: column, Value: id},
+	}
+
+	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, vicMods)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.CacheKillmailSlice(ctx, key, killmails)
+
+	return killmails, err
 }
