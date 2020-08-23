@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/eveisesi/neo"
-
 	"github.com/davecgh/go-spew/spew"
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
@@ -227,31 +225,6 @@ func init() {
 			Name:        "market",
 			Usage:       "Updates market prices in the Db",
 			Subcommands: marketCommands(),
-		},
-		cli.Command{
-			Name: "testing",
-			Action: func(c *cli.Context) error {
-				app := core.New("test-stats", false)
-
-				coreMods := []neo.Modifier{neo.LimitModifier(100), neo.OrderModifier{Column: "id", Sort: "DESC"}}
-				vicMods := []neo.Modifier{neo.EqualToUint64{Column: "alliance_id", Value: 99005338}}
-				attMods := make([]neo.Modifier, 0)
-				// attMods := []neo.Modifier{neo.EqualToUint64{Column: "alliance_id", Value: 1354830081}}
-
-				killmails, err := app.Killmail.AllKillmails(context.Background(), coreMods, vicMods, attMods)
-				if err != nil {
-					app.Logger.WithError(err).Error("encountered error querying killmails")
-				}
-
-				spew.Dump(len(killmails))
-
-				return nil
-			},
-			Flags: []cli.Flag{
-				cli.Uint64Flag{
-					Name: "id",
-				},
-			},
 		},
 	}
 }
