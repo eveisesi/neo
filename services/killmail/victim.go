@@ -46,5 +46,67 @@ func (s *service) VictimByKillmailID(ctx context.Context, id uint) (*neo.Killmai
 }
 
 func (s *service) VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error) {
-	return s.victim.ByKillmailIDs(ctx, ids)
+
+	var victims = make([]*neo.KillmailVictim, 0)
+	var missing = make([]uint, 0)
+	for _, id := range ids {
+
+		key := fmt.Sprintf(neo.REDIS_KILLMAIL_VICTIM, id)
+		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+		if err != nil {
+			missing = append(missing, id)
+			continue
+		}
+
+		if len(result) > 0 {
+
+			innerVictim := new(neo.KillmailVictim)
+			err = json.Unmarshal(result, &innerVictim)
+			if err != nil {
+				missing = append(missing, id)
+				continue
+			}
+
+			victims = append(victims, innerVictim)
+			continue
+
+		}
+
+		missing = append(missing, id)
+
+	}
+
+	if len(missing) == 0 {
+		return victims, nil
+	}
+
+	missingVictimsByKillmailIDs, err := s.victim.ByKillmailIDs(ctx, missing)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(missingVictimsByKillmailIDs) == 0 {
+		return victims, nil
+	}
+
+	victimByKillmailID := make(map[uint]*neo.KillmailVictim)
+	for _, victim := range missingVictimsByKillmailIDs {
+		victimByKillmailID[victim.KillmailID] = victim
+	}
+
+	for i, v := range victimByKillmailID {
+		data, err := json.Marshal(v)
+		if err != nil {
+			continue
+		}
+
+		key := fmt.Sprintf(neo.REDIS_KILLMAIL_ATTACKERS, i)
+
+		_ = s.redis.WithContext(ctx).Set(key, data, time.Minute*120)
+
+	}
+
+	victims = append(victims, missingVictimsByKillmailIDs...)
+
+	return victims, nil
 }
