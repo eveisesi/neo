@@ -114,7 +114,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return alliances, nil
 	}
 
-	dbTypes, err := s.AllianceRespository.AlliancesByAllianceIDs(ctx, missing)
+	dbTypes, err := s.Alliances(ctx, neo.InUint{Column: "id", Value: missing})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -206,8 +206,4 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 	}
 
-}
-
-func (s *service) MemberCountByAllianceID(ctx context.Context, id uint) (int, error) {
-	return s.AllianceRespository.MemberCountByAllianceID(ctx, id)
 }

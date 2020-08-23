@@ -115,7 +115,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 		return corporations, nil
 	}
 
-	dbTypes, err := s.CorporationRespository.CorporationsByCorporationIDs(ctx, missing)
+	dbTypes, err := s.Corporations(ctx, neo.InUint{Column: "id", Value: missing})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
