@@ -16,9 +16,7 @@ func CharacterLoader(ctx context.Context, character character.Service) *generate
 
 			errors := make([]error, len(ids))
 
-			mods := []neo.Modifier{neo.InUint64{Column: "id", Value: ids}}
-
-			rows, err := character.Characters(ctx, mods)
+			rows, err := character.CharactersByCharacterIDs(ctx, ids)
 			if err != nil {
 				errors = append(errors, err)
 				return nil, errors

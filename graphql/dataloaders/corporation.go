@@ -13,7 +13,6 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 		Wait:     defaultWait,
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.Corporation, []error) {
-			corporations := make([]*neo.Corporation, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := corporation.CorporationsByCorporationIDs(ctx, ids)
@@ -27,6 +26,7 @@ func CorporationLoader(ctx context.Context, corporation corporation.Service) *ge
 				corporationByCorporationID[c.ID] = c
 			}
 
+			corporations := make([]*neo.Corporation, len(ids))
 			for i, x := range ids {
 				corporations[i] = corporationByCorporationID[x]
 			}

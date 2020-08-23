@@ -14,7 +14,6 @@ func AllianceLoader(ctx context.Context, alliance alliance.Service) *generated.A
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.Alliance, []error) {
 
-			alliances := make([]*neo.Alliance, len(ids))
 			errors := make([]error, len(ids))
 
 			rows, err := alliance.AlliancesByAllianceIDs(ctx, ids)
@@ -28,6 +27,7 @@ func AllianceLoader(ctx context.Context, alliance alliance.Service) *generated.A
 				allianceByAllianceID[c.ID] = c
 			}
 
+			alliances := make([]*neo.Alliance, len(ids))
 			for i, x := range ids {
 				alliances[i] = allianceByAllianceID[x]
 			}
