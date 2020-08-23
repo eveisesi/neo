@@ -38,28 +38,43 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 	case models.CategoryAll, models.CategoryKill:
 		switch *entity {
 		case models.EntityAll:
-			mails, err = r.Services.Killmail.MVKAll(ctx, uint(*age), uint(*limit))
+			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, uint(*age), uint(*limit))
 		case models.EntityCharacter:
-			mails, err = r.Services.MVKByCharacterID(ctx, uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuableKills(ctx, "character_id", uint64(*id), uint(*age), uint(*limit))
 		case models.EntityCorporation:
-			mails, err = r.Services.MVKByCorporationID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuableKills(ctx, "corporation_id", uint64(*id), uint(*age), uint(*limit))
 		case models.EntityAlliance:
-			mails, err = r.Services.MVKByAllianceID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuableKills(ctx, "alliance_id", uint64(*id), uint(*age), uint(*limit))
 		case models.EntityShip:
-			mails, err = r.Services.MVKByShipID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuableKills(ctx, "ship_type_id", uint64(*id), uint(*age), uint(*limit))
 		case models.EntityShipGroup:
-			mails, err = r.Services.MVKByShipGroupID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuableKills(ctx, "ship_group_id", uint64(*id), uint(*age), uint(*limit))
 		case models.EntitySystem:
-			mails, err = r.Services.MVKBySystemID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "system_solar_id", uint(*id), uint(*age), uint(*limit))
 		case models.EntityConstellation:
-			mails, err = r.Services.MVKByConstellationID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "constellation_id", uint(*id), uint(*age), uint(*limit))
 		case models.EntityRegion:
-			mails, err = r.Services.MVKByRegionID(ctx, uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "region_id", uint(*id), uint(*age), uint(*limit))
 		default:
 			return nil, errors.New("invalid entity")
 		}
 	case models.CategoryLose:
-		return nil, errors.New("not yet supported")
+		switch *entity {
+		case models.EntityAll:
+			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, uint(*age), uint(*limit))
+		case models.EntityCharacter:
+			mails, err = r.Services.MostValuableLosses(ctx, "character_id", uint64(*id), uint(*age), uint(*limit))
+		case models.EntityCorporation:
+			mails, err = r.Services.MostValuableLosses(ctx, "corporation_id", uint64(*id), uint(*age), uint(*limit))
+		case models.EntityAlliance:
+			mails, err = r.Services.MostValuableLosses(ctx, "alliance_id", uint64(*id), uint(*age), uint(*limit))
+		case models.EntityShip:
+			mails, err = r.Services.MostValuableLosses(ctx, "ship_type_id", uint64(*id), uint(*age), uint(*limit))
+		case models.EntityShipGroup:
+			mails, err = r.Services.MostValuableLosses(ctx, "ship_group_id", uint64(*id), uint(*age), uint(*limit))
+		default:
+			return nil, errors.New("invalid entity")
+		}
 	default:
 		return nil, errors.New("invalid category specified")
 	}
@@ -70,36 +85,27 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 
 func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error) {
 
-	if *page > 0 {
-		*page = *page - 1
-		if *page > 10 {
-			*page = 10
-		}
-	} else if *page < 0 {
-		*page = 0
-	}
-
 	var mails []*neo.Killmail
 
 	switch entity {
 	case models.EntityAll:
 		return nil, errors.New("All Type is not supported on this query")
 	case models.EntityCharacter:
-		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), *page)
+		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), uint(*page))
 	case models.EntityCorporation:
-		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), uint(*page))
 	case models.EntityAlliance:
-		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), uint(*page))
 	case models.EntityShip:
-		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), uint(*page))
 	case models.EntityShipGroup:
-		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), uint(*page))
 	case models.EntitySystem:
-		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), uint(*page))
 	case models.EntityConstellation:
-		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), uint(*page))
 	case models.EntityRegion:
-		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), *page)
+		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), uint(*page))
 	default:
 		return nil, errors.New("invalid entity")
 	}
