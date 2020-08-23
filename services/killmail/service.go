@@ -29,18 +29,18 @@ type (
 		DispatchPayload(msg *neo.Message)
 
 		// Killmails
-		AllKillmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error)
 		Killmail(ctx context.Context, id uint) (*neo.Killmail, error)
+		// Killmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error)
 		FullKillmail(ctx context.Context, id uint, withNames bool) (*neo.Killmail, error)
 		RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error)
-		KillmailsByCharacterID(ctx context.Context, id uint64, page int) ([]*neo.Killmail, error)
-		KillmailsByCorporationID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsByAllianceID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsByShipID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsByShipGroupID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsBySystemID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsByConstellationID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
-		KillmailsByRegionID(ctx context.Context, id uint, page int) ([]*neo.Killmail, error)
+		KillmailsByCharacterID(ctx context.Context, id uint64, after uint) ([]*neo.Killmail, error)
+		KillmailsByCorporationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsByAllianceID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsByShipID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsByShipGroupID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsBySystemID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsByConstellationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
+		KillmailsByRegionID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
 
 		// Attackers
 		AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error)
@@ -53,22 +53,9 @@ type (
 		VictimByKillmailID(ctx context.Context, id uint) (*neo.KillmailVictim, error)
 		VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error)
 
-		// MVKs/MVLs
-		MVKAll(ctx context.Context, age, limit uint) ([]*neo.Killmail, error)
-		MVKByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error)
-		MVLByCharacterID(ctx context.Context, id uint64, age, limit uint) ([]*neo.Killmail, error)
-		MVLByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByCorporationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVLByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByAllianceID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVLByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByShipID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVLByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByShipGroupID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-
-		MVKBySystemID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByConstellationID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
-		MVKByRegionID(ctx context.Context, id uint, age, limit uint) ([]*neo.Killmail, error)
+		MostValuable(ctx context.Context, column string, id, age, limit uint) ([]*neo.Killmail, error)
+		MostValuableKills(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error)
+		MostValuableLosses(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error)
 	}
 
 	WSPayload struct {
@@ -100,7 +87,6 @@ type (
 		attackers   neo.KillmailAttackerRepository
 		items       neo.KillmailItemRepository
 		victim      neo.KillmailVictimRepository
-		mvks        neo.MVRepository
 	}
 )
 
@@ -132,7 +118,6 @@ func NewService(
 	attackers neo.KillmailAttackerRepository,
 	items neo.KillmailItemRepository,
 	victim neo.KillmailVictimRepository,
-	mvks neo.MVRepository,
 ) Service {
 	return &service{
 		client,
@@ -152,7 +137,6 @@ func NewService(
 		attackers,
 		items,
 		victim,
-		mvks,
 	}
 }
 
