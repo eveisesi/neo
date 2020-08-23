@@ -35,6 +35,18 @@ func (r *corporationRepository) Corporation(ctx context.Context, id uint) (*neo.
 
 }
 
+func (r *corporationRepository) Corporations(ctx context.Context, mods ...neo.Modifier) ([]*neo.Corporation, error) {
+
+	if len(mods) == 0 {
+		return nil, fmt.Errorf("Atleast one modifier must be passed in")
+	}
+
+	corporations := make([]*neo.Corporation, 0)
+	err := boiler.Corporations(BuildQueryModifiers(boiler.TableNames.Corporations, mods...)...).Bind(ctx, r.db, &corporations)
+	return corporations, err
+
+}
+
 func (r *corporationRepository) Expired(ctx context.Context) ([]*neo.Corporation, error) {
 
 	var corporations = make([]*neo.Corporation, 0)
@@ -86,20 +98,4 @@ func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint, 
 
 	return corporation, errors.Wrap(err, "unable to copy orm to corporation")
 
-}
-
-func (r *corporationRepository) CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error) {
-
-	var corporations = make([]*neo.Corporation, 0)
-	err := boiler.Corporations(
-		qm.WhereIn(
-			fmt.Sprintf(
-				"%s IN ?",
-				boiler.CorporationColumns.ID,
-			),
-			convertSliceUintToSliceInterface(ids)...,
-		),
-	).Bind(ctx, r.db, &corporations)
-
-	return corporations, err
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/queries/qm"
 )
 
 type allianceRepository struct {
@@ -35,16 +34,27 @@ func (r *allianceRepository) Alliance(ctx context.Context, id uint) (*neo.Allian
 
 }
 
+func (r *allianceRepository) Alliances(ctx context.Context, mods ...neo.Modifier) ([]*neo.Alliance, error) {
+
+	if len(mods) == 0 {
+		return nil, fmt.Errorf("atleast one modifier must be passed in")
+	}
+
+	alliances := make([]*neo.Alliance, 0)
+	err := boiler.Alliances(BuildQueryModifiers(boiler.TableNames.Alliances, mods...)...).Bind(ctx, r.db, &alliances)
+	return alliances, err
+
+}
+
 func (r *allianceRepository) Expired(ctx context.Context) ([]*neo.Alliance, error) {
 
-	var alliances = make([]*neo.Alliance, 0)
-	err := boiler.Alliances(
-		boiler.AllianceWhere.CachedUntil.LT(time.Now()),
-		qm.OrderBy(boiler.AllianceColumns.CachedUntil+" ASC"),
-		qm.Limit(1000),
-	).Bind(ctx, r.db, &alliances)
+	mods := []neo.Modifier{
+		neo.LessThanTime{Column: "CacheUntil", Value: time.Now()},
+		neo.LimitModifier(1000),
+		neo.OrderModifier{Column: "CacheUntil", Sort: neo.SortAsc},
+	}
 
-	return alliances, err
+	return r.Alliances(ctx, mods...)
 
 }
 
@@ -86,22 +96,6 @@ func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint, allian
 
 	return alliance, errors.Wrap(err, "unable to copy orm to alliance")
 
-}
-
-func (r *allianceRepository) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error) {
-
-	var alliances = make([]*neo.Alliance, 0)
-	err := boiler.Alliances(
-		qm.WhereIn(
-			fmt.Sprintf(
-				"%s IN ?",
-				boiler.AllianceColumns.ID,
-			),
-			convertSliceUintToSliceInterface(ids)...,
-		),
-	).Bind(ctx, r.db, &alliances)
-
-	return alliances, err
 }
 
 func (r *allianceRepository) MemberCountByAllianceID(ctx context.Context, id uint) (int, error) {
