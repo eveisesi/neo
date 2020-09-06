@@ -2,13 +2,13 @@ package universe
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) BlueprintMaterials(ctx context.Context, id uint) ([]*neo.BlueprintMaterial, error) {
@@ -64,7 +64,7 @@ func (s *service) BlueprintProduct(ctx context.Context, id uint) (*neo.Blueprint
 	}
 
 	product, err = s.BlueprintRepository.BlueprintProduct(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for prodict")
 	}
 
@@ -98,7 +98,7 @@ func (s *service) BlueprintProductByProductTypeID(ctx context.Context, id uint) 
 	}
 
 	product, err = s.BlueprintRepository.BlueprintProductByProductTypeID(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for prodict")
 	}
 

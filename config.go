@@ -2,12 +2,21 @@ package neo
 
 type Config struct {
 	// db configuration
-	DBUser         string `required:"true"`
-	DBPass         string `required:"true"`
-	DBHost         string `required:"true"`
-	DBName         string `required:"true"`
-	DBReadTimeout  int    `default:"30"`
-	DBWriteTimeout int    `default:"30"`
+	MySQL struct {
+		DBUser         string `required:"true"`
+		DBPass         string `required:"true"`
+		DBHost         string `required:"true"`
+		DBName         string `required:"true"`
+		DBReadTimeout  int    `default:"30"`
+		DBWriteTimeout int    `default:"30"`
+	}
+	Mongo struct {
+		DBUser     string `required:"true"`
+		DBPass     string `required:"true"`
+		DBHost     string `required:"true"`
+		DBName     string `required:"true"`
+		DBAuthMech string `required:"true"`
+	}
 
 	Env string `required:"true"`
 
@@ -38,12 +47,7 @@ type Config struct {
 	SlackNotifierValueThreshold int    `envconfig:"SLACK_NOTIFIER_THRESHOLD"`
 	SlackActionBaseURL          string `envconfig:"SLACK_ACTION_BASE_URL"`
 
-	SpacesEnabled  bool   `envconfig:"SPACES_ENABLED" required:"true"`
-	SpacesBucket   string `envconfig:"SPACES_BUCKET"`
-	SpacesEndpoint string `envconfig:"SPACES_ENDPOINT"`
-	SpacesRegion   string `envconfig:"SPACES_REGION"`
-	SpacesKey      string `envconfig:"SPACES_KEY"`
-	SpacesSecret   string `envconfig:"SPACES_SECRET"`
+	BackupEnabled bool `envconfig:"BACKUP_ENABLED" required:"true"`
 
 	NewRelicAppName     string `envconfig:"NEW_RELIC_APP_NAME" required:"true"`
 	NewRelicLicensenKey string `envconfig:"NEW_RELIC_LICENSE_KEY" required:"true"`

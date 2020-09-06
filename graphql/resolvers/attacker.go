@@ -14,36 +14,36 @@ func (r *Resolver) KillmailAttacker() service.KillmailAttackerResolver {
 type killmailAttackerResolver struct{ *Resolver }
 
 func (r *killmailAttackerResolver) Alliance(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Alliance, error) {
-	if !obj.AllianceID.Valid {
+	if obj.AllianceID == nil {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
+	return r.Dataloader(ctx).AllianceLoader.Load(*obj.AllianceID)
 }
 
 func (r *killmailAttackerResolver) Corporation(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Corporation, error) {
-	if !obj.CorporationID.Valid {
+	if obj.CorporationID == nil {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).CorporationLoader.Load(obj.CorporationID.Uint)
+	return r.Dataloader(ctx).CorporationLoader.Load(*obj.CorporationID)
 }
 
 func (r *killmailAttackerResolver) Character(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Character, error) {
-	if !obj.CharacterID.Valid {
+	if obj.CharacterID == nil {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).CharacterLoader.Load(obj.CharacterID.Uint64)
+	return r.Dataloader(ctx).CharacterLoader.Load(*obj.CharacterID)
 }
 
 func (r *killmailAttackerResolver) Ship(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error) {
-	if !obj.ShipTypeID.Valid {
+	if obj.ShipTypeID == nil {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID.Uint)
+	return r.Dataloader(ctx).TypeLoader.Load(*obj.ShipTypeID)
 }
 
 func (r *killmailAttackerResolver) Weapon(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error) {
-	if !obj.WeaponTypeID.Valid {
+	if obj.WeaponTypeID == nil {
 		return nil, nil
 	}
-	return r.Dataloader(ctx).TypeLoader.Load(obj.WeaponTypeID.Uint)
+	return r.Dataloader(ctx).TypeLoader.Load(*obj.WeaponTypeID)
 }

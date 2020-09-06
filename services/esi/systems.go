@@ -28,7 +28,7 @@ type (
 	}
 )
 
-func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, *Meta) {
+func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, Meta) {
 
 	var path = fmt.Sprintf("/v4/universe/systems/%d/", id)
 
@@ -38,7 +38,7 @@ func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo
 	}
 
 	response, m := s.request(ctx, request)
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m
 	}
 
@@ -54,10 +54,10 @@ func (s *service) GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo
 		ID:              esisystem.ID,
 		Name:            esisystem.Name,
 		ConstellationID: esisystem.ConstellationID,
-		SunTypeID:       esisystem.SunTypeID,
-		PosX:            esisystem.Position.X,
-		PosY:            esisystem.Position.Y,
-		PosZ:            esisystem.Position.Z,
-		Security:        esisystem.Security,
+		// SunTypeID:       esisystem.SunTypeID,
+		// PosX:     esisystem.Position.X,
+		// PosY:     esisystem.Position.Y,
+		// PosZ:     esisystem.Position.Z,
+		Security: esisystem.Security,
 	}, m
 }

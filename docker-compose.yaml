@@ -12,6 +12,7 @@ services:
             - .env
         volumes:
             - ./logs:/app/logs
+            - ./static:/app/static
     serve:
         image: ${DOCKER_IMAGE}
         network_mode: "host"

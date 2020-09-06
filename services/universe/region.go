@@ -2,13 +2,13 @@ package universe
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Region(ctx context.Context, id uint) (*neo.Region, error) {
@@ -31,7 +31,7 @@ func (s *service) Region(ctx context.Context, id uint) (*neo.Region, error) {
 	}
 
 	region, err = s.UniverseRepository.Region(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
@@ -73,7 +73,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Re
 		return regions, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, region := range regions {
@@ -91,7 +91,9 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Re
 		return regions, nil
 	}
 
-	dbRegions, err := s.UniverseRepository.RegionsByRegionIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbRegions, err := s.UniverseRepository.Regions(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

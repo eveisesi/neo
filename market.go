@@ -13,13 +13,14 @@ type MarketRepository interface {
 	HistoricalRecord(ctx context.Context, id uint, date time.Time, limit null.Int) ([]*HistoricalRecord, error)
 	CreateHistoricalRecord(ctx context.Context, records []*HistoricalRecord) ([]*HistoricalRecord, error)
 
-	AvgOfTypeLowPrice(ctx context.Context, id uint, days int, date time.Time) (null.Float64, error)
+	Price(ctx context.Context, typeID uint, date string) (*HistoricalRecord, error)
+	Prices(ctx context.Context, mods ...Modifier) ([]*HistoricalRecord, error)
 }
 
 type HistoricalRecord struct {
-	TypeID uint    `db:"type_id" json:"typeID"`
-	Date   *Date   `db:"date" json:"date"`
-	Price  float64 `db:"price" json:"average"`
+	TypeID uint    `bson:"typeID" json:"typeID"`
+	Date   string  `bson:"date" json:"date"`
+	Price  float64 `bson:"price" json:"average"`
 }
 
 type PriceBuilt struct {

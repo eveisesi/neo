@@ -16,10 +16,8 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/scalar"
-	null1 "github.com/eveisesi/neo/graphql/scalar/null"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
-	"github.com/volatiletech/null"
 )
 
 // region    ************************** generated!.gotpl **************************
@@ -118,7 +116,6 @@ type ComplexityRoot struct {
 		DamageDone     func(childComplexity int) int
 		FactionID      func(childComplexity int) int
 		FinalBlow      func(childComplexity int) int
-		ID             func(childComplexity int) int
 		KillmailID     func(childComplexity int) int
 		SecurityStatus func(childComplexity int) int
 		Ship           func(childComplexity int) int
@@ -129,25 +126,17 @@ type ComplexityRoot struct {
 
 	KillmailItem struct {
 		Flag              func(childComplexity int) int
-		ID                func(childComplexity int) int
 		IsParent          func(childComplexity int) int
 		ItemTypeID        func(childComplexity int) int
 		ItemValue         func(childComplexity int) int
 		Items             func(childComplexity int) int
 		KillmailID        func(childComplexity int) int
-		ParentID          func(childComplexity int) int
 		QuantityDestroyed func(childComplexity int) int
 		QuantityDropped   func(childComplexity int) int
 		Singleton         func(childComplexity int) int
 		TotalValue        func(childComplexity int) int
 		Type              func(childComplexity int) int
 		Typeflag          func(childComplexity int) int
-	}
-
-	KillmailPosition struct {
-		X func(childComplexity int) int
-		Y func(childComplexity int) int
-		Z func(childComplexity int) int
 	}
 
 	KillmailVictim struct {
@@ -159,8 +148,6 @@ type ComplexityRoot struct {
 		CorporationID func(childComplexity int) int
 		DamageTaken   func(childComplexity int) int
 		FactionID     func(childComplexity int) int
-		Fitted        func(childComplexity int) int
-		ID            func(childComplexity int) int
 		Items         func(childComplexity int) int
 		KillmailID    func(childComplexity int) int
 		Position      func(childComplexity int) int
@@ -171,6 +158,12 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		MutationPlaceholder func(childComplexity int) int
+	}
+
+	Position struct {
+		X func(childComplexity int) int
+		Y func(childComplexity int) int
+		Z func(childComplexity int) int
 	}
 
 	Query struct {
@@ -266,8 +259,6 @@ type CorporationResolver interface {
 }
 type KillmailResolver interface {
 	System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error)
-	Attackers(ctx context.Context, obj *neo.Killmail) ([]*neo.KillmailAttacker, error)
-	Victim(ctx context.Context, obj *neo.Killmail) (*neo.KillmailVictim, error)
 }
 type KillmailAttackerResolver interface {
 	Alliance(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Alliance, error)
@@ -277,7 +268,6 @@ type KillmailAttackerResolver interface {
 	Weapon(ctx context.Context, obj *neo.KillmailAttacker) (*neo.Type, error)
 }
 type KillmailItemResolver interface {
-	Type(ctx context.Context, obj *neo.KillmailItem) (*neo.Type, error)
 	Typeflag(ctx context.Context, obj *neo.KillmailItem) (*neo.TypeFlag, error)
 }
 type KillmailVictimResolver interface {
@@ -285,9 +275,6 @@ type KillmailVictimResolver interface {
 	Corporation(ctx context.Context, obj *neo.KillmailVictim) (*neo.Corporation, error)
 	Character(ctx context.Context, obj *neo.KillmailVictim) (*neo.Character, error)
 	Ship(ctx context.Context, obj *neo.KillmailVictim) (*neo.Type, error)
-	Position(ctx context.Context, obj *neo.KillmailVictim) (*neo.KillmailPosition, error)
-	Items(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error)
-	Fitted(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error)
 }
 type MutationResolver interface {
 	MutationPlaceholder(ctx context.Context) (bool, error)
@@ -636,13 +623,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailAttacker.FinalBlow(childComplexity), true
 
-	case "KillmailAttacker.id":
-		if e.complexity.KillmailAttacker.ID == nil {
-			break
-		}
-
-		return e.complexity.KillmailAttacker.ID(childComplexity), true
-
 	case "KillmailAttacker.killmailID":
 		if e.complexity.KillmailAttacker.KillmailID == nil {
 			break
@@ -692,13 +672,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailItem.Flag(childComplexity), true
 
-	case "KillmailItem.id":
-		if e.complexity.KillmailItem.ID == nil {
-			break
-		}
-
-		return e.complexity.KillmailItem.ID(childComplexity), true
-
 	case "KillmailItem.isParent":
 		if e.complexity.KillmailItem.IsParent == nil {
 			break
@@ -733,13 +706,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KillmailItem.KillmailID(childComplexity), true
-
-	case "KillmailItem.parentID":
-		if e.complexity.KillmailItem.ParentID == nil {
-			break
-		}
-
-		return e.complexity.KillmailItem.ParentID(childComplexity), true
 
 	case "KillmailItem.quantityDestroyed":
 		if e.complexity.KillmailItem.QuantityDestroyed == nil {
@@ -782,27 +748,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KillmailItem.Typeflag(childComplexity), true
-
-	case "KillmailPosition.x":
-		if e.complexity.KillmailPosition.X == nil {
-			break
-		}
-
-		return e.complexity.KillmailPosition.X(childComplexity), true
-
-	case "KillmailPosition.y":
-		if e.complexity.KillmailPosition.Y == nil {
-			break
-		}
-
-		return e.complexity.KillmailPosition.Y(childComplexity), true
-
-	case "KillmailPosition.z":
-		if e.complexity.KillmailPosition.Z == nil {
-			break
-		}
-
-		return e.complexity.KillmailPosition.Z(childComplexity), true
 
 	case "KillmailVictim.alliance":
 		if e.complexity.KillmailVictim.Alliance == nil {
@@ -860,20 +805,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KillmailVictim.FactionID(childComplexity), true
 
-	case "KillmailVictim.fitted":
-		if e.complexity.KillmailVictim.Fitted == nil {
-			break
-		}
-
-		return e.complexity.KillmailVictim.Fitted(childComplexity), true
-
-	case "KillmailVictim.id":
-		if e.complexity.KillmailVictim.ID == nil {
-			break
-		}
-
-		return e.complexity.KillmailVictim.ID(childComplexity), true
-
 	case "KillmailVictim.items":
 		if e.complexity.KillmailVictim.Items == nil {
 			break
@@ -922,6 +853,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.MutationPlaceholder(childComplexity), true
+
+	case "Position.x":
+		if e.complexity.Position.X == nil {
+			break
+		}
+
+		return e.complexity.Position.X(childComplexity), true
+
+	case "Position.y":
+		if e.complexity.Position.Y == nil {
+			break
+		}
+
+		return e.complexity.Position.Y(childComplexity), true
+
+	case "Position.z":
+		if e.complexity.Position.Z == nil {
+			break
+		}
+
+		return e.complexity.Position.Z(childComplexity), true
 
 	case "Query.allianceByAllianceID":
 		if e.complexity.Query.AllianceByAllianceID == nil {
@@ -1462,7 +1414,11 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
         age: Int = 7
         limit: Int = 6
     ): [Killmail]!
-    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+    killmailsByEntityID(
+        entity: Entity!
+        id: Int!
+        page: Int = 999999999
+    ): [Killmail]!
 }
 
 enum Category {
@@ -1499,13 +1455,12 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     killmailTime: Time!
 
     system: SolarSystem! @goField(forceResolver: true)
-    attackers: [KillmailAttacker]! @goField(forceResolver: true)
-    victim: KillmailVictim! @goField(forceResolver: true)
+    attackers: [KillmailAttacker]!
+    victim: KillmailVictim!
 }
 
 type KillmailAttacker
-    @goModel(model: "github.com/eveisesi/neo.KillmailAttacker") {
-    id: Int!
+@goModel(model: "github.com/eveisesi/neo.KillmailAttacker") {
     killmailID: Int!
     allianceID: Int
     characterID: Int
@@ -1525,7 +1480,6 @@ type KillmailAttacker
 }
 
 type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
-    id: Int!
     killmailID: Int!
     allianceID: Int
     characterID: Int
@@ -1539,14 +1493,12 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     corporation: Corporation @goField(forceResolver: true)
     character: Character @goField(forceResolver: true)
     ship: Type @goField(forceResolver: true)
-    position: KillmailPosition @goField(forceResolver: true)
-    items: [KillmailItem]! @goField(forceResolver: true)
-    fitted: [KillmailItem]! @goField(forceResolver: true)
+    position: Position
+    items: [KillmailItem]!
+    # fitted: [KillmailItem]! @goField(forceResolver: true)
 }
 
 type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
-    id: Int!
-    parentID: Int
     killmailID: Int!
     flag: Int!
     itemTypeID: Int!
@@ -1562,8 +1514,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     items: [KillmailItem]!
 }
 
-type KillmailPosition
-    @goModel(model: "github.com/eveisesi/neo.KillmailPosition") {
+type Position @goModel(model: "github.com/eveisesi/neo.Position") {
     x: Float
     y: Float
     z: Float
@@ -2370,9 +2321,9 @@ func (ec *executionContext) _Constellation_factionID(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Int64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Constellation_region(ctx context.Context, field graphql.CollectedField, obj *neo.Constellation) (ret graphql.Marshaler) {
@@ -2670,9 +2621,9 @@ func (ec *executionContext) _Killmail_moonID(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Killmail_solarSystemID(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
@@ -2735,9 +2686,9 @@ func (ec *executionContext) _Killmail_warID(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Killmail_isNPC(ctx context.Context, field graphql.CollectedField, obj *neo.Killmail) (ret graphql.Marshaler) {
@@ -3057,13 +3008,13 @@ func (ec *executionContext) _Killmail_attackers(ctx context.Context, field graph
 		Object:   "Killmail",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Killmail().Attackers(rctx, obj)
+		return obj.Attackers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3091,13 +3042,13 @@ func (ec *executionContext) _Killmail_victim(ctx context.Context, field graphql.
 		Object:   "Killmail",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Killmail().Victim(rctx, obj)
+		return obj.Victim, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3112,40 +3063,6 @@ func (ec *executionContext) _Killmail_victim(ctx context.Context, field graphql.
 	res := resTmp.(*neo.KillmailVictim)
 	fc.Result = res
 	return ec.marshalNKillmailVictim2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailVictim(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailAttacker_id(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailAttacker",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint)
-	fc.Result = res
-	return ec.marshalNInt2uint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_killmailID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3208,9 +3125,9 @@ func (ec *executionContext) _KillmailAttacker_allianceID(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_characterID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3239,9 +3156,9 @@ func (ec *executionContext) _KillmailAttacker_characterID(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint64)
+	res := resTmp.(*uint64)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_corporationID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3270,9 +3187,9 @@ func (ec *executionContext) _KillmailAttacker_corporationID(ctx context.Context,
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_factionID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3301,9 +3218,9 @@ func (ec *executionContext) _KillmailAttacker_factionID(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_damageDone(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3434,9 +3351,9 @@ func (ec *executionContext) _KillmailAttacker_shipTypeID(ctx context.Context, fi
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_weaponTypeID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3465,9 +3382,9 @@ func (ec *executionContext) _KillmailAttacker_weaponTypeID(ctx context.Context, 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailAttacker_alliance(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailAttacker) (ret graphql.Marshaler) {
@@ -3625,71 +3542,6 @@ func (ec *executionContext) _KillmailAttacker_weapon(ctx context.Context, field 
 	return ec.marshalOType2ᚖgithubᚗcomᚋeveisesiᚋneoᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KillmailItem_id(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailItem",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint)
-	fc.Result = res
-	return ec.marshalNInt2uint(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailItem_parentID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailItem",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ParentID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(null.Uint)
-	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _KillmailItem_killmailID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -3818,9 +3670,9 @@ func (ec *executionContext) _KillmailItem_quantityDropped(ctx context.Context, f
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailItem_quantityDestroyed(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
@@ -3849,9 +3701,9 @@ func (ec *executionContext) _KillmailItem_quantityDestroyed(ctx context.Context,
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailItem_singleton(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailItem) (ret graphql.Marshaler) {
@@ -4001,13 +3853,13 @@ func (ec *executionContext) _KillmailItem_type(ctx context.Context, field graphq
 		Object:   "KillmailItem",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KillmailItem().Type(rctx, obj)
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4086,133 +3938,6 @@ func (ec *executionContext) _KillmailItem_items(ctx context.Context, field graph
 	return ec.marshalNKillmailItem2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailItem(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _KillmailPosition_x(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailPosition) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailPosition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.X, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(null.Float64)
-	fc.Result = res
-	return ec.marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailPosition_y(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailPosition) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailPosition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Y, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(null.Float64)
-	fc.Result = res
-	return ec.marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailPosition_z(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailPosition) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailPosition",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Z, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(null.Float64)
-	fc.Result = res
-	return ec.marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailVictim_id(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailVictim",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(uint)
-	fc.Result = res
-	return ec.marshalNInt2uint(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _KillmailVictim_killmailID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4273,9 +3998,9 @@ func (ec *executionContext) _KillmailVictim_allianceID(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_characterID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4304,9 +4029,9 @@ func (ec *executionContext) _KillmailVictim_characterID(ctx context.Context, fie
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint64)
+	res := resTmp.(*uint64)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_corporationID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4338,9 +4063,9 @@ func (ec *executionContext) _KillmailVictim_corporationID(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalNInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_factionID(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4369,9 +4094,9 @@ func (ec *executionContext) _KillmailVictim_factionID(ctx context.Context, field
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_damageTaken(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4611,13 +4336,13 @@ func (ec *executionContext) _KillmailVictim_position(ctx context.Context, field 
 		Object:   "KillmailVictim",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KillmailVictim().Position(rctx, obj)
+		return obj.Position, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4626,9 +4351,9 @@ func (ec *executionContext) _KillmailVictim_position(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*neo.KillmailPosition)
+	res := resTmp.(*neo.Position)
 	fc.Result = res
-	return ec.marshalOKillmailPosition2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailPosition(ctx, field.Selections, res)
+	return ec.marshalOPosition2ᚖgithubᚗcomᚋeveisesiᚋneoᚐPosition(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _KillmailVictim_items(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
@@ -4642,47 +4367,13 @@ func (ec *executionContext) _KillmailVictim_items(ctx context.Context, field gra
 		Object:   "KillmailVictim",
 		Field:    field,
 		Args:     nil,
-		IsMethod: true,
+		IsMethod: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KillmailVictim().Items(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*neo.KillmailItem)
-	fc.Result = res
-	return ec.marshalNKillmailItem2ᚕᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailItem(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _KillmailVictim_fitted(ctx context.Context, field graphql.CollectedField, obj *neo.KillmailVictim) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "KillmailVictim",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.KillmailVictim().Fitted(rctx, obj)
+		return obj.Items, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4731,6 +4422,99 @@ func (ec *executionContext) _Mutation_mutationPlaceholder(ctx context.Context, f
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_x(ctx context.Context, field graphql.CollectedField, obj *neo.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.X, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_y(ctx context.Context, field graphql.CollectedField, obj *neo.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Y, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Position_z(ctx context.Context, field graphql.CollectedField, obj *neo.Position) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Position",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Z, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*float64)
+	fc.Result = res
+	return ec.marshalOFloat2ᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_queryPlaceholder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5776,9 +5560,9 @@ func (ec *executionContext) _SolarSystem_factionID(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Int64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SolarSystem_sunTypeID(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
@@ -5807,9 +5591,9 @@ func (ec *executionContext) _SolarSystem_sunTypeID(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Int64)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SolarSystem_security(ctx context.Context, field graphql.CollectedField, obj *neo.SolarSystem) (ret graphql.Marshaler) {
@@ -6076,9 +5860,9 @@ func (ec *executionContext) _Type_marketGroupID(ctx context.Context, field graph
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(null.Uint)
+	res := resTmp.(*uint)
 	fc.Result = res
-	return ec.marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx, field.Selections, res)
+	return ec.marshalOInt2ᚖuint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Type_group(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
@@ -6348,9 +6132,9 @@ func (ec *executionContext) _TypeCategory_published(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(null.Bool)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx, field.Selections, res)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TypeFlag_id(ctx context.Context, field graphql.CollectedField, obj *neo.TypeFlag) (ret graphql.Marshaler) {
@@ -7981,33 +7765,15 @@ func (ec *executionContext) _Killmail(ctx context.Context, sel ast.SelectionSet,
 				return res
 			})
 		case "attackers":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Killmail_attackers(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Killmail_attackers(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "victim":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Killmail_victim(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Killmail_victim(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8030,11 +7796,6 @@ func (ec *executionContext) _KillmailAttacker(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("KillmailAttacker")
-		case "id":
-			out.Values[i] = ec._KillmailAttacker_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "killmailID":
 			out.Values[i] = ec._KillmailAttacker_killmailID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8144,13 +7905,6 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("KillmailItem")
-		case "id":
-			out.Values[i] = ec._KillmailItem_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "parentID":
-			out.Values[i] = ec._KillmailItem_parentID(ctx, field, obj)
 		case "killmailID":
 			out.Values[i] = ec._KillmailItem_killmailID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8191,16 +7945,7 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "type":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._KillmailItem_type(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._KillmailItem_type(ctx, field, obj)
 		case "typeflag":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -8228,34 +7973,6 @@ func (ec *executionContext) _KillmailItem(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var killmailPositionImplementors = []string{"KillmailPosition"}
-
-func (ec *executionContext) _KillmailPosition(ctx context.Context, sel ast.SelectionSet, obj *neo.KillmailPosition) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, killmailPositionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("KillmailPosition")
-		case "x":
-			out.Values[i] = ec._KillmailPosition_x(ctx, field, obj)
-		case "y":
-			out.Values[i] = ec._KillmailPosition_y(ctx, field, obj)
-		case "z":
-			out.Values[i] = ec._KillmailPosition_z(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var killmailVictimImplementors = []string{"KillmailVictim"}
 
 func (ec *executionContext) _KillmailVictim(ctx context.Context, sel ast.SelectionSet, obj *neo.KillmailVictim) graphql.Marshaler {
@@ -8267,11 +7984,6 @@ func (ec *executionContext) _KillmailVictim(ctx context.Context, sel ast.Selecti
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("KillmailVictim")
-		case "id":
-			out.Values[i] = ec._KillmailVictim_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "killmailID":
 			out.Values[i] = ec._KillmailVictim_killmailID(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -8348,44 +8060,12 @@ func (ec *executionContext) _KillmailVictim(ctx context.Context, sel ast.Selecti
 				return res
 			})
 		case "position":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._KillmailVictim_position(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._KillmailVictim_position(ctx, field, obj)
 		case "items":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._KillmailVictim_items(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "fitted":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._KillmailVictim_fitted(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._KillmailVictim_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8417,6 +8097,34 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var positionImplementors = []string{"Position"}
+
+func (ec *executionContext) _Position(ctx context.Context, sel ast.SelectionSet, obj *neo.Position) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, positionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Position")
+		case "x":
+			out.Values[i] = ec._Position_x(ctx, field, obj)
+		case "y":
+			out.Values[i] = ec._Position_y(ctx, field, obj)
+		case "z":
+			out.Values[i] = ec._Position_z(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -9324,20 +9032,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx context.Context, v interface{}) (null.Bool, error) {
-	return null1.UnmarshalBool(v)
-}
-
-func (ec *executionContext) marshalNBoolean2githubᚗcomᚋvolatiletechᚋnullᚐBool(ctx context.Context, sel ast.SelectionSet, v null.Bool) graphql.Marshaler {
-	res := null1.MarshalBool(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) marshalNCharacter2githubᚗcomᚋeveisesiᚋneoᚐCharacter(ctx context.Context, sel ast.SelectionSet, v neo.Character) graphql.Marshaler {
 	return ec._Character(ctx, sel, &v)
 }
@@ -9395,20 +9089,6 @@ func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
 	res := graphql.MarshalFloat(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx context.Context, v interface{}) (null.Uint, error) {
-	return null1.UnmarshalUint(v)
-}
-
-func (ec *executionContext) marshalNInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx context.Context, sel ast.SelectionSet, v null.Uint) graphql.Marshaler {
-	res := null1.MarshalUint(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -9485,6 +9165,24 @@ func (ec *executionContext) marshalNInt2uint8(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNInt2ᚖuint(ctx context.Context, v interface{}) (*uint, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalNInt2uint(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalNInt2ᚖuint(ctx context.Context, sel ast.SelectionSet, v *uint) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec.marshalNInt2uint(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalNKillmail2githubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v neo.Killmail) graphql.Marshaler {
@@ -10128,36 +9826,27 @@ func (ec *executionContext) marshalOEntity2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgr
 	return v
 }
 
-func (ec *executionContext) unmarshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, v interface{}) (null.Float64, error) {
-	return null1.UnmarshalFloat64(v)
+func (ec *executionContext) unmarshalOFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	return graphql.UnmarshalFloat(v)
 }
 
-func (ec *executionContext) marshalOFloat2githubᚗcomᚋvolatiletechᚋnullᚐFloat64(ctx context.Context, sel ast.SelectionSet, v null.Float64) graphql.Marshaler {
-	return null1.MarshalFloat64(v)
+func (ec *executionContext) marshalOFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	return graphql.MarshalFloat(v)
 }
 
-func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx context.Context, v interface{}) (null.Int64, error) {
-	return null1.UnmarshalInt64(v)
+func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v interface{}) (*float64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFloat2float64(ctx, v)
+	return &res, err
 }
 
-func (ec *executionContext) marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐInt64(ctx context.Context, sel ast.SelectionSet, v null.Int64) graphql.Marshaler {
-	return null1.MarshalInt64(v)
-}
-
-func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx context.Context, v interface{}) (null.Uint, error) {
-	return null1.UnmarshalUint(v)
-}
-
-func (ec *executionContext) marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint(ctx context.Context, sel ast.SelectionSet, v null.Uint) graphql.Marshaler {
-	return null1.MarshalUint(v)
-}
-
-func (ec *executionContext) unmarshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx context.Context, v interface{}) (null.Uint64, error) {
-	return null1.UnmarshalUint64(v)
-}
-
-func (ec *executionContext) marshalOInt2githubᚗcomᚋvolatiletechᚋnullᚐUint64(ctx context.Context, sel ast.SelectionSet, v null.Uint64) graphql.Marshaler {
-	return null1.MarshalUint64(v)
+func (ec *executionContext) marshalOFloat2ᚖfloat64(ctx context.Context, sel ast.SelectionSet, v *float64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOFloat2float64(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
@@ -10166,6 +9855,22 @@ func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}
 
 func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	return graphql.MarshalInt(v)
+}
+
+func (ec *executionContext) unmarshalOInt2uint(ctx context.Context, v interface{}) (uint, error) {
+	return scalar.UnmarshalUint(v)
+}
+
+func (ec *executionContext) marshalOInt2uint(ctx context.Context, sel ast.SelectionSet, v uint) graphql.Marshaler {
+	return scalar.MarshalUint(v)
+}
+
+func (ec *executionContext) unmarshalOInt2uint64(ctx context.Context, v interface{}) (uint64, error) {
+	return scalar.UnmarshalUint64(v)
+}
+
+func (ec *executionContext) marshalOInt2uint64(ctx context.Context, sel ast.SelectionSet, v uint64) graphql.Marshaler {
+	return scalar.MarshalUint64(v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
@@ -10181,6 +9886,36 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 	return ec.marshalOInt2int(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖuint(ctx context.Context, v interface{}) (*uint, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2uint(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖuint(ctx context.Context, sel ast.SelectionSet, v *uint) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2uint(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖuint64(ctx context.Context, v interface{}) (*uint64, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOInt2uint64(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOInt2ᚖuint64(ctx context.Context, sel ast.SelectionSet, v *uint64) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOInt2uint64(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOKillmail2githubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v neo.Killmail) graphql.Marshaler {
@@ -10216,15 +9951,15 @@ func (ec *executionContext) marshalOKillmailItem2ᚖgithubᚗcomᚋeveisesiᚋne
 	return ec._KillmailItem(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOKillmailPosition2githubᚗcomᚋeveisesiᚋneoᚐKillmailPosition(ctx context.Context, sel ast.SelectionSet, v neo.KillmailPosition) graphql.Marshaler {
-	return ec._KillmailPosition(ctx, sel, &v)
+func (ec *executionContext) marshalOPosition2githubᚗcomᚋeveisesiᚋneoᚐPosition(ctx context.Context, sel ast.SelectionSet, v neo.Position) graphql.Marshaler {
+	return ec._Position(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalOKillmailPosition2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmailPosition(ctx context.Context, sel ast.SelectionSet, v *neo.KillmailPosition) graphql.Marshaler {
+func (ec *executionContext) marshalOPosition2ᚖgithubᚗcomᚋeveisesiᚋneoᚐPosition(ctx context.Context, sel ast.SelectionSet, v *neo.Position) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._KillmailPosition(ctx, sel, v)
+	return ec._Position(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOSearchableEntity2githubᚗcomᚋeveisesiᚋneoᚐSearchableEntity(ctx context.Context, sel ast.SelectionSet, v neo.SearchableEntity) graphql.Marshaler {

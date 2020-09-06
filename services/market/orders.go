@@ -2,14 +2,14 @@ package market
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"sort"
 	"time"
 
-	"github.com/volatiletech/null"
-
 	"github.com/korovkin/limiter"
+	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/volatiletech/null"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/eveisesi/neo"
 )
@@ -117,7 +117,7 @@ func (s *service) FetchTypePrice(id uint, date time.Time) float64 {
 func getPriceFromHistorySlice(history []*neo.HistoricalRecord, day time.Time) *neo.HistoricalRecord {
 
 	for _, v := range history {
-		if day.Format("2006-01-02") == v.Date.Format("2006-01-02") {
+		if day.Format("2006-01-02") == v.Date {
 			return v
 		}
 	}
@@ -128,7 +128,7 @@ func getPriceFromHistorySlice(history []*neo.HistoricalRecord, day time.Time) *n
 func (s *service) getBuildPrice(id uint, date time.Time) float64 {
 
 	built, err := s.MarketRepository.BuiltPrice(context.Background(), id, date)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		s.logger.WithError(err).WithField("type_id", id).WithField("date", date).Error("unexpected error encountered looking up prices build")
 	}
 
@@ -194,7 +194,7 @@ func (s *service) FetchHistory(ctx context.Context) {
 	s.logger.Info("fetching market groups")
 
 	groups, m := s.esi.GetMarketGroups(ctx)
-	if m.IsError() {
+	if m.IsErr() {
 		s.logger.WithError(m.Msg).Error("failed to fetch market groups")
 		return
 	}
@@ -214,10 +214,15 @@ func (s *service) FetchHistory(ctx context.Context) {
 
 func (s *service) processGroup(ctx context.Context, v int) {
 
+	txn := newrelic.FromContext(ctx).NewGoroutine()
+	defer txn.End()
+
+	ctx = newrelic.NewContext(ctx, txn)
+
 	s.logger.WithField("group_id", v).Info("processing group")
 
 	group, m := s.esi.GetMarketGroupsMarketGroupID(ctx, v)
-	if m.IsError() {
+	if m.IsErr() {
 		s.logger.WithError(m.Msg).WithField("market_group_id", v).Error("failed to fetch types for market group")
 		return
 	}
@@ -226,7 +231,7 @@ func (s *service) processGroup(ctx context.Context, v int) {
 
 		s.logger.WithField("type_id", t).Info("processing historical records for type")
 
-		info, err := s.universe.Type(context.Background(), t)
+		info, err := s.universe.Type(ctx, t)
 		if err != nil {
 			s.logger.WithError(err).WithField("type_id", t).Error("failed to fetch item info")
 			return
@@ -237,7 +242,7 @@ func (s *service) processGroup(ctx context.Context, v int) {
 		}
 
 		records, m := s.esi.GetMarketsRegionIDHistory(ctx, region, t)
-		if m.IsError() {
+		if m.IsErr() {
 			s.logger.WithError(m.Msg).WithField("type_id", t).Error("failed to pull market history for type")
 			continue
 		}

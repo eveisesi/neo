@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/volatiletech/null"
@@ -28,31 +29,31 @@ var (
 type (
 	Service interface {
 		// Alliances
-		GetAlliancesAllianceID(ctx context.Context, id uint, etag null.String) (*neo.Alliance, *Meta)
+		GetAlliancesAllianceID(ctx context.Context, id uint, etag null.String) (*neo.Alliance, Meta)
 
 		// Characters
-		GetCharactersCharacterID(ctx context.Context, id uint64, etag null.String) (*neo.Character, *Meta)
+		GetCharactersCharacterID(ctx context.Context, id uint64, etag string) (*neo.Character, Meta)
 
 		// Corporations
-		GetCorporationsCorporationID(ctx context.Context, id uint, etag null.String) (*neo.Corporation, *Meta)
+		GetCorporationsCorporationID(ctx context.Context, id uint, etag null.String) (*neo.Corporation, Meta)
 
 		// Killmails
-		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint, hash string) (*neo.Killmail, *Meta)
+		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint, hash string) (*neo.Killmail, Meta)
 
 		// Market
-		HeadMarketsRegionIDTypes(ctx context.Context, regionID uint) *Meta
-		GetMarketGroups(ctx context.Context) ([]int, *Meta)
-		GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*neo.MarketGroup, *Meta)
-		GetMarketsRegionIDTypes(ctx context.Context, regionID uint, page null.String) ([]int, *Meta)
-		GetMarketsRegionIDHistory(ctx context.Context, regionID uint, typeID uint) ([]*neo.HistoricalRecord, *Meta)
-		GetMarketsPrices(ctx context.Context) ([]*neo.MarketPrices, *Meta)
+		HeadMarketsRegionIDTypes(ctx context.Context, regionID uint) Meta
+		GetMarketGroups(ctx context.Context) ([]int, Meta)
+		GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*neo.MarketGroup, Meta)
+		GetMarketsRegionIDTypes(ctx context.Context, regionID uint, page null.String) ([]int, Meta)
+		GetMarketsRegionIDHistory(ctx context.Context, regionID uint, typeID uint) ([]*neo.HistoricalRecord, Meta)
+		GetMarketsPrices(ctx context.Context) ([]*neo.MarketPrices, Meta)
 
 		// Status
-		GetStatus(ctx context.Context) (*neo.ServerStatus, *Meta)
+		GetStatus(ctx context.Context) (*neo.ServerStatus, Meta)
 
 		// Universe
-		GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, *Meta)
-		GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, *Meta)
+		GetUniverseSystemsSystemID(ctx context.Context, id uint) (*neo.SolarSystem, Meta)
+		GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, Meta)
 	}
 	service struct {
 		client      *http.Client
@@ -76,23 +77,31 @@ type (
 		Code    int
 		Headers map[string]string
 		Msg     error
+		Data    []byte
 	}
 )
 
-func newMeta(method, path, query string, code int, headers map[string]string, msg error) *Meta {
-	return &Meta{method, path, query, code, headers, msg}
+func newMeta(method, path, query string, code int, headers map[string]string, msg error, data []byte) Meta {
+	return Meta{method, path, query, code, headers, msg, data}
 }
 
-func (r *Meta) Error() string {
+func (r Meta) Error() string {
+	if r.Msg == nil {
+		return ""
+	}
 	return r.Msg.Error()
 }
 
-func (r *Meta) IsError() bool {
+func (r Meta) IsErr() bool {
 	return r.Msg != nil
 }
 
 // New returns a default configuration for this package
-func New(client *http.Client, redis *redis.Client, host, uagent string) Service {
+func New(redis *redis.Client, host, uagent string) Service {
+
+	client := &http.Client{
+		Timeout: time.Second * 3,
+	}
 
 	return &service{
 		redis:       redis,
@@ -105,7 +114,13 @@ func New(client *http.Client, redis *redis.Client, host, uagent string) Service 
 
 // Request prepares and executes an http request to the EVE Swagger Interface OpenAPI
 // and returns the response
-func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
+func (s *service) request(ctx context.Context, r request) ([]byte, Meta) {
+
+	defer func() {
+		if recov := recover(); recov != nil {
+			spew.Dump(r, recov)
+		}
+	}()
 
 	uri := url.URL{
 		Scheme:   "https",
@@ -117,7 +132,7 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 	req, err := http.NewRequestWithContext(ctx, r.method, uri.String(), bytes.NewBuffer(r.body))
 	if err != nil {
 		err = errors.Wrap(err, "Unable build request")
-		return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, errors.Wrap(err, "failed to build esi request"))
+		return nil, newMeta(r.method, r.path, r.query, http.StatusInternalServerError, map[string]string{}, errors.Wrap(err, "failed to build esi request"), nil)
 	}
 	req = newrelic.RequestWithTransactionContext(req, newrelic.FromContext(ctx))
 
@@ -128,19 +143,23 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 	req.Header.Add("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Add("User-Agent", s.ua)
 
-	m := newMeta(r.method, r.path, r.query, -1, map[string]string{}, nil)
+	m := newMeta(r.method, r.path, r.query, 0, map[string]string{}, nil, []byte{})
 
-	attempts := uint(0)
 	var httpResponse *http.Response
+	attempts := uint(0)
 
 	for {
 
 		if attempts >= s.maxattempts {
 			m.Msg = errors.New("max attempts exceeded")
-			return nil, m
+			break
 		}
 
+		seg := newrelic.StartExternalSegment(newrelic.FromContext(ctx), req)
 		httpResponse, err = s.client.Do(req)
+		seg.Response = httpResponse
+		seg.End()
+
 		if err != nil {
 			if _, ok := err.(net.Error); ok {
 				attempts++
@@ -150,7 +169,7 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 
 			err = errors.Wrap(err, "failed to make esi request")
 
-			return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, err)
+			return nil, newMeta(r.method, r.path, r.query, -1, map[string]string{}, err, []byte{})
 		}
 
 		if httpResponse.StatusCode < 500 {
@@ -172,17 +191,17 @@ func (s *service) request(ctx context.Context, r request) ([]byte, *Meta) {
 	data, err := ioutil.ReadAll(httpResponse.Body)
 	if err != nil {
 		err = errors.Wrap(err, "error reading body")
-		return nil, newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, errors.Wrap(err, "failed to build esi request"))
+
+		return nil, newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, errors.Wrap(err, "failed to build esi request"), []byte{})
 	}
 
 	httpResponse.Body.Close()
 
-	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, nil)
+	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, m.Msg, data)
+	s.trackESICallStatusCode(ctx, m.Code)
 
 	s.retrieveErrorReset(ctx, headers)
 	s.retrieveErrorCount(ctx, headers)
-
-	s.trackESICallStatusCode(ctx, m.Code)
 
 	return data, m
 }

@@ -2,7 +2,6 @@ package killmail
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirkon/go-format"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) {
@@ -35,7 +35,7 @@ func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) 
 	}
 
 	killmail, err = s.killmails.Killmail(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for killmail")
 	}
 
@@ -94,8 +94,8 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 	}
 
 	if kmVictim != nil && withNames {
-		if kmVictim.CharacterID.Valid {
-			character, err := s.character.Character(ctx, kmVictim.CharacterID.Uint64)
+		if kmVictim.CharacterID != nil {
+			character, err := s.character.Character(ctx, *kmVictim.CharacterID)
 			if err != nil {
 				entry.WithError(err).Error("failed to fetch victim character information")
 			}
@@ -103,8 +103,8 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 				kmVictim.Character = character
 			}
 		}
-		if kmVictim.CorporationID.Valid {
-			corporation, err := s.corporation.Corporation(ctx, kmVictim.CorporationID.Uint)
+		if kmVictim.CorporationID != nil {
+			corporation, err := s.corporation.Corporation(ctx, *kmVictim.CorporationID)
 			if err != nil {
 				entry.WithError(err).Error("failed to fetch victim corporation information")
 			}
@@ -112,8 +112,8 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 				kmVictim.Corporation = corporation
 			}
 		}
-		if kmVictim.AllianceID.Valid {
-			alliance, err := s.alliance.Alliance(ctx, kmVictim.AllianceID.Uint)
+		if kmVictim.AllianceID != nil {
+			alliance, err := s.alliance.Alliance(ctx, *kmVictim.AllianceID)
 			if err != nil {
 				entry.WithError(err).Error("failed to fetch victim alliance information")
 			}
@@ -134,21 +134,6 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 			killmail.Victim.Ship = ship
 		}
 	}
-
-	items, err := s.items.ByKillmailID(ctx, id)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch items")
-	}
-	if err == nil {
-		kmVictim.Items = items
-	}
-
-	kmAttackers, err := s.AttackersByKillmailID(ctx, id)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch km attackers")
-	}
-
-	killmail.Attackers = kmAttackers
 
 	return killmail, nil
 }
@@ -197,9 +182,9 @@ func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails 
 func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "characters",
-		"id":   id,
-		"page": after,
+		"type":  "characters",
+		"id":    id,
+		"after": after,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -211,14 +196,16 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after u
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.EqualTo{Column: "victim.characterID", Value: id},
+		neo.EqualTo{Column: "attackers.characterID", Value: id},
 	}
-	victimMods := []neo.Modifier{neo.EqualToUint64{Column: "character_id", Value: id}}
-	attMods := []neo.Modifier{neo.EqualToUint64{Column: "character_id", Value: id}}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, victimMods, attMods)
+	if after > 0 {
+		mods = append(mods, neo.LessThan{Column: "id", Value: after})
+	}
+
+	killmails, err = s.killmails.Killmails(ctx, mods)
 	if err != nil {
 		return nil, err
 	}
@@ -342,9 +329,9 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uin
 	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "shipGroup",
-		"id":   id,
-		"page": after,
+		"type":  "shipGroup",
+		"id":    id,
+		"after": after,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -377,9 +364,9 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uin
 func (s *service) KillmailsBySystemID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "systems",
-		"id":   id,
-		"page": after,
+		"type":  "systems",
+		"id":    id,
+		"after": after,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -410,9 +397,9 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, after uint) 
 func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "constellation",
-		"id":   id,
-		"page": after,
+		"type":  "constellation",
+		"id":    id,
+		"after": after,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -447,9 +434,9 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, after
 func (s *service) KillmailsByRegionID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type": "region",
-		"id":   id,
-		"page": after,
+		"type":  "region",
+		"id":    id,
+		"after": after,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)

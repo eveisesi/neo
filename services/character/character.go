@@ -2,16 +2,16 @@ package character
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"go.mongodb.org/mongo-driver/mongo"
+
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 )
 
 func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, error) {
@@ -33,7 +33,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 	}
 
 	character, err = s.CharacterRespository.Character(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for character")
 	}
 
@@ -49,13 +49,13 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 	}
 
 	// Character is not cached, the DB doesn't have this character, lets check ESI
-	character, m := s.esi.GetCharactersCharacterID(ctx, id, null.NewString("", false))
-	if m.IsError() {
+	character, m := s.esi.GetCharactersCharacterID(ctx, id, "")
+	if m.IsErr() {
 		return nil, m.Msg
 	}
 
 	// ESI has the character. Lets insert it into the db, and cache it is redis
-	_, err = s.CharacterRespository.CreateCharacter(ctx, character)
+	err = s.CharacterRespository.CreateCharacter(ctx, character)
 	if err != nil {
 		return character, errors.Wrap(err, "unable to insert character into db")
 	}
@@ -67,7 +67,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 
 	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
 
-	return character, errors.Wrap(err, "failed to cache solar character in redis")
+	return character, errors.Wrap(err, "failed to cache character in redis")
 }
 
 func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
@@ -140,6 +140,10 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 
 }
 
+func (s *service) CreateCharacter(ctx context.Context, character *neo.Character) error {
+	return s.CharacterRespository.CreateCharacter(ctx, character)
+}
+
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
@@ -147,7 +151,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		ctx = newrelic.NewContext(ctx, txn)
 
 		expired, err := s.Expired(ctx)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			s.logger.WithError(err).Error("Failed to fetch expired characters")
 			return
 		}
@@ -159,13 +163,14 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		}
 
 		for _, character := range expired {
+			entry := s.logger.WithContext(ctx).WithField("character_id", character.ID)
 			seg := txn.StartSegment("handleCharacter")
 			seg.AddAttribute("id", character.ID)
 			s.tracker.GateKeeper(ctx)
 			newCharacter, m := s.esi.GetCharactersCharacterID(ctx, character.ID, character.Etag)
-			if m.IsError() {
+			if m.IsErr() {
 				txn.NoticeError(m.Msg)
-				s.logger.WithContext(ctx).WithError(m.Msg).WithField("character_id", character.ID).Error("failed to fetch character from esi")
+				entry.WithError(err).Error("failed to fetch character from esi")
 				continue
 			}
 
@@ -179,25 +184,24 @@ func (s *service) UpdateExpired(ctx context.Context) {
 					character.UpdatePriority++
 				}
 
-				character.CachedUntil = newCharacter.CachedUntil.AddDate(0, 0, int(character.UpdatePriority))
+				character.CachedUntil = time.Unix(newCharacter.CachedUntil, 0).AddDate(0, 0, int(character.UpdatePriority)).Unix()
 				character.Etag = newCharacter.Etag
 
-				_, err = s.UpdateCharacter(ctx, character.ID, character)
+				err = s.UpdateCharacter(ctx, character.ID, character)
 			case http.StatusOK:
-				_, err = s.UpdateCharacter(ctx, character.ID, newCharacter)
+				err = s.UpdateCharacter(ctx, character.ID, newCharacter)
 			default:
-				s.logger.WithContext(ctx).WithField("status_code", m.Code).WithField("character_id", character.ID).Error("unaccounted for status code received from esi service")
+				entry.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
 			}
-
 			if err != nil {
-				txn.NoticeError(m.Msg)
-				s.logger.WithContext(ctx).WithError(err).WithField("character_id", character.ID).Error("failed to update character")
+				txn.NoticeError(err)
+				entry.WithError(err).Error("failed to update character")
 				continue
 			}
 
-			s.logger.WithContext(ctx).WithField("character_id", character.ID).WithField("status_code", m.Code).Debug("character successfully updated")
+			entry.WithField("status_code", m.Code).Debug("character successfully updated")
 			seg.End()
-			time.Sleep(time.Millisecond * 25)
+			time.Sleep(time.Millisecond * 50)
 		}
 		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("characters successfully updated")
 		txn.End()

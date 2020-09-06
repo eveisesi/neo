@@ -9,7 +9,11 @@ extend type Query {
         age: Int = 7
         limit: Int = 6
     ): [Killmail]!
-    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+    killmailsByEntityID(
+        entity: Entity!
+        id: Int!
+        page: Int = 999999999
+    ): [Killmail]!
 }
 
 enum Category {
@@ -46,13 +50,12 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     killmailTime: Time!
 
     system: SolarSystem! @goField(forceResolver: true)
-    attackers: [KillmailAttacker]! @goField(forceResolver: true)
-    victim: KillmailVictim! @goField(forceResolver: true)
+    attackers: [KillmailAttacker]!
+    victim: KillmailVictim!
 }
 
 type KillmailAttacker
-    @goModel(model: "github.com/eveisesi/neo.KillmailAttacker") {
-    id: Int!
+@goModel(model: "github.com/eveisesi/neo.KillmailAttacker") {
     killmailID: Int!
     allianceID: Int
     characterID: Int
@@ -72,7 +75,6 @@ type KillmailAttacker
 }
 
 type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
-    id: Int!
     killmailID: Int!
     allianceID: Int
     characterID: Int
@@ -86,14 +88,12 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     corporation: Corporation @goField(forceResolver: true)
     character: Character @goField(forceResolver: true)
     ship: Type @goField(forceResolver: true)
-    position: KillmailPosition @goField(forceResolver: true)
-    items: [KillmailItem]! @goField(forceResolver: true)
-    fitted: [KillmailItem]! @goField(forceResolver: true)
+    position: Position
+    items: [KillmailItem]!
+    # fitted: [KillmailItem]! @goField(forceResolver: true)
 }
 
 type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
-    id: Int!
-    parentID: Int
     killmailID: Int!
     flag: Int!
     itemTypeID: Int!
@@ -109,8 +109,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     items: [KillmailItem]!
 }
 
-type KillmailPosition
-    @goModel(model: "github.com/eveisesi/neo.KillmailPosition") {
+type Position @goModel(model: "github.com/eveisesi/neo.Position") {
     x: Float
     y: Float
     z: Float

@@ -38,6 +38,12 @@ type (
 		ESI5XX     int64
 		PrevESI5XX int64
 
+		ESIErrorReset     int64
+		PrevESIErrorReset int64
+
+		ESIErrorRemain     int64
+		PrevESIErrorRemain int64
+
 		ProcessingQueue     int64
 		PrevProcessingQueue int64
 
@@ -88,6 +94,14 @@ func (s *service) fetchESI4XX() (int64, error) {
 
 func (s *service) fetchESI5XX() (int64, error) {
 	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_5XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+}
+
+func (s *service) fetchESIErrorReset() (int64, error) {
+	return s.redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
+}
+
+func (s *service) fetchESIErrorRemain() (int64, error) {
+	return s.redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
 }
 
 func (s *service) fetchProcessingQueue() (int64, error) {
@@ -146,6 +160,16 @@ func (s *service) EvaluateParams(param *stat) error {
 		return errors.Wrap(err, "fetchESI5XX failed")
 	}
 
+	param.ESIErrorRemain, err = s.fetchESIErrorRemain()
+	if err != nil {
+		return errors.Wrap(err, "fetchESIErrorRemain failed")
+	}
+
+	param.ESIErrorReset, err = s.fetchESIErrorReset()
+	if err != nil {
+		return errors.Wrap(err, "fetchESIErrorReset failed")
+	}
+
 	param.ProcessingQueue, err = s.fetchProcessingQueue()
 	if err != nil {
 		return errors.Wrap(err, "fetchProcessingQueue failed")
@@ -191,6 +215,8 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevESI420 = params.ESI420
 	params.PrevESI4XX = params.ESI4XX
 	params.PrevESI5XX = params.ESI5XX
+	params.PrevESIErrorRemain = params.ESIErrorRemain
+	params.PrevESIErrorReset = params.ESIErrorReset
 	params.PrevProcessingQueue = params.ProcessingQueue
 	params.PrevRecalculatingQueue = params.RecalculatingQueue
 	params.PrevBackupQueue = params.BackupQueue
@@ -250,6 +276,10 @@ func (s *service) Run() error {
 					params.InvalidQueue,
 					params.InvalidQueue-params.PrevInvalidQueue,
 				),
+				"",
+				fmt.Sprintf(
+					"Time: %s", time.Now().Format("15:04:05"),
+				),
 			},
 			[]string{
 				fmt.Sprintf(
@@ -276,6 +306,17 @@ func (s *service) Run() error {
 					"%d: ESI HTTP 5XXs in last 5 minutes (%d)",
 					params.ESI5XX,
 					params.ESI5XX-params.PrevESI5XX,
+				),
+				"",
+				fmt.Sprintf(
+					"%d: Current Error Count(%d)",
+					100-params.ESIErrorRemain,
+					100-params.PrevESIErrorRemain,
+				),
+				fmt.Sprintf(
+					"%d: Reset At Unix (%d)",
+					params.ESIErrorReset,
+					params.PrevESIErrorReset,
 				),
 			},
 		}

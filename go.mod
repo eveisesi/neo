@@ -35,9 +35,11 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
+	github.com/newrelic/go-agent v3.8.1+incompatible
 	github.com/newrelic/go-agent/v3 v3.8.1
 	github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin v1.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrlogrus v1.0.0
+	github.com/newrelic/go-agent/v3/integrations/nrmongo v1.0.0
 	github.com/newrelic/go-agent/v3/integrations/nrmysql v1.2.0
 	github.com/onsi/ginkgo v1.12.0 // indirect
 	github.com/onsi/gomega v1.9.0 // indirect
@@ -47,11 +49,15 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/slack-go/slack v0.6.4
 	github.com/spf13/cast v1.3.1 // indirect
+	github.com/spf13/cobra v1.0.0 // indirect
+	github.com/spf13/viper v1.7.1 // indirect
 	github.com/urfave/cli v1.22.3
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.6.1+incompatible
+	github.com/xdg/stringprep v1.0.0 // indirect
+	go.mongodb.org/mongo-driver v1.4.0
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd // indirect
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	golang.org/x/sys v0.0.0-20200615200032-f1bc736245b1 // indirect

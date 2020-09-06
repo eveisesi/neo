@@ -2,34 +2,28 @@ package neo
 
 import (
 	"context"
-	"time"
-
-	"github.com/volatiletech/null"
 )
 
 type CorporationRespository interface {
 	Corporation(ctx context.Context, id uint) (*Corporation, error)
 	Corporations(ctx context.Context, mods ...Modifier) ([]*Corporation, error)
-	CreateCorporation(ctx context.Context, corporation *Corporation) (*Corporation, error)
-	UpdateCorporation(ctx context.Context, id uint, corporation *Corporation) (*Corporation, error)
+	CreateCorporation(ctx context.Context, corporation *Corporation) error
+	UpdateCorporation(ctx context.Context, id uint, corporation *Corporation) error
 
 	Expired(ctx context.Context) ([]*Corporation, error)
+	MemberCountByAllianceID(ctx context.Context, id uint) (int, error)
 }
 
 type Corporation struct {
-	ID               uint        `boil:"id" json:"id"`
-	Name             string      `boil:"name" json:"name"`
-	Ticker           string      `boil:"ticker" json:"ticker"`
-	MemberCount      uint        `boil:"member_count" json:"member_count"`
-	AllianceID       null.Uint   `boil:"alliance_id" json:"alliance_id,omitempty"`
-	NotModifiedCount uint        `boil:"not_modified_count" json:"not_modified_count"`
-	UpdatePriority   uint        `boil:"update_priority" json:"update_priority"`
-	Etag             null.String `boil:"etag" json:"etag"`
-	CachedUntil      time.Time   `boil:"cached_until" json:"cached_until"`
-	CreatedAt        time.Time   `boil:"created_at" json:"created_at"`
-	UpdatedAt        time.Time   `boil:"updated_at" json:"updated_at"`
-}
-
-func (c Corporation) IsExpired() bool {
-	return c.CachedUntil.Before(time.Now())
+	ID               uint   `bson:"id" json:"id"`
+	Name             string `bson:"name" json:"name"`
+	Ticker           string `bson:"ticker" json:"ticker"`
+	MemberCount      uint   `bson:"memberCount" json:"memberCount"`
+	AllianceID       *uint  `bson:"allianceID,omitempty" json:"allianceID,omitempty"`
+	NotModifiedCount uint   `bson:"notModifiedCount" json:"notModifiedCount"`
+	UpdatePriority   uint   `bson:"updatePriority" json:"updatePriority"`
+	Etag             string `bson:"etag" json:"etag"`
+	CachedUntil      int64  `bson:"cachedUntil" json:"cachedUntil"`
+	CreatedAt        int64  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        int64  `bson:"updatedAt" json:"updatedAt"`
 }

@@ -157,7 +157,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 				if count < threshold {
 					break
 				}
-				if i%10 == 0 {
+				if i%100 == 0 {
 					entry.WithField("count", count).Infoln()
 				}
 				time.Sleep(time.Second)
@@ -165,7 +165,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 			}
 		}
 
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(time.Second)
 
 		attempts = 1
 	}

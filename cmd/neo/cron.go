@@ -73,7 +73,7 @@ func registerEsiServerStatusCron(c *cron.Cron, app *core.App) {
 		app.Logger.WithContext(ctx).Info("checking tq server status")
 
 		serverStatus, m := app.ESI.GetStatus(ctx)
-		if m.IsError() {
+		if m.IsErr() {
 			app.Logger.WithContext(ctx).WithError(m.Msg).Error("Failed to fetch tq server status from ESI")
 			return
 		}

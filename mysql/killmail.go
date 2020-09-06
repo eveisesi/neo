@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jinzhu/copier"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/volatiletech/sqlboiler/queries"
+
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/boil"
 	"github.com/volatiletech/sqlboiler/queries/qm"
 
 	"github.com/eveisesi/neo/mysql/boiler"
@@ -26,7 +27,11 @@ func NewKillmailRepository(db *sqlx.DB) neo.KillmailRepository {
 	}
 }
 
-func (r *killmailRepository) Killmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error) {
+func (r *killmailRepository) Killmails(ctx context.Context, mods ...neo.Modifier) ([]*neo.Killmail, error) {
+
+	coreMods := make([]neo.Modifier, 0)
+	vicMods := make([]neo.Modifier, 0)
+	attMods := make([]neo.Modifier, 0)
 
 	var killmails = make([]*neo.Killmail, 0)
 	var qmMods = make([]qm.QueryMod, 0)
@@ -84,7 +89,14 @@ func (r *killmailRepository) Killmails(ctx context.Context, coreMods []neo.Modif
 		return nil, errors.New("Atleast one modifier must be specified")
 	}
 
-	err := boiler.NewQuery(qmMods...).Bind(ctx, r.db, &killmails)
+	q := boiler.NewQuery(qmMods...)
+
+	query, args := queries.BuildQuery(q)
+
+	fmt.Println(query)
+	spew.Dump(args)
+
+	err = q.Bind(ctx, r.db, &killmails)
 
 	return killmails, err
 }
@@ -100,126 +112,134 @@ func (r *killmailRepository) Killmail(ctx context.Context, id uint) (*neo.Killma
 
 }
 
-func (r *killmailRepository) Create(ctx context.Context, killmail *neo.Killmail) (*neo.Killmail, error) {
+func (r *killmailRepository) CreateKillmail(ctx context.Context, killmail *neo.Killmail) error {
 
-	query := `
-		INSERT INTO killmails
-			(id, hash, moon_id, solar_system_id, constellation_id, region_id, war_id, is_npc, is_awox, is_solo, dropped_value, destroyed_value, fitted_value, total_value, killmail_time, created_at, updated_at)
-		VALUES (
-			?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW()
-		)
-	`
+	// query := `
+	// 	INSERT INTO killmails
+	// 		(id, hash, moon_id, solar_system_id, constellation_id, region_id, war_id, is_npc, is_awox, is_solo, dropped_value, destroyed_value, fitted_value, total_value, killmail_time, created_at, updated_at)
+	// 	VALUES (
+	// 		?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW()
+	// 	)
+	// `
 
-	_, err = r.db.ExecContext(
-		ctx,
-		query,
-		killmail.ID, killmail.Hash, killmail.MoonID.Uint,
-		killmail.SolarSystemID, killmail.ConstellationID, killmail.RegionID,
-		killmail.WarID.Uint, killmail.IsNPC, killmail.IsAwox,
-		killmail.IsSolo, killmail.DroppedValue, killmail.DestroyedValue,
-		killmail.FittedValue, killmail.TotalValue, killmail.KillmailTime,
-	)
+	// _, err = r.db.ExecContext(
+	// 	ctx,
+	// 	query,
+	// 	killmail.ID, killmail.Hash, killmail.MoonID.Uint,
+	// 	killmail.SolarSystemID, killmail.ConstellationID, killmail.RegionID,
+	// 	killmail.WarID.Uint, killmail.IsNPC, killmail.IsAwox,
+	// 	killmail.IsSolo, killmail.DroppedValue, killmail.DestroyedValue,
+	// 	killmail.FittedValue, killmail.TotalValue, killmail.KillmailTime,
+	// )
 
-	return r.Killmail(ctx, killmail.ID)
+	// return r.Killmail(ctx, killmail.ID)
+	return nil
 
 }
 
 func (r *killmailRepository) CreateWithTxn(ctx context.Context, txn neo.Transactioner, killmail *neo.Killmail) (*neo.Killmail, error) {
-	var t = txn.(*transaction)
+	// var t = txn.(*transaction)
 
-	query := `
-		INSERT INTO killmails
-			(id, hash, moon_id, solar_system_id, constellation_id, region_id, war_id, is_npc, is_awox, is_solo, dropped_value, destroyed_value, fitted_value, total_value, killmail_time, created_at, updated_at)
-		VALUES (
-			?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW()
-		)
-	`
+	// query := `
+	// 	INSERT INTO killmails
+	// 		(id, hash, moon_id, solar_system_id, constellation_id, region_id, war_id, is_npc, is_awox, is_solo, dropped_value, destroyed_value, fitted_value, total_value, killmail_time, created_at, updated_at)
+	// 	VALUES (
+	// 		?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW()
+	// 	)
+	// `
 
-	_, err := t.ExecContext(
-		ctx,
-		query,
-		killmail.ID, killmail.Hash, killmail.MoonID.Uint,
-		killmail.SolarSystemID, killmail.ConstellationID, killmail.RegionID,
-		killmail.WarID.Uint, killmail.IsNPC, killmail.IsAwox,
-		killmail.IsSolo, killmail.DroppedValue, killmail.DestroyedValue,
-		killmail.FittedValue, killmail.TotalValue, killmail.KillmailTime,
-	)
+	// _, err := t.ExecContext(
+	// 	ctx,
+	// 	query,
+	// 	killmail.ID, killmail.Hash, killmail.MoonID.Uint,
+	// 	killmail.SolarSystemID, killmail.ConstellationID, killmail.RegionID,
+	// 	killmail.WarID.Uint, killmail.IsNPC, killmail.IsAwox,
+	// 	killmail.IsSolo, killmail.DroppedValue, killmail.DestroyedValue,
+	// 	killmail.FittedValue, killmail.TotalValue, killmail.KillmailTime,
+	// )
 
-	return killmail, err
+	// return killmail, err
+	return nil, nil
 
 }
 
 func (r *killmailRepository) Update(ctx context.Context, id uint, killmail *neo.Killmail) error {
 
-	var bKillmail = new(boiler.Killmail)
-	err := copier.Copy(bKillmail, killmail)
-	if err != nil {
-		return errors.Wrap(err, "unable to copy killmail to orm")
-	}
+	// var bKillmail = new(boiler.Killmail)
+	// err := copier.Copy(bKillmail, killmail)
+	// if err != nil {
+	// 	return errors.Wrap(err, "unable to copy killmail to orm")
+	// }
 
-	bKillmail.ID = id
+	// bKillmail.ID = id
 
-	_, err = bKillmail.Update(ctx, r.db, boil.Infer())
-	if err != nil {
-		return errors.Wrap(err, "failed to update killmail in db")
-	}
+	// _, err = bKillmail.Update(ctx, r.db, boil.Infer())
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to update killmail in db")
+	// }
 
-	err = copier.Copy(killmail, bKillmail)
+	// err = copier.Copy(killmail, bKillmail)
 
-	return errors.Wrap(err, "unable to copy orm to killmail")
+	// return errors.Wrap(err, "unable to copy orm to killmail")
+
+	return nil
 
 }
 
 func (r *killmailRepository) UpdateWithTxn(ctx context.Context, txn neo.Transactioner, killmail *neo.Killmail) error {
-	var t = txn.(*transaction)
-	var bKillmail = new(boiler.Killmail)
-	err := copier.Copy(bKillmail, killmail)
-	if err != nil {
-		return errors.Wrap(err, "unable to copy killmail to orm")
-	}
+	// var t = txn.(*transaction)
+	// var bKillmail = new(boiler.Killmail)
+	// err := copier.Copy(bKillmail, killmail)
+	// if err != nil {
+	// 	return errors.Wrap(err, "unable to copy killmail to orm")
+	// }
 
-	_, err = bKillmail.Update(ctx, t, boil.Infer())
-	if err != nil {
-		return errors.Wrap(err, "unable to update killmail in db")
-	}
+	// _, err = bKillmail.Update(ctx, t, boil.Infer())
+	// if err != nil {
+	// 	return errors.Wrap(err, "unable to update killmail in db")
+	// }
 
-	return errors.Wrap(err, "unable to copy orm to killmail")
+	// return errors.Wrap(err, "unable to copy orm to killmail")
+	return nil
 }
-
 func (r *killmailRepository) Exists(ctx context.Context, id uint) (bool, error) {
-	return boiler.KillmailExists(ctx, r.db, id)
+	// return boiler.KillmailExists(ctx, r.db, id)
+	return false, nil
 }
 
 func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*neo.Killmail, error) {
 
-	var killmails = make([]*neo.Killmail, 0)
-	err := boiler.Killmails(
-		qm.Limit(limit),
-		qm.Offset(offset),
-		qm.OrderBy(
-			fmt.Sprintf(
-				"%s DESC",
-				boiler.KillmailColumns.ID,
-			),
-		),
-	).Bind(ctx, r.db, &killmails)
+	// var killmails = make([]*neo.Killmail, 0)
+	// err := boiler.Killmails(
+	// 	qm.Limit(limit),
+	// 	qm.Offset(offset),
+	// 	qm.OrderBy(
+	// 		fmt.Sprintf(
+	// 			"%s DESC",
+	// 			boiler.KillmailColumns.ID,
+	// 		),
+	// 	),
+	// ).Bind(ctx, r.db, &killmails)
+	//
+	// return killmails, err
 
-	return killmails, err
+	return nil, nil
 
 }
 
 func (r *killmailRepository) Recalculable(ctx context.Context, limit int, after uint) ([]*neo.Killmail, error) {
 
-	mods := []qm.QueryMod{}
-	mods = append(mods,
-		boiler.KillmailWhere.ID.GT(after),
-		qm.OrderBy(fmt.Sprintf("%s ASC", boiler.KillmailColumns.ID)),
-	)
-	mods = append(mods, qm.Limit(limit))
+	return nil, nil
+	// mods := []qm.QueryMod{}
+	// mods = append(mods,
+	// 	boiler.KillmailWhere.ID.GT(after),
+	// 	qm.OrderBy(fmt.Sprintf("%s ASC", boiler.KillmailColumns.ID)),
+	// )
+	// mods = append(mods, qm.Limit(limit))
 
-	var killmails = make([]*neo.Killmail, 0)
-	err := boiler.Killmails(mods...).Bind(ctx, r.db, &killmails)
+	// var killmails = make([]*neo.Killmail, 0)
+	// err := boiler.Killmails(mods...).Bind(ctx, r.db, &killmails)
 
-	return killmails, err
+	// return killmails, err
 
 }

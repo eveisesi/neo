@@ -2,7 +2,6 @@ package corporation
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, error) {
@@ -33,7 +33,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 	}
 
 	corporation, err = s.CorporationRespository.Corporation(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for corporation")
 	}
 
@@ -50,12 +50,12 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 
 	// Corporation is not cached, the DB doesn't have this corporation, lets check ESI
 	corporation, m := s.esi.GetCorporationsCorporationID(ctx, id, null.NewString("", false))
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m.Msg
 	}
 
 	// ESI has the corporation. Lets insert it into the db, and cache it is redis
-	_, err = s.CorporationRespository.CreateCorporation(ctx, corporation)
+	err = s.CorporationRespository.CreateCorporation(ctx, corporation)
 	if err != nil {
 		return corporation, errors.Wrap(err, "unable to insert corporation into db")
 	}
@@ -146,7 +146,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		txn := s.newrelic.StartTransaction("updateExpiredCorporations")
 		ctx = newrelic.NewContext(ctx, txn)
 		expired, err := s.Expired(ctx)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			s.logger.WithError(err).Error("Failed to fetch expired corporations")
 			return
 		}
@@ -161,8 +161,8 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			seg := txn.StartSegment("handleCorporation")
 			seg.AddAttribute("id", corporation.ID)
 			s.tracker.GateKeeper(ctx)
-			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, corporation.Etag)
-			if m.IsError() {
+			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, null.NewString("", true))
+			if m.IsErr() {
 				txn.NoticeError(m.Msg)
 				s.logger.WithContext(ctx).WithError(m.Msg).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
 				continue
@@ -178,12 +178,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 					corporation.UpdatePriority++
 				}
 
-				corporation.CachedUntil = newCorporation.CachedUntil.Add(time.Hour*24).AddDate(0, 0, int(corporation.UpdatePriority))
+				corporation.CachedUntil = time.Unix(newCorporation.CachedUntil, 0).AddDate(0, 0, int(corporation.UpdatePriority)).Unix()
 				corporation.Etag = newCorporation.Etag
 
-				_, err = s.UpdateCorporation(ctx, corporation.ID, corporation)
+				err = s.UpdateCorporation(ctx, corporation.ID, corporation)
 			case http.StatusOK:
-				_, err = s.UpdateCorporation(ctx, corporation.ID, newCorporation)
+				err = s.UpdateCorporation(ctx, corporation.ID, newCorporation)
 			default:
 				s.logger.WithContext(ctx).WithField("status_code", m.Code).WithField("corporation_id", corporation.ID).Error("unaccounted for status code received from esi service")
 			}
@@ -196,7 +196,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			s.logger.WithContext(ctx).WithField("corporation_id", corporation.ID).WithField("status_code", m.Code).Debug("corporation successfully updated")
 			seg.End()
-			time.Sleep(time.Millisecond * 25)
+			time.Sleep(time.Millisecond * 50)
 		}
 		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("corporations successfully updated")
 		txn.End()

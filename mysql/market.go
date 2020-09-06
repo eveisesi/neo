@@ -25,6 +25,14 @@ func NewMarketRepository(db *sqlx.DB) neo.MarketRepository {
 	return &marketRepository{db}
 }
 
+func (r *marketRepository) Price(ctx context.Context, typeID uint, date string) (*neo.HistoricalRecord, error) {
+	panic("not implemented")
+}
+
+func (r *marketRepository) Prices(ctx context.Context, mods ...neo.Modifier) ([]*neo.HistoricalRecord, error) {
+	panic("not implemented")
+}
+
 func (r *marketRepository) HistoricalRecord(ctx context.Context, id uint, date time.Time, limit null.Int) ([]*neo.HistoricalRecord, error) {
 
 	mods := make([]qm.QueryMod, 0)
@@ -110,28 +118,5 @@ func (r *marketRepository) CreateHistoricalRecord(ctx context.Context, records [
 	_, err := r.db.ExecContext(ctx, query, params...)
 
 	return records, err
-
-}
-
-func (r *marketRepository) AvgOfTypeLowPrice(ctx context.Context, id uint, days int, date time.Time) (null.Float64, error) {
-
-	query := `
-		SELECT 
-			AVG(average) 
-		FROM 
-			prices 
-		WHERE 
-			type_id = ? 
-			AND date BETWEEN ? - INTERVAL %d DAY AND ?
-
-	`
-
-	query = fmt.Sprintf(query, days)
-
-	var avg null.Float64
-
-	err := r.db.GetContext(ctx, &avg, query, id, date, date)
-
-	return avg, err
 
 }

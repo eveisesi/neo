@@ -1,22 +1,23 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 
 	"github.com/eveisesi/neo"
+	"github.com/eveisesi/neo/mdb"
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/backup"
 	"github.com/eveisesi/neo/services/character"
@@ -49,17 +50,27 @@ import (
 	sqlDriver "github.com/go-sql-driver/mysql"
 )
 
+type MongoServices struct {
+	Alliance    alliance.Service
+	Character   character.Service
+	Corporation corporation.Service
+	Market      market.Service
+}
+
 type App struct {
 	Label    string
 	NewRelic *newrelic.Application
 	Logger   *logrus.Logger
-	DB       *sqlx.DB
+	MySQLDB  *sqlx.DB
+	MongoDB  *mongo.Database
 	Redis    *redis.Client
 	Client   *http.Client
 	Config   *neo.Config
 	Spaces   *session.Session
+	ESI      esi.Service
 
-	ESI          esi.Service
+	Mongo MongoServices
+
 	Alliance     alliance.Service
 	Backup       backup.Service
 	Character    character.Service
@@ -104,14 +115,19 @@ func New(command string, debug bool) *App {
 		logger.WithError(err).Warn("failed to initialize newrelic application")
 	}
 
-	db, err := makeDB(cfg)
+	mysqlDB, err := makeMySQLDB(cfg)
 	if err != nil {
-		logrus.WithError(err).Fatal("failed to make db connection")
+		logrus.WithError(err).Fatal("failed to make mysql db connection")
 	}
 
-	err = db.Ping()
+	// err = mysqlDB.Ping()
+	// if err != nil {
+	// 	logger.WithError(err).Fatal("failed to ping db server")
+	// }
+
+	mongoDB, err := makeMongoDB(cfg)
 	if err != nil {
-		logger.WithError(err).Fatal("failed to ping db server")
+		logrus.WithError(err).Fatal("failed to make mongo db connection")
 	}
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -137,9 +153,9 @@ func New(command string, debug bool) *App {
 	}
 	client.Transport = newrelic.NewRoundTripper(client.Transport)
 
-	esiClient := esi.New(client, redisClient, cfg.ESIHost, cfg.ESIUAgent)
+	esiClient := esi.New(redisClient, cfg.ESIHost, cfg.ESIUAgent)
 
-	txn := mysql.NewTransactioner(db)
+	txn := mysql.NewTransactioner(mysqlDB)
 
 	tracker := tracker.NewService(
 		redisClient,
@@ -152,7 +168,7 @@ func New(command string, debug bool) *App {
 		nr,
 		esiClient,
 		tracker,
-		mysql.NewAllianceRepository(db),
+		mdb.NewAllianceRepository(mongoDB),
 	)
 
 	character := character.NewService(
@@ -161,7 +177,7 @@ func New(command string, debug bool) *App {
 		nr,
 		esiClient,
 		tracker,
-		mysql.NewCharacterRepository(db),
+		mdb.NewCharacterRepository(mongoDB),
 	)
 
 	corporation := corporation.NewService(
@@ -170,13 +186,13 @@ func New(command string, debug bool) *App {
 		nr,
 		esiClient,
 		tracker,
-		mysql.NewCorporationRepository(db),
+		mdb.NewCorporationRepository(mongoDB),
 	)
 
 	search := search.NewService(
 		autocompleter,
 		logger,
-		mysql.NewSearchRepository(db),
+		mysql.NewSearchRepository(mysqlDB),
 	)
 
 	top := top.NewService(
@@ -186,17 +202,18 @@ func New(command string, debug bool) *App {
 	universe := universe.NewService(
 		redisClient,
 		esiClient,
-		mysql.NewBlueprintRepository(db),
-		mysql.NewUniverseRepository(db),
+		mdb.NewBlueprintRepository(mongoDB),
+		mdb.NewUniverseRepository(mongoDB),
 	)
 
 	market := market.NewService(
 		redisClient,
 		esiClient,
+		nr,
 		logger,
 		universe,
 		txn,
-		mysql.NewMarketRepository(db),
+		mdb.NewMarketRepository(mongoDB),
 		tracker,
 	)
 
@@ -214,7 +231,12 @@ func New(command string, debug bool) *App {
 		logger,
 		redisClient,
 		cfg.SSOJWKSURL,
-		mysql.NewTokenRepository(db),
+		mysql.NewTokenRepository(mysqlDB),
+	)
+
+	backup := backup.NewService(
+		redisClient,
+		logger,
 	)
 
 	killmail := killmail.NewService(
@@ -224,20 +246,17 @@ func New(command string, debug bool) *App {
 		esiClient,
 		logger,
 		cfg,
+		backup,
 		character,
 		corporation,
 		alliance,
 		universe,
 		market,
 		tracker,
-		txn,
-		mysql.NewKillmailRepository(db),
-		mysql.NewKillmailAttackerRepository(db),
-		mysql.NewKillmailItemRepository(db),
-		mysql.NewKillmailVictimRepository(db),
+		mdb.NewKillmailRepository(mongoDB),
 	)
 
-	stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(db))
+	stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(mysqlDB))
 
 	notifications := notifications.NewService(
 		client,
@@ -252,34 +271,16 @@ func New(command string, debug bool) *App {
 		killmail,
 	)
 
-	spacesSession, e := session.NewSession(
-		&aws.Config{
-			Credentials: credentials.NewStaticCredentials(cfg.SpacesKey, cfg.SpacesSecret, ""),
-			Endpoint:    aws.String(cfg.SpacesEndpoint),
-			Region:      aws.String("us-east-1"),
-		},
-	)
-	if e != nil {
-		logger.WithError(err).Fatal("failed to create spaces session")
-	}
-
-	backup := backup.NewService(
-		cfg.SpacesBucket,
-		s3.New(spacesSession),
-		redisClient,
-		logger,
-	)
-
 	return &App{
 		Label:    command,
 		NewRelic: nr,
 		Logger:   logger,
-		DB:       db,
+		MySQLDB:  mysqlDB,
+		MongoDB:  mongoDB,
 		Redis:    redisClient,
 		Client:   client,
 		ESI:      esiClient,
 		Config:   cfg,
-		Spaces:   spacesSession,
 
 		Alliance:     alliance,
 		Backup:       backup,
@@ -315,6 +316,7 @@ func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*n
 		newrelic.ConfigLicense(cfg.NewRelicLicensenKey),
 		newrelic.ConfigDistributedTracerEnabled(true),
 		newrelic.ConfigLogger(nrlogrus.Transform(logger)),
+		// newrelic.ConfigDebugLogger(os.Stdout),
 		func(config *newrelic.Config) {
 			config.Labels = map[string]string{
 				"command": command,
@@ -331,17 +333,17 @@ func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*n
 
 }
 
-func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
+func makeMySQLDB(cfg *neo.Config) (*sqlx.DB, error) {
 
 	c := &sqlDriver.Config{
-		User:         cfg.DBUser,
-		Passwd:       cfg.DBPass,
+		User:         cfg.MySQL.DBUser,
+		Passwd:       cfg.MySQL.DBPass,
 		Net:          "tcp",
-		Addr:         cfg.DBHost,
-		DBName:       cfg.DBName,
+		Addr:         cfg.MySQL.DBHost,
+		DBName:       cfg.MySQL.DBName,
 		Timeout:      time.Second * 2,
-		ReadTimeout:  time.Second * time.Duration(cfg.DBReadTimeout),
-		WriteTimeout: time.Second * time.Duration(cfg.DBWriteTimeout),
+		ReadTimeout:  time.Second * time.Duration(cfg.MySQL.DBReadTimeout),
+		WriteTimeout: time.Second * time.Duration(cfg.MySQL.DBWriteTimeout),
 		ParseTime:    true,
 
 		// Defaults
@@ -361,6 +363,29 @@ func makeDB(cfg *neo.Config) (*sqlx.DB, error) {
 	db.SetConnMaxLifetime(time.Minute * 5)
 
 	return db, nil
+}
+
+func makeMongoDB(cfg *neo.Config) (*mongo.Database, error) {
+
+	q := url.Values{}
+	q.Set("authMechanism", cfg.Mongo.DBAuthMech)
+	c := &url.URL{
+		Scheme:   "mongodb",
+		Host:     cfg.Mongo.DBHost,
+		User:     url.UserPassword(cfg.Mongo.DBUser, cfg.Mongo.DBPass),
+		Path:     fmt.Sprintf("/%s", cfg.Mongo.DBName),
+		RawQuery: q.Encode(),
+	}
+
+	mc, err := mdb.Connect(context.TODO(), c)
+	if err != nil {
+		return nil, err
+	}
+
+	mdb := mc.Database(cfg.Mongo.DBName)
+
+	return mdb, nil
+
 }
 
 func loadEnv() (*neo.Config, error) {
@@ -394,9 +419,9 @@ func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{
-			Filename: fmt.Sprintf("logs/%s/%s-error.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
+			Filename: fmt.Sprintf("logs/error/%s.log", hostname),
 			MaxSize:  50,
-			Compress: true,
+			Compress: false,
 		},
 		LogLevels: []logrus.Level{
 			logrus.PanicLevel,
@@ -408,10 +433,10 @@ func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{
-			Filename:   fmt.Sprintf("logs/%s/%s-info.log", hostname, time.Now().Format("2006-01-02T15:03:04")),
+			Filename:   fmt.Sprintf("logs/info/%s.log", hostname),
 			MaxBackups: 3,
 			MaxSize:    10,
-			Compress:   true,
+			Compress:   false,
 		},
 		LogLevels: []logrus.Level{
 			logrus.InfoLevel,
@@ -441,11 +466,11 @@ type writerHook struct {
 }
 
 func (w *writerHook) Fire(entry *logrus.Entry) error {
+
 	line, err := entry.String()
 	if err != nil {
 		return err
 	}
-
 	_, err = w.Writer.Write([]byte(line))
 	return err
 }

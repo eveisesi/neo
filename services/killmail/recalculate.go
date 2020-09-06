@@ -1,161 +1,148 @@
 package killmail
 
-import (
-	"context"
-	"database/sql"
-	"encoding/json"
-	"time"
+// func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint) {
 
-	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
-	"github.com/korovkin/limiter"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-)
+// 	for {
 
-func (s *service) RecalculatorDispatcher(limit, trigger int64, after uint) {
+// 		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+// 		if err != nil {
+// 			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
+// 			time.Sleep(time.Second * 2)
+// 			continue
+// 		}
 
-	for {
+// 		if count >= trigger {
+// 			time.Sleep(time.Second * 10)
+// 			continue
+// 		}
 
-		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
-		if err != nil {
-			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
-			time.Sleep(time.Second * 2)
-			continue
-		}
+// 		s.logger.Info("fetching killmail to recalculate")
 
-		if count >= trigger {
-			time.Sleep(time.Second * 10)
-			continue
-		}
+// 		killmails, err := s.killmails.Recalculable(context.Background(), int(limit), after)
+// 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+// 			s.logger.WithError(err).Error("failed to fetch killmails")
+// 			return
+// 		}
 
-		s.logger.Info("fetching killmail to recalculate")
+// 		if len(killmails) == 0 {
+// 			s.logger.Info("no killmails returned")
+// 			return
+// 		}
 
-		killmails, err := s.killmails.Recalculable(context.Background(), int(limit), after)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			s.logger.WithError(err).Error("failed to fetch killmails")
-			return
-		}
+// 		s.logger.WithField("killmails", len(killmails)).Info("killmails retrieved successfully")
 
-		if len(killmails) == 0 {
-			s.logger.Info("no killmails returned")
-			return
-		}
+// 		after = killmails[len(killmails)-1].ID
 
-		s.logger.WithField("killmails", len(killmails)).Info("killmails retrieved successfully")
+// 		for _, killmail := range killmails {
 
-		after = killmails[len(killmails)-1].ID
+// 			msg := neo.Message{
+// 				ID:   killmail.ID,
+// 				Hash: killmail.Hash,
+// 			}
 
-		for _, killmail := range killmails {
+// 			payload, err := json.Marshal(msg)
+// 			if err != nil {
+// 				s.logger.WithError(err).Error("failed to marshal message for recalculator queue")
+// 				continue
+// 			}
 
-			msg := neo.Message{
-				ID:   killmail.ID,
-				Hash: killmail.Hash,
-			}
+// 			_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_RECALCULATE, &redis.Z{Score: float64(killmail.ID), Member: string(payload)}).Result()
+// 			if err != nil {
+// 				s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to recalculating queue")
+// 				return
+// 			}
+// 		}
 
-			payload, err := json.Marshal(msg)
-			if err != nil {
-				s.logger.WithError(err).Error("failed to marshal message for recalculator queue")
-				continue
-			}
+// 		s.logger.WithField("after", after).Info("killmails dispatched successfully")
+// 	}
 
-			_, err = s.redis.ZAdd(neo.QUEUES_KILLMAIL_RECALCULATE, &redis.Z{Score: float64(killmail.ID), Member: string(payload)}).Result()
-			if err != nil {
-				s.logger.WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to recalculating queue")
-				return
-			}
-		}
+// }
 
-		s.logger.WithField("after", after).Info("killmails dispatched successfully")
-	}
+// func (s *service) Recalculator(gLimit int64) {
 
-}
+// 	limit := limiter.NewConcurrencyLimiter(int(gLimit))
 
-func (s *service) Recalculator(gLimit int64) {
+// 	attempts := 0
+// 	for {
+// 		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+// 		if err != nil {
+// 			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
+// 			time.Sleep(time.Second * 2)
+// 			continue
+// 		}
 
-	limit := limiter.NewConcurrencyLimiter(int(gLimit))
+// 		if count == 0 {
+// 			attempts++
+// 			if attempts >= 100 {
+// 				s.logger.Info("done with recalculation")
+// 				break
+// 			}
+// 			s.logger.WithField("count", count).Info("no messages on queue")
+// 			time.Sleep(time.Second * 10)
+// 			continue
+// 		}
 
-	attempts := 0
-	for {
-		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
-		if err != nil {
-			s.logger.WithError(err).Error("unable to determine count of recalculation message queue")
-			time.Sleep(time.Second * 2)
-			continue
-		}
+// 		s.logger.WithField("messages", count).Info("processing recalculable messages")
 
-		if count == 0 {
-			attempts++
-			if attempts >= 100 {
-				s.logger.Info("done with recalculation")
-				break
-			}
-			s.logger.WithField("count", count).Info("no messages on queue")
-			time.Sleep(time.Second * 10)
-			continue
-		}
+// 		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_RECALCULATE, 1000).Result()
+// 		if err != nil {
+// 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
+// 		}
 
-		s.logger.WithField("messages", count).Info("processing recalculable messages")
+// 		for _, result := range results {
+// 			message := result.Member.(string)
+// 			limit.ExecuteWithTicket(func(workerID int) {
+// 				s.recalculateKillmail([]byte(message), workerID)
+// 			})
+// 		}
 
-		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_RECALCULATE, 1000).Result()
-		if err != nil {
-			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
-		}
+// 	}
 
-		for _, result := range results {
-			message := result.Member.(string)
-			limit.ExecuteWithTicket(func(workerID int) {
-				s.recalculateKillmail([]byte(message), workerID)
-			})
-		}
+// }
 
-	}
+// func (s *service) recalculateKillmail(message []byte, workerID int) {
 
-}
+// 	var ctx = context.Background()
 
-func (s *service) recalculateKillmail(message []byte, workerID int) {
+// 	var payload = neo.Message{}
 
-	var ctx = context.Background()
+// 	err := json.Unmarshal(message, &payload)
+// 	if err != nil {
+// 		s.logger.WithField("message", string(message)).Error("failed to unmarshal message into message struct")
+// 		return
+// 	}
 
-	var payload = neo.Message{}
+// 	entry := s.logger.WithFields(logrus.Fields{
+// 		"id":   payload.ID,
+// 		"hash": payload.Hash,
+// 	})
 
-	err := json.Unmarshal(message, &payload)
-	if err != nil {
-		s.logger.WithField("message", string(message)).Error("failed to unmarshal message into message struct")
-		return
-	}
+// 	entry.Debugln()
 
-	entry := s.logger.WithFields(logrus.Fields{
-		"id":   payload.ID,
-		"hash": payload.Hash,
-	})
+// 	killmail, err := s.killmails.Killmail(ctx, payload.ID)
+// 	if err != nil {
+// 		entry.WithError(err).Error("unable to retreive killmail from db")
+// 		return
+// 	}
 
-	entry.Debugln()
+// 	killmail.Victim, err = s.victim.ByKillmailID(ctx, killmail.ID)
+// 	if err != nil {
+// 		entry.WithError(err).Error("encountered error fetching victim")
+// 		return
+// 	}
 
-	killmail, err := s.killmails.Killmail(ctx, payload.ID)
-	if err != nil {
-		entry.WithError(err).Error("unable to retreive killmail from db")
-		return
-	}
+// 	killmail.Victim.Items, err = s.items.ByKillmailID(ctx, killmail.ID)
+// 	if err != nil {
+// 		entry.WithError(err).Error("encountered error fetching victim items")
+// 		return
+// 	}
 
-	killmail.Victim, err = s.victim.ByKillmailID(ctx, killmail.ID)
-	if err != nil {
-		entry.WithError(err).Error("encountered error fetching victim")
-		return
-	}
+// 	killmail.Attackers, err = s.attackers.ByKillmailID(ctx, killmail.ID)
+// 	if err != nil {
+// 		entry.WithError(err).Error("encountered error fetching attackers")
+// 		return
+// 	}
 
-	killmail.Victim.Items, err = s.items.ByKillmailID(ctx, killmail.ID)
-	if err != nil {
-		entry.WithError(err).Error("encountered error fetching victim items")
-		return
-	}
+// 	s.primeKillmailNodes(ctx, killmail, entry)
 
-	killmail.Attackers, err = s.attackers.ByKillmailID(ctx, killmail.ID)
-	if err != nil {
-		entry.WithError(err).Error("encountered error fetching attackers")
-		return
-	}
-
-	s.primeKillmailNodes(ctx, killmail, entry)
-
-}
+// }

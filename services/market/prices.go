@@ -12,17 +12,18 @@ func (s *service) FetchPrices(ctx context.Context) {
 	s.logger.Info("fetching hourly market prices")
 
 	prices, m := s.esi.GetMarketsPrices(ctx)
-	if m.IsError() {
+	if m.IsErr() {
 		s.logger.WithError(m.Msg).Error("failed to fetch market prices")
 		return
 	}
 
+	today := time.Now().Format("2006-01-02")
 	records := make([]*neo.HistoricalRecord, 0)
 	for _, price := range prices {
 
 		record := &neo.HistoricalRecord{
 			TypeID: price.TypeID,
-			Date:   &neo.Date{Time: time.Now()},
+			Date:   today,
 		}
 
 		// Select the greater of the two
@@ -33,7 +34,7 @@ func (s *service) FetchPrices(ctx context.Context) {
 			p = price.AveragePrice
 		}
 
-		if p <= 0.01 {
+		if p < 0.01 {
 			continue
 		}
 

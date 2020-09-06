@@ -27,7 +27,7 @@ type TypeAttribute struct {
 	Value       float64 `json:"value"`
 }
 
-func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, *Meta) {
+func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Type, []*neo.TypeAttribute, Meta) {
 
 	var esitype = new(Type)
 
@@ -39,7 +39,7 @@ func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Typ
 	}
 
 	response, m := s.request(ctx, request)
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, nil, m
 	}
 
@@ -59,12 +59,12 @@ func (s *service) GetUniverseTypesTypeID(ctx context.Context, id uint) (*neo.Typ
 	}
 
 	return &neo.Type{
-		ID:            esitype.ID,
-		GroupID:       esitype.GroupID,
-		Name:          esitype.Name,
-		Description:   esitype.Description,
-		Published:     esitype.Published,
-		MarketGroupID: esitype.MarketGroupID,
+		ID:          esitype.ID,
+		GroupID:     esitype.GroupID,
+		Name:        esitype.Name,
+		Description: esitype.Description,
+		Published:   esitype.Published,
+		// MarketGroupID: esitype.MarketGroupID,
 	}, attributes, m
 
 }

@@ -3,141 +3,100 @@ package neo
 import (
 	"context"
 	"time"
-
-	"github.com/volatiletech/null"
 )
 
 type KillmailRepository interface {
 	Killmail(ctx context.Context, id uint) (*Killmail, error)
-	Killmails(ctx context.Context, coreMods []Modifier, vicMods []Modifier, attMods []Modifier) ([]*Killmail, error)
-	Create(ctx context.Context, killmail *Killmail) (*Killmail, error)
-	CreateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) (*Killmail, error)
-	Update(ctx context.Context, id uint, killmail *Killmail) error
-	UpdateWithTxn(ctx context.Context, txn Transactioner, killmail *Killmail) error
+	Killmails(ctx context.Context, mods ...Modifier) ([]*Killmail, error)
+	CreateKillmail(ctx context.Context, killmail *Killmail) error
+	// Update(ctx context.Context, id uint, killmail *Killmail) error
 
 	Exists(ctx context.Context, id uint) (bool, error)
 	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
-	Recalculable(ctx context.Context, limit int, after uint) ([]*Killmail, error)
-}
-
-type KillmailAttackerRepository interface {
-	ByKillmailID(ctx context.Context, id uint) ([]*KillmailAttacker, error)
-	ByKillmailIDs(ctx context.Context, ids []uint) ([]*KillmailAttacker, error)
-	Create(ctx context.Context, attacker *KillmailAttacker) (*KillmailAttacker, error)
-	CreateWithTxn(ctx context.Context, txn Transactioner, attacker *KillmailAttacker) (*KillmailAttacker, error)
-	CreateBulk(ctx context.Context, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
-	CreateBulkWithTxn(ctx context.Context, txn Transactioner, attackers []*KillmailAttacker) ([]*KillmailAttacker, error)
-}
-
-type KillmailItemRepository interface {
-	ByKillmailID(ctx context.Context, id uint) ([]*KillmailItem, error)
-	ByKillmailIDs(ctx context.Context, ids []uint) ([]*KillmailItem, error)
-	Create(ctx context.Context, item *KillmailItem) (*KillmailItem, error)
-	CreateWithTxn(ctx context.Context, txn Transactioner, item *KillmailItem) (*KillmailItem, error)
-	CreateBulk(ctx context.Context, items []*KillmailItem) ([]*KillmailItem, error)
-	CreateBulkWithTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) ([]*KillmailItem, error)
-	UpdateBulk(ctx context.Context, items []*KillmailItem) error
-	UpdateBulkWithTxn(ctx context.Context, txn Transactioner, items []*KillmailItem) error
-}
-
-type KillmailVictimRepository interface {
-	ByKillmailID(ctx context.Context, id uint) (*KillmailVictim, error)
-	ByKillmailIDs(ctx context.Context, ids []uint) ([]*KillmailVictim, error)
-	Create(ctx context.Context, victim *KillmailVictim) (*KillmailVictim, error)
-	CreateWithTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) (*KillmailVictim, error)
-	Update(ctx context.Context, victim *KillmailVictim) error
-	UpdateWithTxn(ctx context.Context, txn Transactioner, victim *KillmailVictim) error
+	// Recalculable(ctx context.Context, limit int, after uint) ([]*Killmail, error)
 }
 
 type Killmail struct {
-	ID              uint      `db:"id" json:"id"`
-	Hash            string    `db:"hash" json:"hash"`
-	MoonID          null.Uint `db:"moon_id" json:"moon_id,omitempty"`
-	SolarSystemID   uint      `db:"solar_system_id" json:"solar_system_id"`
-	ConstellationID uint      `db:"constellation_id"`
-	RegionID        uint      `db:"region_id"`
-	WarID           null.Uint `db:"war_id" json:"war_id,omitempty"`
-	IsNPC           bool      `db:"is_npc" json:"isNPC"`
-	IsAwox          bool      `db:"is_awox" json:"isAwox"`
-	IsSolo          bool      `db:"is_solo" json:"isSolo"`
-	DroppedValue    float64   `db:"dropped_value" json:"droppedValue"`
-	DestroyedValue  float64   `db:"destroyed_value" json:"destroyedValue"`
-	FittedValue     float64   `db:"fitted_value" json:"fittedValue"`
-	TotalValue      float64   `db:"total_value" json:"totalValue"`
-	KillmailTime    time.Time `db:"killmail_time" json:"killmail_time"`
+	ID              uint      `bson:"id" json:"id"`
+	Hash            string    `bson:"hash" json:"hash"`
+	MoonID          *uint     `bson:"moonID,omitempty" json:"moonID,omitempty"`
+	SolarSystemID   uint      `bson:"solarSystemID" json:"solarSystemID"`
+	ConstellationID uint      `bson:"constellationID"`
+	RegionID        uint      `bson:"regionID"`
+	WarID           *uint     `bson:"warID,omitempty" json:"warID,omitempty"`
+	IsNPC           bool      `bson:"isNPC" json:"isNPC"`
+	IsAwox          bool      `bson:"isAwox" json:"isAwox"`
+	IsSolo          bool      `bson:"isSolo" json:"isSolo"`
+	DroppedValue    float64   `bson:"droppedValue" json:"droppedValue"`
+	DestroyedValue  float64   `bson:"destroyedValue" json:"destroyedValue"`
+	FittedValue     float64   `bson:"fittedValue" json:"fittedValue"`
+	TotalValue      float64   `bson:"totalValue" json:"totalValue"`
+	KillmailTime    time.Time `bson:"killmailTime" json:"killmailTime"`
 
-	Attackers []*KillmailAttacker `json:"attackers"`
-	Victim    *KillmailVictim     `json:"victim"`
-
-	System *SolarSystem `json:"-"`
+	System    *SolarSystem        `bson:"-" json:"-"`
+	Attackers []*KillmailAttacker `bson:"attackers" json:"attackers"`
+	Victim    *KillmailVictim     `bson:"victim" json:"victim"`
 }
 
 type KillmailAttacker struct {
-	ID             uint        `json:"id"`
-	KillmailID     uint        `json:"killmail_id"`
-	AllianceID     null.Uint   `json:"alliance_id"`
-	CharacterID    null.Uint64 `json:"character_id"`
-	CorporationID  null.Uint   `json:"corporation_id"`
-	FactionID      null.Uint   `json:"faction_id"`
-	DamageDone     uint        `json:"damage_done"`
-	FinalBlow      bool        `json:"final_blow"`
-	SecurityStatus float64     `json:"security_status"`
-	ShipTypeID     null.Uint   `json:"ship_type_id"`
-	ShipGroupID    null.Uint
-	WeaponTypeID   null.Uint `json:"weapon_type_id"`
-	WeaponGroupID  null.Uint
+	KillmailID     uint    `bson:"killmailID" json:"killmailID"`
+	AllianceID     *uint   `bson:"allianceID" json:"allianceID"`
+	CharacterID    *uint64 `bson:"characterID" json:"characterID"`
+	CorporationID  *uint   `bson:"corporationID" json:"corporationID"`
+	FactionID      *uint   `bson:"factionID" json:"factionID"`
+	DamageDone     uint    `bson:"damageDone" json:"damageDone"`
+	FinalBlow      bool    `bson:"finalBlow" json:"finalBlow"`
+	SecurityStatus float64 `bson:"securityStatus" json:"securityStatus"`
+	ShipTypeID     *uint   `bson:"shipTypeID" json:"shipTypeID"`
+	ShipGroupID    *uint   `bson:"shipGroupID" json:"shipGroupID"`
+	WeaponTypeID   *uint   `bson:"weaponTypeID" json:"weaponTypeID"`
+	WeaponGroupID  *uint   `bson:"weaponGroupID" json:"weaponGroupID"`
 
-	Alliance    *Alliance    `json:"-"`
-	Character   *Character   `json:"-"`
-	Corporation *Corporation `json:"-"`
-	Ship        *Type        `json:"-"`
-	Weapon      *Type        `json:"-"`
+	Alliance    *Alliance    `bson:"-" json:"-"`
+	Character   *Character   `bson:"-" json:"-"`
+	Corporation *Corporation `bson:"-" json:"-"`
+	Ship        *Type        `bson:"-" json:"-"`
+	Weapon      *Type        `bson:"-" json:"-"`
 }
 
 type KillmailItem struct {
-	ID                uint      `json:"id"`
-	ParentID          null.Uint `json:"parent_id"`
-	KillmailID        uint      `json:"killmail_id"`
-	Flag              uint      `json:"flag"`
-	ItemTypeID        uint      `json:"item_type_id"`
-	ItemGroupID       uint
-	QuantityDropped   null.Uint `json:"quantity_dropped"`
-	QuantityDestroyed null.Uint `json:"quantity_destroyed"`
-	ItemValue         float64   `json:"itemValue"`
-	TotalValue        float64   `json:"totalValue"`
-	Singleton         uint8     `json:"singleton"`
-	IsParent          bool      `json:"is_parent"`
+	KillmailID        uint    `bson:"killmailID" json:"killmailID"`
+	Flag              uint    `bson:"flag" json:"flag"`
+	ItemTypeID        uint    `bson:"itemTypeID" json:"itemTypeID"`
+	ItemGroupID       uint    `bson:"itemGroupID" json:"itemGroupID"`
+	QuantityDropped   *uint   `bson:"quantityDropped" json:"quantityDropped"`
+	QuantityDestroyed *uint   `bson:"quantityDestroyed" json:"quantityDestroyed"`
+	ItemValue         float64 `bson:"itemValue" json:"itemValue"`
+	TotalValue        float64 `bson:"totalValue" json:"totalValue"`
+	Singleton         uint8   `bson:"singleton" json:"singleton"`
+	IsParent          bool    `bson:"isparent" json:"isparent"`
 
-	Item  *Type           `json:"-"`
-	Items []*KillmailItem `json:"items"`
+	Type  *Type           `bson:"-" json:"-"`
+	Items []*KillmailItem `bson:"items" json:"items"`
 }
 
 type KillmailVictim struct {
-	ID            uint        `json:"id"`
-	KillmailID    uint        `json:"killmail_id"`
-	AllianceID    null.Uint   `json:"alliance_id"`
-	CharacterID   null.Uint64 `json:"character_id"`
-	CorporationID null.Uint   `json:"corporation_id"`
-	FactionID     null.Uint   `json:"faction_id"`
-	DamageTaken   uint        `json:"damage_taken"`
-	ShipTypeID    uint        `json:"ship_type_id"`
-	ShipGroupID   uint
-	ShipValue     float64           `json:"shipValue" `
-	Position      *KillmailPosition `json:"position"`
-	PosX          null.Float64      `json:"pos_x"`
-	PosY          null.Float64      `json:"pos_y"`
-	PosZ          null.Float64      `json:"pos_z"`
+	KillmailID    uint    `bson:"killmailID" json:"killmailID"`
+	AllianceID    *uint   `bson:"allianceID" json:"allianceID"`
+	CharacterID   *uint64 `bson:"characterID" json:"characterID"`
+	CorporationID *uint   `bson:"corporationID" json:"corporationID"`
+	FactionID     *uint   `bson:"factionID" json:"factionID"`
+	DamageTaken   uint    `bson:"damageTaken" json:"damageTaken"`
+	ShipTypeID    uint    `bson:"shipTypeID" json:"shipTypeID"`
+	ShipGroupID   uint    `bson:"shipGroupID" json:"shipGroupID"`
+	ShipValue     float64 `bson:"shipValue" json:"shipValue"`
 
-	Alliance    *Alliance    `json:"-"`
-	Character   *Character   `json:"-"`
-	Corporation *Corporation `json:"-"`
-	Ship        *Type        `json:"-"`
+	Alliance    *Alliance    `bson:"-" json:"-"`
+	Character   *Character   `bson:"-" json:"-"`
+	Corporation *Corporation `bson:"-" json:"-"`
+	Ship        *Type        `bson:"-" json:"-"`
 
-	Items []*KillmailItem `json:"items"`
+	Position *Position       `bson:"position" json:"position"`
+	Items    []*KillmailItem `bson:"items" json:"items"`
 }
 
-type KillmailPosition struct {
-	X null.Float64 `json:"x"`
-	Y null.Float64 `json:"y"`
-	Z null.Float64 `json:"z"`
+type Position struct {
+	X float64 `bson:"x" json:"x"`
+	Y float64 `bson:"y" json:"y"`
+	Z float64 `bson:"z" json:"z"`
 }

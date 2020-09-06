@@ -1,7 +1,6 @@
 package stats
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -69,7 +68,7 @@ func (s *service) Run() error {
 				continue
 			}
 
-			s.processMessage(message)
+			// s.processMessage(message)
 		}
 	}
 
@@ -92,10 +91,10 @@ func (s *service) Run() error {
 // 	i := 1
 // 	for {
 // 		killmails, err := s.killmail.KillmailsByShipID(ctx, uint64(id), i)
-// 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+// 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 // 			return fmt.Errorf("failed to fetch killmails to recalculate stats")
 // 		}
-// 		if errors.Is(err, sql.ErrNoRows) {
+// 		if errors.Is(err, mongo.ErrNoDocuments) {
 // 			return nil
 // 		}
 
@@ -109,332 +108,332 @@ func (s *service) Run() error {
 
 // }
 
-func (s *service) processMessage(msg neo.Message) {
+// func (s *service) processMessage(msg neo.Message) {
 
-	txn := s.newrelic.StartTransaction("process stats message")
-	defer txn.End()
+// 	txn := s.newrelic.StartTransaction("process stats message")
+// 	defer txn.End()
 
-	ctx := newrelic.NewContext(context.Background(), txn)
+// 	ctx := newrelic.NewContext(context.Background(), txn)
 
-	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
-		"id":   msg.ID,
-		"hash": msg.Hash,
-	})
+// 	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
+// 		"id":   msg.ID,
+// 		"hash": msg.Hash,
+// 	})
 
-	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, false)
-	if err != nil {
-		entry.WithError(err).Error("failed to fetch full killmail for stats")
-		return
-	}
-	if killmail.IsNPC {
-		return
-	}
+// 	killmail, err := s.killmail.FullKillmail(ctx, msg.ID, false)
+// 	if err != nil {
+// 		entry.WithError(err).Error("failed to fetch full killmail for stats")
+// 		return
+// 	}
+// 	if killmail.IsNPC {
+// 		return
+// 	}
 
-	stats := make([]*neo.Stat, 0)
-	stats = append(stats, s.location(killmail)...)
-	stats = append(stats, s.victim(killmail)...)
-	stats = append(stats, s.attackers(killmail)...)
+// 	stats := make([]*neo.Stat, 0)
+// 	stats = append(stats, s.location(killmail)...)
+// 	stats = append(stats, s.victim(killmail)...)
+// 	stats = append(stats, s.attackers(killmail)...)
 
-	chunks := chunkSliceStats(stats, 100)
-	for _, _ = range chunks {
-		err = nil
-		if err != nil {
-			entry.WithError(err).Error("encountered error calculating stats")
-			return
-		}
-	}
+// 	chunks := chunkSliceStats(stats, 100)
+// 	for _, _ = range chunks {
+// 		err = nil
+// 		if err != nil {
+// 			entry.WithError(err).Error("encountered error calculating stats")
+// 			return
+// 		}
+// 	}
 
-	entry.Info("stats calculated successfully")
+// 	entry.Info("stats calculated successfully")
 
-}
+// }
 
-func chunkSliceStats(slice []*neo.Stat, size int) [][]*neo.Stat {
+// func chunkSliceStats(slice []*neo.Stat, size int) [][]*neo.Stat {
 
-	var chunk = make([][]*neo.Stat, 0)
-	if len(slice) <= size {
-		chunk = append(chunk, slice)
-		slice = nil
-		return chunk
-	}
+// 	var chunk = make([][]*neo.Stat, 0)
+// 	if len(slice) <= size {
+// 		chunk = append(chunk, slice)
+// 		slice = nil
+// 		return chunk
+// 	}
 
-	for x := 0; x < len(slice); x += size {
-		end := x + size
+// 	for x := 0; x < len(slice); x += size {
+// 		end := x + size
 
-		if end > len(slice) {
-			end = len(slice)
-		}
+// 		if end > len(slice) {
+// 			end = len(slice)
+// 		}
 
-		chunk = append(chunk, slice[x:end])
-	}
+// 		chunk = append(chunk, slice[x:end])
+// 	}
 
-	slice = nil
+// 	slice = nil
 
-	return chunk
+// 	return chunk
 
-}
+// }
 
-func (s *service) date(t time.Time) *neo.Date {
-	return &neo.Date{Time: time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)}
-}
+// func (s *service) date(t time.Time) *neo.Date {
+// 	return &neo.Date{Time: time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)}
+// }
 
-func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
+// func (s *service) location(killmail *neo.Killmail) []*neo.Stat {
 
-	date := s.date(killmail.KillmailTime)
-	stats := make([]*neo.Stat, 0)
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(killmail.SolarSystemID),
-		EntityType: neo.StatEntitySystem,
-		Category:   neo.StatCategoryShipsKilled,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      1,
-	})
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(killmail.SolarSystemID),
-		EntityType: neo.StatEntitySystem,
-		Category:   neo.StatCategoryISKKilled,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      killmail.TotalValue,
-	})
-	if killmail.System != nil {
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(killmail.System.ConstellationID),
-			EntityType: neo.StatEntityConstellation,
-			Category:   neo.StatCategoryShipsKilled,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      1,
-		})
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(killmail.System.ConstellationID),
-			EntityType: neo.StatEntityConstellation,
-			Category:   neo.StatCategoryISKKilled,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      killmail.TotalValue,
-		})
-		if killmail.System.Constellation != nil {
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(killmail.System.Constellation.RegionID),
-				EntityType: neo.StatEntityRegion,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(killmail.System.Constellation.RegionID),
-				EntityType: neo.StatEntityRegion,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
-		}
-	}
-	return stats
+// 	date := s.date(killmail.KillmailTime)
+// 	stats := make([]*neo.Stat, 0)
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(killmail.SolarSystemID),
+// 		EntityType: neo.StatEntitySystem,
+// 		Category:   neo.StatCategoryShipsKilled,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      1,
+// 	})
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(killmail.SolarSystemID),
+// 		EntityType: neo.StatEntitySystem,
+// 		Category:   neo.StatCategoryISKKilled,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      killmail.TotalValue,
+// 	})
+// 	if killmail.System != nil {
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(killmail.System.ConstellationID),
+// 			EntityType: neo.StatEntityConstellation,
+// 			Category:   neo.StatCategoryShipsKilled,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      1,
+// 		})
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(killmail.System.ConstellationID),
+// 			EntityType: neo.StatEntityConstellation,
+// 			Category:   neo.StatCategoryISKKilled,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      killmail.TotalValue,
+// 		})
+// 		if killmail.System.Constellation != nil {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(killmail.System.Constellation.RegionID),
+// 				EntityType: neo.StatEntityRegion,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(killmail.System.Constellation.RegionID),
+// 				EntityType: neo.StatEntityRegion,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
+// 		}
+// 	}
+// 	return stats
 
-}
+// }
 
-func (s *service) victim(killmail *neo.Killmail) []*neo.Stat {
-	date := s.date(killmail.KillmailTime)
-	stats := make([]*neo.Stat, 0)
-	victim := killmail.Victim
+// func (s *service) victim(killmail *neo.Killmail) []*neo.Stat {
+// 	date := s.date(killmail.KillmailTime)
+// 	stats := make([]*neo.Stat, 0)
+// 	victim := killmail.Victim
 
-	if victim.CharacterID.Valid {
-		stats = append(stats, &neo.Stat{
-			EntityID:   victim.CharacterID.Uint64,
-			EntityType: neo.StatEntityCharacter,
-			Category:   neo.StatCategoryShipsLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      1,
-		})
-		stats = append(stats, &neo.Stat{
-			EntityID:   victim.CharacterID.Uint64,
-			EntityType: neo.StatEntityCharacter,
-			Category:   neo.StatCategoryISKLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      killmail.TotalValue,
-		})
-	}
-	if victim.CorporationID.Valid {
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(victim.CorporationID.Uint),
-			EntityType: neo.StatEntityCorporation,
-			Category:   neo.StatCategoryShipsLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      1,
-		})
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(victim.CorporationID.Uint),
-			EntityType: neo.StatEntityCorporation,
-			Category:   neo.StatCategoryISKLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      killmail.TotalValue,
-		})
-	}
-	if victim.AllianceID.Valid {
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(victim.AllianceID.Uint),
-			EntityType: neo.StatEntityAlliance,
-			Category:   neo.StatCategoryShipsLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      1,
-		})
-		stats = append(stats, &neo.Stat{
-			EntityID:   uint64(victim.AllianceID.Uint),
-			EntityType: neo.StatEntityAlliance,
-			Category:   neo.StatCategoryISKLost,
-			Frequency:  neo.StatFrequencyDaily,
-			Date:       date,
-			Value:      killmail.TotalValue,
-		})
-	}
+// 	if victim.CharacterID.Valid {
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   victim.CharacterID.Uint64,
+// 			EntityType: neo.StatEntityCharacter,
+// 			Category:   neo.StatCategoryShipsLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      1,
+// 		})
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   victim.CharacterID.Uint64,
+// 			EntityType: neo.StatEntityCharacter,
+// 			Category:   neo.StatCategoryISKLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      killmail.TotalValue,
+// 		})
+// 	}
+// 	if victim.CorporationID.Valid {
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(victim.CorporationID.Uint),
+// 			EntityType: neo.StatEntityCorporation,
+// 			Category:   neo.StatCategoryShipsLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      1,
+// 		})
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(victim.CorporationID.Uint),
+// 			EntityType: neo.StatEntityCorporation,
+// 			Category:   neo.StatCategoryISKLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      killmail.TotalValue,
+// 		})
+// 	}
+// 	if victim.AllianceID.Valid {
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(victim.AllianceID.Uint),
+// 			EntityType: neo.StatEntityAlliance,
+// 			Category:   neo.StatCategoryShipsLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      1,
+// 		})
+// 		stats = append(stats, &neo.Stat{
+// 			EntityID:   uint64(victim.AllianceID.Uint),
+// 			EntityType: neo.StatEntityAlliance,
+// 			Category:   neo.StatCategoryISKLost,
+// 			Frequency:  neo.StatFrequencyDaily,
+// 			Date:       date,
+// 			Value:      killmail.TotalValue,
+// 		})
+// 	}
 
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(victim.ShipTypeID),
-		EntityType: neo.StatEntityShip,
-		Category:   neo.StatCategoryShipsLost,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      1,
-	})
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(victim.ShipTypeID),
-		EntityType: neo.StatEntityShip,
-		Category:   neo.StatCategoryISKLost,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      killmail.TotalValue,
-	})
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(victim.ShipTypeID),
+// 		EntityType: neo.StatEntityShip,
+// 		Category:   neo.StatCategoryShipsLost,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      1,
+// 	})
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(victim.ShipTypeID),
+// 		EntityType: neo.StatEntityShip,
+// 		Category:   neo.StatCategoryISKLost,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      killmail.TotalValue,
+// 	})
 
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(victim.ShipGroupID),
-		EntityType: neo.StatEntityShipGroup,
-		Category:   neo.StatCategoryShipsLost,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      1,
-	})
-	stats = append(stats, &neo.Stat{
-		EntityID:   uint64(victim.ShipGroupID),
-		EntityType: neo.StatEntityShipGroup,
-		Category:   neo.StatCategoryISKLost,
-		Frequency:  neo.StatFrequencyDaily,
-		Date:       date,
-		Value:      killmail.TotalValue,
-	})
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(victim.ShipGroupID),
+// 		EntityType: neo.StatEntityShipGroup,
+// 		Category:   neo.StatCategoryShipsLost,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      1,
+// 	})
+// 	stats = append(stats, &neo.Stat{
+// 		EntityID:   uint64(victim.ShipGroupID),
+// 		EntityType: neo.StatEntityShipGroup,
+// 		Category:   neo.StatCategoryISKLost,
+// 		Frequency:  neo.StatFrequencyDaily,
+// 		Date:       date,
+// 		Value:      killmail.TotalValue,
+// 	})
 
-	return stats
+// 	return stats
 
-}
+// }
 
-func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
-	date := s.date(killmail.KillmailTime)
-	stats := make([]*neo.Stat, 0)
-	attackers := killmail.Attackers
+// func (s *service) attackers(killmail *neo.Killmail) []*neo.Stat {
+// 	date := s.date(killmail.KillmailTime)
+// 	stats := make([]*neo.Stat, 0)
+// 	attackers := killmail.Attackers
 
-	for _, attacker := range attackers {
-		if attacker.CharacterID.Valid {
-			stats = append(stats, &neo.Stat{
-				EntityID:   attacker.CharacterID.Uint64,
-				EntityType: neo.StatEntityCharacter,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   attacker.CharacterID.Uint64,
-				EntityType: neo.StatEntityCharacter,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
-		}
-		if attacker.CorporationID.Valid {
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.CorporationID.Uint),
-				EntityType: neo.StatEntityCorporation,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.CorporationID.Uint),
-				EntityType: neo.StatEntityCorporation,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
-		}
-		if attacker.AllianceID.Valid {
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.AllianceID.Uint),
-				EntityType: neo.StatEntityAlliance,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.AllianceID.Uint),
-				EntityType: neo.StatEntityAlliance,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
-		}
+// 	for _, attacker := range attackers {
+// 		if attacker.CharacterID.Valid {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   attacker.CharacterID.Uint64,
+// 				EntityType: neo.StatEntityCharacter,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   attacker.CharacterID.Uint64,
+// 				EntityType: neo.StatEntityCharacter,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
+// 		}
+// 		if attacker.CorporationID.Valid {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.CorporationID.Uint),
+// 				EntityType: neo.StatEntityCorporation,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.CorporationID.Uint),
+// 				EntityType: neo.StatEntityCorporation,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
+// 		}
+// 		if attacker.AllianceID.Valid {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.AllianceID.Uint),
+// 				EntityType: neo.StatEntityAlliance,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.AllianceID.Uint),
+// 				EntityType: neo.StatEntityAlliance,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
+// 		}
 
-		if attacker.ShipTypeID.Valid {
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.ShipTypeID.Uint),
-				EntityType: neo.StatEntityShip,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.ShipTypeID.Uint),
-				EntityType: neo.StatEntityShip,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
+// 		if attacker.ShipTypeID.Valid {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.ShipTypeID.Uint),
+// 				EntityType: neo.StatEntityShip,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.ShipTypeID.Uint),
+// 				EntityType: neo.StatEntityShip,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
 
-		}
+// 		}
 
-		if attacker.ShipGroupID.Valid {
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.ShipGroupID.Uint),
-				EntityType: neo.StatEntityShipGroup,
-				Category:   neo.StatCategoryShipsKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      1,
-			})
-			stats = append(stats, &neo.Stat{
-				EntityID:   uint64(attacker.ShipGroupID.Uint),
-				EntityType: neo.StatEntityShipGroup,
-				Category:   neo.StatCategoryISKKilled,
-				Frequency:  neo.StatFrequencyDaily,
-				Date:       date,
-				Value:      killmail.TotalValue,
-			})
-		}
-	}
+// 		if attacker.ShipGroupID.Valid {
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.ShipGroupID.Uint),
+// 				EntityType: neo.StatEntityShipGroup,
+// 				Category:   neo.StatCategoryShipsKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      1,
+// 			})
+// 			stats = append(stats, &neo.Stat{
+// 				EntityID:   uint64(attacker.ShipGroupID.Uint),
+// 				EntityType: neo.StatEntityShipGroup,
+// 				Category:   neo.StatCategoryISKKilled,
+// 				Frequency:  neo.StatFrequencyDaily,
+// 				Date:       date,
+// 				Value:      killmail.TotalValue,
+// 			})
+// 		}
+// 	}
 
-	return stats
-}
+// 	return stats
+// }

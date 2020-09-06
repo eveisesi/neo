@@ -1,112 +1,52 @@
 package backup
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/eveisesi/neo"
 	"github.com/go-redis/redis/v7"
-	"github.com/korovkin/limiter"
 	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	Run(gLimit, gSleep int64)
+	BackupKillmail(ctx context.Context, date time.Time, payload neo.Message, data []byte)
 }
 
 type service struct {
-	bucket string
-	client *s3.S3
 	redis  *redis.Client
 	logger *logrus.Logger
 }
 
-func NewService(bucket string, client *s3.S3, redis *redis.Client, logger *logrus.Logger) Service {
+func NewService(redis *redis.Client, logger *logrus.Logger) Service {
 	return &service{
-		bucket: bucket,
-		client: client,
 		redis:  redis,
 		logger: logger,
 	}
 }
 
-func (s *service) Run(gLimit, gSleep int64) {
+func (s *service) BackupKillmail(ctx context.Context, date time.Time, payload neo.Message, data []byte) {
 
-	ctx := context.Background()
+	entry := s.logger.WithContext(ctx).WithField("id", payload.ID).WithField("hash", payload.Hash)
 
-	limiter := limiter.NewConcurrencyLimiter(int(gLimit))
+	directory := fmt.Sprintf(neo.BACKUP_KILLMAIL_RAW_PARENT_DIRECTORY_FORMAT, date.Format("2006-01-02"))
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		_ = os.Mkdir(directory, 0555)
+	}
 
-	for {
-		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_BACKUP, "-inf", "+inf").Result()
+	file, err := os.OpenFile(fmt.Sprintf(neo.BACKUP_KILLMAIL_RAW_NAME_FORMAT, directory, payload.ID, payload.Hash), os.O_CREATE|os.O_WRONLY, 0444)
+	if err != nil {
+		entry.WithError(err).Error("failed to open backup file for killmail")
+	}
+
+	if err == nil && data != nil {
+		_, err = file.WriteString(string(data))
 		if err != nil {
-			s.logger.WithError(err).Error("unable to determine count of message queue")
-			time.Sleep(time.Second * 2)
-			continue
+			entry.WithError(err).Error("failed to write killmail to backup file")
 		}
-
-		if count == 0 {
-			s.logger.Info("message queue is empty")
-			time.Sleep(time.Second * 2)
-			continue
-		}
-
-		results, err := s.redis.WithContext(ctx).ZPopMax(neo.QUEUES_KILLMAIL_BACKUP, gLimit).Result()
-		if err != nil {
-			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
-		}
-
-		for _, result := range results {
-			message := result.Member.(string)
-			limiter.ExecuteWithTicket(func(workerID int) {
-				s.uploadMessage([]byte(message), workerID, gSleep)
-			})
-		}
-
-	}
-}
-
-func (s *service) uploadMessage(message []byte, workerID int, sleep int64) {
-
-	var ctx = context.Background()
-
-	var envelope = new(neo.Envelope)
-	err := json.Unmarshal(message, envelope)
-	if err != nil {
-		s.logger.WithError(err).WithField("workerID", workerID).Error("failed to unmarshal envelope for backup")
-		return
 	}
 
-	killmail, err := envelope.Killmail.MarshalJSON()
-	if err != nil {
-		s.logger.WithError(err).WithField("workerID", workerID).Error("failed to unmarshal killmail for backup")
-		return
-	}
-
-	body := bytes.NewReader(killmail)
-
-	object := s3.PutObjectInput{
-		Bucket:        aws.String("neo"),
-		Key:           aws.String(fmt.Sprintf("killmails/%d:%s.json", envelope.ID, envelope.Hash)),
-		Body:          body,
-		ACL:           aws.String("public-read"),
-		ContentLength: aws.Int64(body.Size()),
-		ContentType:   aws.String("application/json"),
-	}
-
-	_, err = s.client.PutObject(&object)
-	if err != nil {
-		s.logger.WithError(err).WithField("workerID", workerID).Error("failed to PUT object into DO spaces")
-		s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_BACKUP, &redis.Z{Score: float64(envelope.ID), Member: string(message)})
-		return
-	}
-
-	s.logger.WithFields(logrus.Fields{"id": envelope.ID, "hash": envelope.Hash}).Info("killmail successfully uploaded")
-
-	time.Sleep(time.Millisecond * time.Duration(sleep))
-
+	file.Close()
 }

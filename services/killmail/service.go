@@ -6,6 +6,7 @@ import (
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
+	"github.com/eveisesi/neo/services/backup"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
@@ -20,6 +21,7 @@ import (
 
 type (
 	Service interface {
+		ProcessMessage(ctx context.Context, entry *logrus.Entry, message []byte) (*neo.Killmail, error)
 		// Business Appliances
 		HistoryExporter(mindate, maxdate string, datehold bool, threshold int64) error
 		Importer(gLimit, gSleep int64) error
@@ -76,17 +78,14 @@ type (
 		esi         esi.Service
 		logger      *logrus.Logger
 		config      *neo.Config
+		backup      backup.Service
 		character   character.Service
 		corporation corporation.Service
 		alliance    alliance.Service
 		universe    universe.Service
 		market      market.Service
 		tracker     tracker.Service
-		txn         neo.Starter
 		killmails   neo.KillmailRepository
-		attackers   neo.KillmailAttackerRepository
-		items       neo.KillmailItemRepository
-		victim      neo.KillmailVictimRepository
 	}
 )
 
@@ -102,6 +101,7 @@ func NewService(
 	esi esi.Service,
 	logger *logrus.Logger,
 	config *neo.Config,
+	backup backup.Service,
 
 	// Services
 	character character.Service,
@@ -111,13 +111,11 @@ func NewService(
 	market market.Service,
 	tracker tracker.Service,
 
-	txn neo.Starter,
-
 	// Repositories
 	killmails neo.KillmailRepository,
-	attackers neo.KillmailAttackerRepository,
-	items neo.KillmailItemRepository,
-	victim neo.KillmailVictimRepository,
+	// attackers neo.KillmailAttackerRepository,
+	// items neo.KillmailItemRepository,
+	// victim neo.KillmailVictimRepository,
 ) Service {
 	return &service{
 		client,
@@ -126,17 +124,17 @@ func NewService(
 		esi,
 		logger,
 		config,
+		backup,
 		character,
 		corporation,
 		alliance,
 		universe,
 		market,
 		tracker,
-		txn,
 		killmails,
-		attackers,
-		items,
-		victim,
+		// attackers,
+		// items,
+		// victim,
 	}
 }
 

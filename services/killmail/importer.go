@@ -43,8 +43,6 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 		}
 
 		for _, result := range results {
-			innertxn := s.newrelic.StartTransaction("process killmail")
-			ctx := newrelic.NewContext(context.Background(), innertxn.NewGoroutine())
 			s.tracker.GateKeeper(ctx)
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
@@ -57,9 +55,15 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 
 func (s *service) handleMessage(ctx context.Context, message []byte, workerID int, sleep int64) {
 
-	txn := newrelic.FromContext(ctx)
+	txn := s.newrelic.StartTransaction("handleMessage")
 	defer txn.End()
-	killmail, err := s.ProcessMessage(ctx, message)
+	ctx = newrelic.NewContext(ctx, txn.NewGoroutine())
+
+	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
+		"worker": workerID,
+	})
+
+	killmail, err := s.ProcessMessage(ctx, entry, message)
 	if err != nil {
 		txn.NoticeError(err)
 		s.logger.WithContext(ctx).WithError(err).Error("failed to handle message")
@@ -71,12 +75,6 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 		txn.Ignore()
 		return
 	}
-
-	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
-		"id":     killmail.ID,
-		"hash":   killmail.Hash,
-		"worker": workerID,
-	})
 
 	msg, err := json.Marshal(neo.Message{
 		ID:   killmail.ID,
@@ -101,7 +99,9 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 
 }
 
-func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Killmail, error) {
+func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, message []byte) (*neo.Killmail, error) {
+
+	// var wg sync.WaitGroup
 
 	txn := newrelic.FromContext(ctx)
 
@@ -113,7 +113,7 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 		return nil, err
 	}
 
-	entry := s.logger.WithContext(ctx).WithFields(logrus.Fields{
+	entry = entry.WithFields(logrus.Fields{
 		"id":   payload.ID,
 		"hash": payload.Hash,
 	})
@@ -131,14 +131,16 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 	}
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(ctx, payload.ID, payload.Hash)
-	if m.IsError() {
+	if m.IsErr() {
 		txn.NoticeError(m.Msg)
 		entry.WithError(m.Msg).WithFields(logrus.Fields{
 			"code":  m.Code,
 			"path":  m.Path,
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
-		s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
+		if m.Code >= 500 {
+			s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
+		}
 		return nil, err
 	}
 
@@ -157,30 +159,14 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 		s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return nil, err
 	}
-	entry = entry.WithField("killmail", killmail.KillmailTime.Format("2006-01-02 15:04:05"))
 
-	killmail.Hash = payload.Hash
+	// wg.Add(1)
+	// go s.backupKillmail(ctx, &wg, killmail.KillmailTime, payload, m.Data)
+
+	entry = entry.WithField("killtime", killmail.KillmailTime.Format("2006-01-02 15:04:05"))
 	s.primeKillmailNodes(ctx, killmail, entry)
 
-	dbTxn, err := s.txn.Begin()
-	if err != nil {
-		s.logger.WithError(err).Error("failed to start transaction")
-		return nil, err
-	}
-
-	_, err = s.killmails.CreateWithTxn(ctx, dbTxn, killmail)
-	if err != nil {
-		entry.WithError(err).Error("error encountered inserting killmail into db")
-		return nil, err
-	}
-
 	killmail.Victim.KillmailID = killmail.ID
-
-	if killmail.Victim.Position != nil {
-		killmail.Victim.PosX.SetValid(killmail.Victim.Position.X.Float64)
-		killmail.Victim.PosY.SetValid(killmail.Victim.Position.Y.Float64)
-		killmail.Victim.PosZ.SetValid(killmail.Victim.Position.Z.Float64)
-	}
 
 	date := killmail.KillmailTime
 	shipValue := s.market.FetchTypePrice(killmail.Victim.ShipTypeID, date)
@@ -193,38 +179,28 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 
 	killmail.Victim.ShipGroupID = victimShipType.GroupID
 
-	_, err = s.victim.CreateWithTxn(ctx, dbTxn, killmail.Victim)
-	if err != nil {
-		entry.WithError(err).Error("error encountered inserting killmail victim into db")
-	}
-
 	for _, attacker := range killmail.Attackers {
 		attacker.KillmailID = killmail.ID
 
-		if attacker.ShipTypeID.Valid {
-			attackerShipType, err := s.universe.Type(ctx, attacker.ShipTypeID.Uint)
+		if attacker.ShipTypeID != nil {
+			attackerShipType, err := s.universe.Type(ctx, *attacker.ShipTypeID)
 			if err != nil {
-				entry.WithError(err).WithField("ship_type_id", attacker.ShipTypeID.Uint).Error("encountered looking up type information for attacker ship")
+				entry.WithError(err).WithField("ship_type_id", attacker.ShipTypeID).Error("encountered looking up type information for attacker ship")
 				continue
 			}
 
-			attacker.ShipGroupID.SetValid(attackerShipType.GroupID)
+			attacker.ShipGroupID = &attackerShipType.GroupID
 		}
 
-		if attacker.WeaponTypeID.Valid {
-			attackerWeaponType, err := s.universe.Type(ctx, attacker.WeaponTypeID.Uint)
+		if attacker.WeaponTypeID != nil {
+			attackerWeaponType, err := s.universe.Type(ctx, *attacker.WeaponTypeID)
 			if err != nil {
-				entry.WithError(err).WithField("weapon_type_id", attacker.WeaponTypeID.Uint).Error("encountered looking up type information for attacker weapon")
+				entry.WithError(err).WithField("weapon_type_id", attacker.WeaponTypeID).Error("encountered looking up type information for attacker weapon")
 				continue
 			}
 
-			attacker.WeaponGroupID.SetValid(attackerWeaponType.GroupID)
+			attacker.WeaponGroupID = &attackerWeaponType.GroupID
 		}
-	}
-
-	_, err = s.attackers.CreateBulkWithTxn(ctx, dbTxn, killmail.Attackers)
-	if err != nil {
-		entry.WithError(err).Error("error encountered inserting killmail attackers into db")
 	}
 
 	destroyedValue := float64(0)
@@ -240,11 +216,11 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 		}
 
 		item.ItemValue = itemValue
-		if item.QuantityDestroyed.Uint > 0 {
-			destroyedValue += item.ItemValue * float64(item.QuantityDestroyed.Uint)
+		if item.QuantityDestroyed != nil && *item.QuantityDestroyed > 0 {
+			destroyedValue += item.ItemValue * float64(*item.QuantityDestroyed)
 		}
-		if item.QuantityDropped.Uint > 0 {
-			droppedValue += item.ItemValue * float64(item.QuantityDropped.Uint)
+		if item.QuantityDropped != nil && *item.QuantityDropped > 0 {
+			droppedValue += item.ItemValue * float64(*item.QuantityDropped)
 		}
 		if len(item.Items) > 0 {
 			item.IsParent = true
@@ -259,16 +235,10 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 		item.ItemGroupID = itemType.GroupID
 	}
 
-	_, err = s.items.CreateBulkWithTxn(ctx, dbTxn, killmail.Victim.Items)
-	if err != nil {
-		s.logger.WithError(err).Error("failed to insert items into db")
-	}
-
 	for _, item := range killmail.Victim.Items {
 		if len(item.Items) > 0 {
 			for _, subItem := range item.Items {
 				subItem.KillmailID = killmail.ID
-				subItem.ParentID.SetValid(item.ID)
 				subItemValue := float64(0)
 				if subItem.Singleton != 2 {
 					subItemValue = s.market.FetchTypePrice(subItem.ItemTypeID, date)
@@ -277,11 +247,11 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 				}
 				subItem.ItemValue = subItemValue
 
-				if subItem.QuantityDestroyed.Uint > 0 {
-					destroyedValue += subItemValue * float64(subItem.QuantityDestroyed.Uint)
+				if subItem.QuantityDestroyed != nil && *subItem.QuantityDestroyed > 0 {
+					destroyedValue += subItemValue * float64(*subItem.QuantityDestroyed)
 				}
-				if subItem.QuantityDropped.Uint > 0 {
-					droppedValue += subItemValue * float64(subItem.QuantityDropped.Uint)
+				if subItem.QuantityDropped != nil && *subItem.QuantityDropped > 0 {
+					droppedValue += subItemValue * float64(*subItem.QuantityDropped)
 				}
 
 				subItemType, err := s.universe.Type(ctx, subItem.ItemTypeID)
@@ -292,23 +262,7 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 
 				subItem.ItemGroupID = subItemType.GroupID
 			}
-
-			_, err = s.items.CreateBulkWithTxn(ctx, dbTxn, item.Items)
-			if err != nil {
-				entry.WithError(err).Error("error encountered insert sub items")
-			}
 		}
-	}
-
-	err = dbTxn.Commit()
-	if err != nil {
-		entry.WithError(err).Error("failed to commit transaction.attempting rollback")
-		err = dbTxn.Rollback()
-		if err != nil {
-			entry.WithError(err).Fatal("failed to rollback transaction, exiting...")
-		}
-
-		return nil, err
 	}
 
 	fittedValue := s.calculatedFittedValue(killmail.Victim.Items)
@@ -324,7 +278,7 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 	killmail.FittedValue = fittedValue
 	killmail.TotalValue = sum
 
-	err = s.killmails.Update(ctx, killmail.ID, killmail)
+	err = s.killmails.CreateKillmail(ctx, killmail)
 	if err != nil {
 		entry.WithError(err).Error("error encountered inserting killmail victim into db")
 		return nil, err
@@ -332,7 +286,9 @@ func (s *service) ProcessMessage(ctx context.Context, message []byte) (*neo.Kill
 
 	entry.Info("killmail successfully imported")
 
-	return killmail, nil
+	// wg.Wait()
+
+	return nil, nil
 }
 
 func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
@@ -345,12 +301,11 @@ func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 		return false
 	}
 
-	if !killmail.Victim.CorporationID.Valid {
+	if killmail.Victim.CorporationID == nil {
 		return false
 	}
 
-	//
-	victimCorporationID := killmail.Victim.CorporationID.Uint
+	victimCorporationID := *killmail.Victim.CorporationID
 	// Victim is in an NPC Corp. This is not an AWOX since characters
 	// cannot choose which NPC Corp they are in
 	if victimCorporationID < 98000000 {
@@ -369,15 +324,15 @@ func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 	}
 
 	for _, attacker := range killmail.Attackers {
-		if !attacker.CorporationID.Valid {
+		if attacker.CorporationID == nil {
 			continue
 		}
 
-		if !attacker.ShipTypeID.Valid {
+		if attacker.ShipTypeID == nil {
 			continue
 		}
 
-		attackerShip, err := s.universe.Type(context.Background(), attacker.ShipTypeID.Uint)
+		attackerShip, err := s.universe.Type(ctx, *attacker.ShipTypeID)
 		if err != nil {
 			continue
 		}
@@ -388,7 +343,7 @@ func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {
 			goto LoopEnd
 		}
 
-		if attacker.CorporationID.Uint == victimCorporationID {
+		if *attacker.CorporationID == victimCorporationID {
 			return true
 		}
 	LoopEnd:
@@ -409,11 +364,11 @@ func (s *service) calcIsNPC(ctx context.Context, killmail *neo.Killmail) bool {
 	}
 
 	for _, attacker := range killmail.Attackers {
-		if !attacker.CorporationID.Valid {
+		if attacker.CorporationID == nil {
 			continue
 		}
 
-		if attacker.CorporationID.Uint >= 98000000 {
+		if *attacker.CorporationID >= 98000000 {
 			return false
 		}
 	}
@@ -438,7 +393,11 @@ func (s *service) calcIsSolo(ctx context.Context, killmail *neo.Killmail) bool {
 
 	attacker := killmail.Attackers[0]
 
-	return attacker.CorporationID.Uint >= 98000000
+	if attacker.CorporationID == nil {
+		return false
+	}
+
+	return *attacker.CorporationID >= 98000000
 
 }
 
@@ -460,77 +419,68 @@ func (s *service) primeKillmailNodes(ctx context.Context, killmail *neo.Killmail
 
 	constellation.Region = region
 	system.Constellation = constellation
-	killmail.System = system
 	killmail.ConstellationID = system.ConstellationID
 	killmail.RegionID = constellation.RegionID
 
 	victim := killmail.Victim
 
 	if victim != nil {
-		if victim.AllianceID.Valid {
-			_, err := s.alliance.Alliance(ctx, victim.AllianceID.Uint)
+		if victim.AllianceID != nil {
+			_, err := s.alliance.Alliance(ctx, *victim.AllianceID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime victim alliance")
 			}
 		}
-
-		if victim.CorporationID.Valid {
-			_, err := s.corporation.Corporation(ctx, victim.CorporationID.Uint)
+		if victim.CorporationID != nil {
+			_, err := s.corporation.Corporation(ctx, *victim.CorporationID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime victim character")
 			}
 		}
-
-		if victim.CharacterID.Valid {
-			_, err := s.character.Character(ctx, victim.CharacterID.Uint64)
+		if victim.CharacterID != nil {
+			_, err := s.character.Character(ctx, *victim.CharacterID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime victim character")
 			}
-		}
 
+		}
 		_, err = s.universe.Type(ctx, victim.ShipTypeID)
 		if err != nil {
 			entry.WithError(err).Error("failed to prime victim ship type")
 		}
 	}
-
 	for _, attacker := range killmail.Attackers {
-		if attacker.AllianceID.Valid {
-			_, err := s.alliance.Alliance(ctx, attacker.AllianceID.Uint)
+		if attacker.AllianceID != nil {
+			_, err := s.alliance.Alliance(ctx, *attacker.AllianceID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime attacker alliance")
 			}
 		}
-
-		if attacker.CorporationID.Valid {
-			_, err := s.corporation.Corporation(ctx, attacker.CorporationID.Uint)
+		if attacker.CorporationID != nil {
+			_, err := s.corporation.Corporation(ctx, *attacker.CorporationID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime attacker character")
 			}
 		}
-
-		if attacker.CharacterID.Valid {
-			_, err := s.character.Character(ctx, attacker.CharacterID.Uint64)
+		if attacker.CharacterID != nil {
+			_, err := s.character.Character(ctx, *attacker.CharacterID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime attacker character")
 			}
 		}
-
-		if attacker.ShipTypeID.Valid {
-			_, err = s.universe.Type(ctx, attacker.ShipTypeID.Uint)
+		if attacker.ShipTypeID != nil {
+			_, err = s.universe.Type(ctx, *attacker.ShipTypeID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
-
-		if attacker.WeaponTypeID.Valid {
-			_, err = s.universe.Type(ctx, attacker.WeaponTypeID.Uint)
+		if attacker.WeaponTypeID != nil {
+			_, err = s.universe.Type(ctx, *attacker.WeaponTypeID)
 			if err != nil {
 				entry.WithError(err).Error("failed to prime attacker ship type")
 			}
 		}
 	}
-
 	s.handleVictimItems(killmail.Victim.Items)
 }
 
@@ -576,7 +526,17 @@ func (s *service) calculatedFittedValue(items []*neo.KillmailItem) float64 {
 		if _, ok := fittedFlags[uint64(item.Flag)]; !ok {
 			continue
 		}
-		total += item.ItemValue * float64(item.QuantityDestroyed.Uint+item.QuantityDropped.Uint)
+
+		var qDestroyed uint = 0
+		if item.QuantityDestroyed != nil {
+			qDestroyed = *item.QuantityDestroyed
+		}
+		var qDropped uint = 0
+		if item.QuantityDropped != nil {
+			qDropped = *item.QuantityDropped
+		}
+
+		total += item.ItemValue * float64(qDestroyed+qDropped)
 	}
 
 	return total

@@ -2,13 +2,13 @@ package universe
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Type(ctx context.Context, id uint) (*neo.Type, error) {
@@ -31,7 +31,7 @@ func (s *service) Type(ctx context.Context, id uint) (*neo.Type, error) {
 	}
 
 	invType, err = s.UniverseRepository.Type(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
@@ -48,7 +48,7 @@ func (s *service) Type(ctx context.Context, id uint) (*neo.Type, error) {
 
 	// Type is not cached, the DB doesn't have this type, lets check ESI
 	invType, attributes, m := s.esi.GetUniverseTypesTypeID(ctx, id)
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m.Msg
 	}
 
@@ -101,7 +101,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, 
 		return types, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, invType := range types {
@@ -119,7 +119,9 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, 
 		return types, nil
 	}
 
-	dbTypes, err := s.UniverseRepository.TypesByTypeIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbTypes, err := s.UniverseRepository.Types(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -209,7 +211,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*n
 		return final, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		if _, ok := attributes[id]; !ok {
 			missing = append(missing, id)
@@ -224,7 +226,9 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*n
 		return final, nil
 	}
 
-	dbAttributes, err := s.UniverseRepository.TypeAttributesByTypeIDs(ctx, missing)
+	mods := neo.In{Column: "typeID", Values: missing}
+
+	dbAttributes, err := s.UniverseRepository.TypeAttributes(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing attributes")
 	}
@@ -277,7 +281,7 @@ func (s *service) TypeCategory(ctx context.Context, id uint) (*neo.TypeCategory,
 	}
 
 	invCategory, err = s.UniverseRepository.TypeCategory(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
@@ -319,7 +323,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) (
 		return categories, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, invCategory := range categories {
@@ -337,7 +341,9 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) (
 		return categories, nil
 	}
 
-	dbCategory, err := s.UniverseRepository.TypeCategoriesByCategoryIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbCategory, err := s.UniverseRepository.TypeCategories(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -382,7 +388,7 @@ func (s *service) TypeFlag(ctx context.Context, id uint) (*neo.TypeFlag, error) 
 	}
 
 	invFlag, err = s.UniverseRepository.TypeFlag(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for flag")
 	}
 
@@ -424,7 +430,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*ne
 		return flags, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, invFlag := range flags {
@@ -442,7 +448,9 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*ne
 		return flags, nil
 	}
 
-	dbFlags, err := s.UniverseRepository.TypeFlagsByTypeFlagIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbFlags, err := s.UniverseRepository.TypeFlags(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -487,7 +495,7 @@ func (s *service) TypeGroup(ctx context.Context, id uint) (*neo.TypeGroup, error
 	}
 
 	invGroup, err = s.UniverseRepository.TypeGroup(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
@@ -529,7 +537,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.
 		return groups, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, invGroup := range groups {
@@ -547,7 +555,9 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.
 		return groups, nil
 	}
 
-	dbGroups, err := s.UniverseRepository.TypeGroupsByGroupIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbGroups, err := s.UniverseRepository.TypeGroups(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

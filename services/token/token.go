@@ -2,7 +2,6 @@ package token
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/oauth2"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -46,11 +46,11 @@ func (s *service) GetTokenForCode(ctx context.Context, state, code string) (*neo
 
 	// // Check to see if we know who this character is
 	neoToken, err := s.Token(ctx, characterID)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && err != mongo.ErrNoDocuments {
 		return nil, errors.Wrap(err, "unexpected error encountered")
 	}
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, mongo.ErrNoDocuments) {
 
 		neoToken = &neo.Token{
 			ID:           characterID,

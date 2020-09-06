@@ -2,7 +2,6 @@ package alliance
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) {
@@ -32,7 +32,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 	}
 
 	alliance, err = s.AllianceRespository.Alliance(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for alliance")
 	}
 
@@ -49,12 +49,12 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 
 	// Alliance is not cached, the DB doesn't have this alliance, lets check ESI
 	alliance, m := s.esi.GetAlliancesAllianceID(ctx, id, null.NewString("", false))
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m.Msg
 	}
 
 	// ESI has the alliance. Lets insert it into the db, and cache it is redis
-	_, err = s.AllianceRespository.CreateAlliance(ctx, alliance)
+	err = s.AllianceRespository.CreateAlliance(ctx, alliance)
 	if err != nil {
 		return alliance, errors.Wrap(err, "unable to insert alliance into db")
 	}
@@ -146,7 +146,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		ctx = newrelic.NewContext(ctx, txn)
 
 		expired, err := s.Expired(ctx)
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			txn.NoticeError(err)
 			s.logger.WithError(err).Error("Failed to fetch expired alliances")
 			return
@@ -163,8 +163,8 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			seg.AddAttribute("id", alliance.ID)
 			s.tracker.GateKeeper(ctx)
 
-			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, alliance.Etag)
-			if m.IsError() {
+			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, null.NewString("", false))
+			if m.IsErr() {
 				txn.NoticeError(m.Msg)
 				s.logger.WithError(m.Msg).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
 				continue
@@ -180,12 +180,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 					alliance.UpdatePriority++
 				}
 
-				alliance.CachedUntil = newAlliance.CachedUntil.Add(time.Hour*24).AddDate(0, 0, int(alliance.UpdatePriority))
+				alliance.CachedUntil = time.Unix(newAlliance.CachedUntil, 0).AddDate(0, 0, int(alliance.UpdatePriority)).Unix()
 				alliance.Etag = newAlliance.Etag
 
-				_, err = s.UpdateAlliance(ctx, alliance.ID, alliance)
+				err = s.UpdateAlliance(ctx, alliance.ID, alliance)
 			case http.StatusOK:
-				_, err = s.UpdateAlliance(ctx, alliance.ID, newAlliance)
+				err = s.UpdateAlliance(ctx, alliance.ID, newAlliance)
 			default:
 				s.logger.WithField("status_code", m.Code).WithField("alliance_id", alliance.ID).Error("unaccounted for status code received from esi service")
 			}
@@ -200,7 +200,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 
 			time.Sleep(time.Millisecond * 25)
 		}
-		s.logger.WithField("count", len(expired)).Debug("alliances successfully updated")
+		s.logger.WithField("count", len(expired)).Info("alliances successfully updated")
 		txn.End()
 		time.Sleep(time.Second)
 

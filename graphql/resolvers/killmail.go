@@ -83,7 +83,7 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 
 }
 
-func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error) {
+func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, after *int) ([]*neo.Killmail, error) {
 
 	var mails []*neo.Killmail
 
@@ -91,21 +91,21 @@ func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.E
 	case models.EntityAll:
 		return nil, errors.New("All Type is not supported on this query")
 	case models.EntityCharacter:
-		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), uint(*page))
+		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), uint(*after))
 	case models.EntityCorporation:
-		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), uint(*after))
 	case models.EntityAlliance:
-		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), uint(*after))
 	case models.EntityShip:
-		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), uint(*after))
 	case models.EntityShipGroup:
-		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), uint(*after))
 	case models.EntitySystem:
-		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), uint(*after))
 	case models.EntityConstellation:
-		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), uint(*after))
 	case models.EntityRegion:
-		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), uint(*page))
+		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), uint(*after))
 	default:
 		return nil, errors.New("invalid entity")
 	}
@@ -118,14 +118,6 @@ func (r *Resolver) Killmail() service.KillmailResolver {
 }
 
 type killmailResolver struct{ *Resolver }
-
-func (r *killmailResolver) Attackers(ctx context.Context, obj *neo.Killmail) ([]*neo.KillmailAttacker, error) {
-	return r.Dataloader(ctx).KillmailAttackersLoader.Load(obj.ID)
-}
-
-func (r *killmailResolver) Victim(ctx context.Context, obj *neo.Killmail) (*neo.KillmailVictim, error) {
-	return r.Dataloader(ctx).KillmailVictimLoader.Load(obj.ID)
-}
 
 func (r *killmailResolver) System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error) {
 	return r.Dataloader(ctx).SolarSystemLoader.Load(obj.SolarSystemID)

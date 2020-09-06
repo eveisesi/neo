@@ -2,13 +2,13 @@ package universe
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, error) {
@@ -31,7 +31,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 	}
 
 	system, err = s.UniverseRepository.SolarSystem(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for solar system")
 	}
 
@@ -48,7 +48,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 
 	// System is not cached, the DB doesn't have this system, lets check ESI
 	system, m := s.esi.GetUniverseSystemsSystemID(ctx, id)
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m.Msg
 	}
 
@@ -96,7 +96,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 		return systems, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, system := range systems {
@@ -114,7 +114,9 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 		return systems, nil
 	}
 
-	dbSystems, err := s.UniverseRepository.SolarSystemsBySolarSystemIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbSystems, err := s.UniverseRepository.SolarSystems(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing solar system ids")
 	}

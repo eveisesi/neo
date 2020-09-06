@@ -68,6 +68,9 @@ const REDIS_TYPE_ATTRIBUTES = "neo:type:attributes:%d"
 const REDIS_TYPE_FLAG = "neo:type:flag:%d"
 const REDIS_TYPE_GROUP = "neo:type:group:%d"
 
+const BACKUP_KILLMAIL_RAW_PARENT_DIRECTORY_FORMAT = "static/killmails/raw/%s"
+const BACKUP_KILLMAIL_RAW_NAME_FORMAT = "%s/%d-%s.json"
+
 // NEO Queues
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
 const QUEUES_KILLMAIL_RECALCULATE = "neo:killmails:recalculate"

@@ -17,20 +17,17 @@ func (s *Server) Dataloaders(next http.Handler) http.Handler {
 		ctx := r.Context()
 
 		loaders := dataloaders.Loaders{
-			AllianceLoader:          dataloaders.AllianceLoader(ctx, s.alliance),
-			CharacterLoader:         dataloaders.CharacterLoader(ctx, s.character),
-			ConstellationLoader:     dataloaders.ConstellationLoader(ctx, s.universe),
-			CorporationLoader:       dataloaders.CorporationLoader(ctx, s.corporation),
-			KillmailAttackersLoader: dataloaders.KillmailAttackersLoader(ctx, s.killmail),
-			KillmailItemsLoader:     dataloaders.KillmailItemsLoader(ctx, s.killmail),
-			KillmailVictimLoader:    dataloaders.KillmailVictimLoader(ctx, s.killmail),
-			RegionLoader:            dataloaders.RegionLoader(ctx, s.universe),
-			SolarSystemLoader:       dataloaders.SolarSystemLoader(ctx, s.universe),
-			TypeLoader:              dataloaders.TypeLoader(ctx, s.universe),
-			TypeAttributeLoader:     dataloaders.TypeAttributeLoader(ctx, s.universe),
-			TypeCategoryLoader:      dataloaders.TypeCategoryLoader(ctx, s.universe),
-			TypeFlagLoader:          dataloaders.TypeFlagLoader(ctx, s.universe),
-			TypeGroupLoader:         dataloaders.TypeGroupLoader(ctx, s.universe),
+			AllianceLoader:      dataloaders.AllianceLoader(ctx, s.alliance),
+			CharacterLoader:     dataloaders.CharacterLoader(ctx, s.character),
+			ConstellationLoader: dataloaders.ConstellationLoader(ctx, s.universe),
+			CorporationLoader:   dataloaders.CorporationLoader(ctx, s.corporation),
+			RegionLoader:        dataloaders.RegionLoader(ctx, s.universe),
+			SolarSystemLoader:   dataloaders.SolarSystemLoader(ctx, s.universe),
+			TypeLoader:          dataloaders.TypeLoader(ctx, s.universe),
+			TypeAttributeLoader: dataloaders.TypeAttributeLoader(ctx, s.universe),
+			TypeCategoryLoader:  dataloaders.TypeCategoryLoader(ctx, s.universe),
+			TypeFlagLoader:      dataloaders.TypeFlagLoader(ctx, s.universe),
+			TypeGroupLoader:     dataloaders.TypeGroupLoader(ctx, s.universe),
 		}
 
 		ctx = context.WithValue(ctx, ctxKey, loaders)

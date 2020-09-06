@@ -9,13 +9,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *service) GetStatus(ctx context.Context) (*neo.ServerStatus, *Meta) {
+func (s *service) GetStatus(ctx context.Context) (*neo.ServerStatus, Meta) {
 
 	response, m := s.request(ctx, request{
 		method: http.MethodGet,
 		path:   "/v1/status",
 	})
-	if m.IsError() {
+	if m.IsErr() {
 		return nil, m
 	}
 

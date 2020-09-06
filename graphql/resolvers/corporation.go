@@ -18,8 +18,10 @@ func (r *Resolver) Corporation() service.CorporationResolver {
 type corporationResolver struct{ *Resolver }
 
 func (r *corporationResolver) Alliance(ctx context.Context, obj *neo.Corporation) (*neo.Alliance, error) {
-	if !obj.AllianceID.Valid {
-		return nil, nil
-	}
-	return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
+	return nil, nil
+
+	// if !obj.AllianceID.Valid {
+	// 	return nil, nil
+	// }
+	// return r.Dataloader(ctx).AllianceLoader.Load(obj.AllianceID.Uint)
 }

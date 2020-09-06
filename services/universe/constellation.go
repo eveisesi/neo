@@ -2,13 +2,13 @@ package universe
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/eveisesi/neo"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellation, error) {
@@ -31,7 +31,7 @@ func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellatio
 	}
 
 	constellation, err = s.UniverseRepository.Constellation(ctx, id)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 		return nil, errors.Wrap(err, "unable to query database for type")
 	}
 
@@ -73,7 +73,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return constellations, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, constellation := range constellations {
@@ -91,7 +91,9 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return constellations, nil
 	}
 
-	dbConstellations, err := s.UniverseRepository.ConstellationsByConstellationIDs(ctx, missing)
+	mods := neo.In{Column: "id", Values: missing}
+
+	dbConstellations, err := s.UniverseRepository.Constellations(ctx, mods)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

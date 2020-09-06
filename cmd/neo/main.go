@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
@@ -33,16 +34,18 @@ func init() {
 			Usage:       "Parent command for all administrative task around killmails",
 			Subcommands: killmailCommands(),
 		},
-		cronCommand(),
 		cli.Command{
-			Name: "test",
+			Name: "time",
 			Action: func(c *cli.Context) error {
-
-				spew.Dump(string([]byte{105, 110, 118, 97, 108, 105, 100, 95, 98, 108, 111, 99, 107, 115}))
-
+				fmt.Println(time.Now().Unix())
 				return nil
 			},
 		},
+		alliances(),
+		characters(),
+		corporations(),
+		cronCommand(),
+		test(),
 		cli.Command{
 			Name:  "history",
 			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
@@ -153,74 +156,19 @@ func init() {
 			Action: func(c *cli.Context) error {
 				app := core.New("updater", false)
 
-				ch := make(chan int, 3)
+				var wg sync.WaitGroup
 
+				wg.Add(3)
 				go app.Character.UpdateExpired(context.Background())
 				go app.Corporation.UpdateExpired(context.Background())
 				go app.Alliance.UpdateExpired(context.Background())
 
-				<-ch
+				wg.Wait()
 
 				return nil
 
 			},
 		},
-		// migrateCommand(),
-		// cli.Command{
-		// 	Name:  "recalculate",
-		// 	Usage: "Dispatches Go Routines to handle recalculable killmails in the recalculate queue",
-		// 	Action: func(c *cli.Context) error {
-
-		// 		debug := c.Bool("debug")
-		// 		workers := c.Int64("workers")
-
-		// 		core.New("recalculate", debug).Killmail.Recalculator(workers)
-
-		// 		return nil
-		// 	},
-		// 	Flags: []cli.Flag{
-		// 		cli.IntFlag{
-		// 			Name:  "workers",
-		// 			Usage: "Number of Go Routines to that should be used to process messages.",
-		// 			Value: 10,
-		// 		},
-		// 		cli.BoolFlag{
-		// 			Name:  "debug",
-		// 			Usage: "Outputs Debug Logs",
-		// 		},
-		// 	},
-		// },
-		// cli.Command{
-		// 	Name:  "recalculable",
-		// 	Usage: "Finds Killmails where the DestroyedValue and the DroppedValue do not equal the TotalValue and dispatches them to a queue to have these properties recalculated",
-		// 	Action: func(c *cli.Context) error {
-
-		// 		limit := c.Int64("limit")
-		// 		trigger := c.Int64("trigger")
-		// 		after := c.Uint64("after")
-
-		// 		core.New("recalculable", false).Killmail.RecalculatorDispatcher(limit, trigger, after)
-
-		// 		return nil
-		// 	},
-		// 	Flags: []cli.Flag{
-		// 		cli.IntFlag{
-		// 			Name:  "limit",
-		// 			Usage: "number of records to fetch from the db",
-		// 			Value: 10000,
-		// 		},
-		// 		cli.IntFlag{
-		// 			Name:  "trigger",
-		// 			Usage: "this number of less must remain on the queue before triggering another pull from the db",
-		// 			Value: 2500,
-		// 		},
-		// 		cli.Int64Flag{
-		// 			Name:  "after",
-		// 			Usage: "Start at a specific killmail id",
-		// 			Value: 0,
-		// 		},
-		// 	},
-		// },
 		cli.Command{
 			Name:        "market",
 			Usage:       "Updates market prices in the Db",
@@ -230,6 +178,14 @@ func init() {
 }
 
 func main() {
+
+	directories := []string{"./static/killmails/raw"}
+	for _, directory := range directories {
+		if _, err := os.Stat(directory); os.IsNotExist(err) {
+			_ = os.MkdirAll(directory, 0666)
+		}
+	}
+
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)
