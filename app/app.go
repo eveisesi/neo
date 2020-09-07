@@ -283,13 +283,10 @@ func New(command string, debug bool) *App {
 // name is the command that this instance of the application is executing and is configured at runtime in func main
 func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*newrelic.Application, error) {
 
-	env := ""
+	appName := cfg.NewRelicAppName
 	if cfg.Env != "production" {
-		env = cfg.Env
+		appName = fmt.Sprintf("%s-%s", cfg.Env, appName)
 	}
-
-	appName := fmt.Sprintf("%s-%s", env, cfg.NewRelicAppName)
-	// appName := fmt.Sprintf("%s-%s-%s", env, cfg.NewRelicAppName, command)
 
 	app, err := newrelic.NewApplication(
 		newrelic.ConfigAppName(appName),
