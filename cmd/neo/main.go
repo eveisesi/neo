@@ -11,7 +11,6 @@ import (
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/server"
 	"github.com/joho/godotenv"
-	_ "github.com/newrelic/go-agent/v3/integrations/nrmysql"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/urfave/cli"
 )
@@ -30,59 +29,18 @@ func init() {
 	app.Version = "v0.0.1"
 	app.Commands = []cli.Command{
 		cli.Command{
-			Name:        "killmail",
-			Usage:       "Parent command for all administrative task around killmails",
-			Subcommands: killmailCommands(),
-		},
-		cli.Command{
 			Name: "time",
 			Action: func(c *cli.Context) error {
 				fmt.Println(time.Now().Unix())
 				return nil
 			},
 		},
+		killmail(),
 		alliances(),
 		characters(),
 		corporations(),
 		cronCommand(),
 		test(),
-		cli.Command{
-			Name:  "history",
-			Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
-			Action: func(c *cli.Context) error {
-				app := core.New("killmail-history", false)
-				maxdate := c.String("maxdate")
-				mindate := c.String("mindate")
-				threshold := c.Int64("threshold")
-				datehold := c.Bool("datehold")
-
-				err := app.Killmail.HistoryExporter(mindate, maxdate, datehold, threshold)
-				if err != nil {
-					return cli.NewExitError(err, 1)
-				}
-
-				return cli.NewExitError(nil, 0)
-			},
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:  "maxdate",
-					Usage: "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
-				},
-				cli.StringFlag{
-					Name:     "mindate",
-					Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
-					Required: true,
-				},
-				cli.BoolFlag{
-					Name:  "datehold",
-					Usage: "Hold after each date until the processing queue has reached a threshold. Threshold must be defined, else this command will be ignored",
-				},
-				cli.IntFlag{
-					Name:  "threshold",
-					Usage: "Threshold that the queue must be below process processing the next date",
-				},
-			},
-		},
 		cli.Command{
 			Name:   "serve",
 			Usage:  "Starts an HTTP Server to serve killmail data",

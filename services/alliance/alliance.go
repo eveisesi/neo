@@ -10,7 +10,6 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -48,7 +47,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 	}
 
 	// Alliance is not cached, the DB doesn't have this alliance, lets check ESI
-	alliance, m := s.esi.GetAlliancesAllianceID(ctx, id, null.NewString("", false))
+	alliance, m := s.esi.GetAlliancesAllianceID(ctx, id, "")
 	if m.IsErr() {
 		return nil, m.Msg
 	}
@@ -96,7 +95,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return alliances, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, alliance := range alliances {
@@ -114,7 +113,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return alliances, nil
 	}
 
-	dbTypes, err := s.Alliances(ctx, neo.InUint{Column: "id", Value: missing})
+	dbTypes, err := s.Alliances(ctx, neo.In{Column: "id", Values: missing})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -158,28 +157,37 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			continue
 		}
 
+		s.logger.WithField("count", len(expired)).Info("updating expired alliances")
+
 		for _, alliance := range expired {
+			entry := s.logger.WithContext(ctx).WithField("allianceID", alliance.ID)
+			s.tracker.GateKeeper(ctx)
 			seg := txn.StartSegment("handleAlliance")
 			seg.AddAttribute("id", alliance.ID)
-			s.tracker.GateKeeper(ctx)
 
-			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, null.NewString("", false))
+			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, alliance.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
-				s.logger.WithError(m.Msg).WithField("alliance_id", alliance.ID).Error("failed to fetch alliance from esi")
+				entry.WithError(m.Msg).Error("failed to fetch alliance from esi")
 				continue
 			}
 
 			switch m.Code {
-			case http.StatusNotModified:
+			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				alliance.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
+				alliance.UpdateError++
 
-				alliance.NotModifiedCount++
+				err = s.UpdateAlliance(ctx, alliance.ID, alliance)
+			case http.StatusNotModified:
 
 				if alliance.NotModifiedCount >= 2 && alliance.UpdatePriority < 2 {
 					alliance.NotModifiedCount = 0
 					alliance.UpdatePriority++
+				} else {
+					alliance.NotModifiedCount++
 				}
 
+				alliance.UpdateError = 0
 				alliance.CachedUntil = time.Unix(newAlliance.CachedUntil, 0).AddDate(0, 0, int(alliance.UpdatePriority)).Unix()
 				alliance.Etag = newAlliance.Etag
 
@@ -187,18 +195,18 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				err = s.UpdateAlliance(ctx, alliance.ID, newAlliance)
 			default:
-				s.logger.WithField("status_code", m.Code).WithField("alliance_id", alliance.ID).Error("unaccounted for status code received from esi service")
+				entry.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {
 				txn.NoticeError(err)
-				s.logger.WithError(err).WithField("alliance_id", alliance.ID).Error("failed to update alliance")
+				entry.WithError(err).Error("failed to update alliance")
 			}
 
-			s.logger.WithField("alliance_id", alliance.ID).WithField("status_code", m.Code).Debug("alliance successfully updated")
+			entry.WithField("status_code", m.Code).Debug("alliance successfully updated")
 			seg.End()
 
-			time.Sleep(time.Millisecond * 25)
+			time.Sleep(time.Millisecond * 50)
 		}
 		s.logger.WithField("count", len(expired)).Info("alliances successfully updated")
 		txn.End()

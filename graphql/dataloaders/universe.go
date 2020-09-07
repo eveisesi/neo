@@ -14,7 +14,7 @@ func ConstellationLoader(ctx context.Context, universe universe.Service) *genera
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.Constellation, []error) {
 			constellations := make([]*neo.Constellation, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.ConstellationsByConstellationIDs(ctx, ids)
 			if err != nil {
@@ -31,7 +31,7 @@ func ConstellationLoader(ctx context.Context, universe universe.Service) *genera
 				constellations[i] = constellationsByConstellationIDs[v]
 			}
 
-			return constellations, errors
+			return constellations, nil
 		},
 	})
 }
@@ -42,7 +42,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.Region, []error) {
 			regions := make([]*neo.Region, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.RegionsByRegionIDs(ctx, ids)
 			if err != nil {
@@ -59,7 +59,7 @@ func RegionLoader(ctx context.Context, universe universe.Service) *generated.Reg
 				regions[i] = regionsByRegionIDs[v]
 			}
 
-			return regions, errors
+			return regions, nil
 		},
 	})
 }
@@ -70,7 +70,7 @@ func SolarSystemLoader(ctx context.Context, universe universe.Service) *generate
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.SolarSystem, []error) {
 			solarSystems := make([]*neo.SolarSystem, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.SolarSystemsBySolarSystemIDs(ctx, ids)
 			if err != nil {
@@ -98,7 +98,7 @@ func TypeLoader(ctx context.Context, universe universe.Service) *generated.TypeL
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.Type, []error) {
 			invTypes := make([]*neo.Type, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.TypesByTypeIDs(ctx, ids)
 			if err != nil {
@@ -126,7 +126,7 @@ func TypeAttributeLoader(ctx context.Context, universe universe.Service) *genera
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([][]*neo.TypeAttribute, []error) {
 			invTypeAttributes := make([][]*neo.TypeAttribute, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.TypeAttributesByTypeIDs(ctx, ids)
 			if err != nil {
@@ -154,7 +154,7 @@ func TypeCategoryLoader(ctx context.Context, universe universe.Service) *generat
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.TypeCategory, []error) {
 			invTypeCategories := make([]*neo.TypeCategory, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.TypeCategoriesByCategoryIDs(ctx, ids)
 			if err != nil {
@@ -182,7 +182,7 @@ func TypeFlagLoader(ctx context.Context, universe universe.Service) *generated.T
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.TypeFlag, []error) {
 			invTypeFlags := make([]*neo.TypeFlag, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.TypeFlagsByTypeFlagIDs(ctx, ids)
 			if err != nil {
@@ -210,7 +210,7 @@ func TypeGroupLoader(ctx context.Context, universe universe.Service) *generated.
 		MaxBatch: defaultMaxBatch,
 		Fetch: func(ids []uint) ([]*neo.TypeGroup, []error) {
 			invTypeGroups := make([]*neo.TypeGroup, len(ids))
-			errors := make([]error, len(ids))
+			errors := make([]error, 0)
 
 			rows, err := universe.TypeGroupsByGroupIDs(ctx, ids)
 			if err != nil {

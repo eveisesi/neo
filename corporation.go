@@ -24,6 +24,7 @@ type Corporation struct {
 	UpdatePriority   uint   `bson:"updatePriority" json:"updatePriority"`
 	Etag             string `bson:"etag" json:"etag"`
 	CachedUntil      int64  `bson:"cachedUntil" json:"cachedUntil"`
+	UpdateError      int64  `bson:"updateError" json:"updateError"`
 	CreatedAt        int64  `bson:"createdAt" json:"createdAt"`
 	UpdatedAt        int64  `bson:"updatedAt" json:"updatedAt"`
 }

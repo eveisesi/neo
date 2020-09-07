@@ -2,9 +2,7 @@ package mdb
 
 import (
 	"context"
-	"fmt"
 	"net/url"
-	"strconv"
 
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/integrations/nrmongo"
@@ -44,6 +42,8 @@ const (
 	lessthanequal    string = "$lte"
 	notequal         string = "$ne"
 	notin            string = "$nin"
+	and              string = "$and"
+	or               string = "$or"
 )
 
 func BuildFilters(modifiers ...neo.Modifier) primitive.D {
@@ -63,29 +63,32 @@ func BuildFilters(modifiers ...neo.Modifier) primitive.D {
 			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthan, Value: o.Value}}})
 		case neo.LessThanEqualTo:
 			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthanequal, Value: o.Value}}})
-		case neo.In:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: in, Value: o.Values}}})
-		case neo.NotIn:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: notin, Value: o.Values}}})
-		case neo.EqualToTime:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: equal, Value: o.Value}}})
-		case neo.NotEqualToTime:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: notequal, Value: o.Value}}})
-		case neo.GreaterThanTime:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: greaterthan, Value: o.Value.String()}}})
-		case neo.LessThanTime:
-			time, _ := strconv.Unquote(fmt.Sprintf("ISODate('%s')", o.Value.Format("2006-01-02T15:04:05Z")))
-
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.E{Key: lessthan, Value: time}})
-		case neo.ColValOr:
+		case neo.OrMod:
+			arr := primitive.A{}
+			for _, mod := range o.Values {
+				arr = append(arr, BuildFilters(mod))
+			}
+			mods = append(mods, primitive.E{Key: or, Value: arr})
+		case neo.AndMod:
 
 			arr := primitive.A{}
 			for _, mod := range o.Values {
 				arr = append(arr, BuildFilters(mod))
 			}
+			mods = append(mods, primitive.E{Key: and, Value: arr})
 
-			mods = append(mods, primitive.E{Key: "$or", Value: arr})
+		case neo.In:
 
+			arr := primitive.A{}
+			for _, value := range o.Values {
+				arr = append(arr, value)
+			}
+
+			// element := primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}}
+
+			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}})
+		case neo.NotIn:
+			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: notin, Value: o.Values}}})
 		}
 
 	}

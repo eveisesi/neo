@@ -11,13 +11,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/vektah/gqlparser/v2/ast"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-redis/redis/v7"
-	"github.com/vektah/gqlparser/v2/ast"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"
@@ -167,12 +168,12 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 			}
 
 			opCtx := graphql.GetOperationContext(ctx)
-
-			entry.Logger = entry.Logger.WithField("operationName", opCtx.OperationName)
+			entry.Logger = entry.Logger.WithField("requestType", opCtx.Operation.Name)
 
 			for _, s := range opCtx.Operation.SelectionSet {
 				var field *ast.Field
 				var ok bool
+
 				if field, ok = s.(*ast.Field); !ok {
 					continue
 				}
@@ -182,9 +183,9 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 					if err != nil {
 						continue
 					}
-
-					entry.Logger = entry.Logger.WithField(fmt.Sprintf("%s_%s_%s", opCtx.OperationName, field.Alias, arg.Name), value)
+					entry.Logger = entry.Logger.WithField(fmt.Sprintf("%s_%s", field.Name, arg.Name), value)
 				}
+
 			}
 
 			return next(ctx)

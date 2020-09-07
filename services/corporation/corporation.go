@@ -10,7 +10,6 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
-	"github.com/volatiletech/null"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -49,7 +48,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 	}
 
 	// Corporation is not cached, the DB doesn't have this corporation, lets check ESI
-	corporation, m := s.esi.GetCorporationsCorporationID(ctx, id, null.NewString("", false))
+	corporation, m := s.esi.GetCorporationsCorporationID(ctx, id, "")
 	if m.IsErr() {
 		return nil, m.Msg
 	}
@@ -97,7 +96,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 		return corporations, nil
 	}
 
-	var missing []uint
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, corporation := range corporations {
@@ -115,7 +114,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 		return corporations, nil
 	}
 
-	dbTypes, err := s.Corporations(ctx, neo.InUint{Column: "id", Value: missing})
+	dbTypes, err := s.Corporations(ctx, neo.In{Column: "id", Values: missing})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -157,27 +156,36 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			continue
 		}
 
+		s.logger.WithField("count", len(expired)).Info("updating expired corporations")
+
 		for _, corporation := range expired {
+			entry := s.logger.WithContext(ctx).WithField("corporationID", corporation.ID)
+			s.tracker.GateKeeper(ctx)
 			seg := txn.StartSegment("handleCorporation")
 			seg.AddAttribute("id", corporation.ID)
-			s.tracker.GateKeeper(ctx)
-			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, null.NewString("", true))
+			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, corporation.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
-				s.logger.WithContext(ctx).WithError(m.Msg).WithField("corporation_id", corporation.ID).Error("failed to fetch corporation from esi")
+				entry.WithError(m.Msg).Error("failed to fetch corporation from esi")
 				continue
 			}
 
 			switch m.Code {
-			case http.StatusNotModified:
+			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				corporation.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
+				corporation.UpdateError++
 
-				corporation.NotModifiedCount++
+				err = s.UpdateCorporation(ctx, corporation.ID, corporation)
+			case http.StatusNotModified:
 
 				if corporation.NotModifiedCount >= 2 && corporation.UpdatePriority < 2 {
 					corporation.NotModifiedCount = 0
 					corporation.UpdatePriority++
+				} else {
+					corporation.NotModifiedCount++
 				}
 
+				corporation.UpdateError = 0
 				corporation.CachedUntil = time.Unix(newCorporation.CachedUntil, 0).AddDate(0, 0, int(corporation.UpdatePriority)).Unix()
 				corporation.Etag = newCorporation.Etag
 
@@ -185,16 +193,16 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			case http.StatusOK:
 				err = s.UpdateCorporation(ctx, corporation.ID, newCorporation)
 			default:
-				s.logger.WithContext(ctx).WithField("status_code", m.Code).WithField("corporation_id", corporation.ID).Error("unaccounted for status code received from esi service")
+				entry.WithField("status_code", m.Code).Error("unaccounted for status code received from esi service")
 			}
 
 			if err != nil {
 				txn.NoticeError(err)
-				s.logger.WithContext(ctx).WithError(err).WithField("corporation_id", corporation.ID).Error("failed to update corporation")
+				entry.WithError(err).Error("failed to update corporation")
 				continue
 			}
 
-			s.logger.WithContext(ctx).WithField("corporation_id", corporation.ID).WithField("status_code", m.Code).Debug("corporation successfully updated")
+			entry.WithField("status_code", m.Code).Debug("corporation successfully updated")
 			seg.End()
 			time.Sleep(time.Millisecond * 50)
 		}

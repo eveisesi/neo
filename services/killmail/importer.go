@@ -17,10 +17,35 @@ import (
 func (s *service) Importer(gLimit, gSleep int64) error {
 
 	limit := limiter.NewConcurrencyLimiter(int(gLimit))
-
 	for {
+
 		txn := s.newrelic.StartTransaction("killmail queue check")
 		ctx := newrelic.NewContext(context.Background(), txn)
+
+		stop, err := s.redis.WithContext(ctx).Get(neo.QUEUE_STOP).Int64()
+		if err != nil {
+			s.logger.WithError(err).Error("stop flag is missing. attempting to create with default value of 0")
+			_, err := s.redis.WithContext(ctx).Set(neo.QUEUE_STOP, 0, 0).Result()
+			if err != nil {
+				txn.NoticeError(err)
+				s.logger.WithError(err).Fatal("error encountered attempting to create stop flag with default value")
+			}
+			continue
+		}
+
+		if stop == 1 {
+			s.logger.Info("stop signal set")
+			if limit.GetNumInProgress() > 0 {
+				s.logger.Info("calling limit.Wait")
+
+				limit.Wait()
+			}
+
+			s.logger.Info("sleeping for 5 seconds")
+			time.Sleep(time.Second * 5)
+			continue
+		}
+
 		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 		if err != nil {
 			txn.NoticeError(err)
@@ -42,13 +67,14 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}
 
-		for _, result := range results {
+		for i, result := range results {
 			s.tracker.GateKeeper(ctx)
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
-				s.handleMessage(ctx, []byte(message), workerID, gSleep)
+				s.handleMessage(ctx, []byte(message), i, gSleep)
 			})
 		}
+
 		txn.End()
 	}
 }

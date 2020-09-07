@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -29,13 +30,13 @@ var (
 type (
 	Service interface {
 		// Alliances
-		GetAlliancesAllianceID(ctx context.Context, id uint, etag null.String) (*neo.Alliance, Meta)
+		GetAlliancesAllianceID(ctx context.Context, id uint, etag string) (*neo.Alliance, Meta)
 
 		// Characters
 		GetCharactersCharacterID(ctx context.Context, id uint64, etag string) (*neo.Character, Meta)
 
 		// Corporations
-		GetCorporationsCorporationID(ctx context.Context, id uint, etag null.String) (*neo.Corporation, Meta)
+		GetCorporationsCorporationID(ctx context.Context, id uint, etag string) (*neo.Corporation, Meta)
 
 		// Killmails
 		GetKillmailsKillmailIDKillmailHash(ctx context.Context, id uint, hash string) (*neo.Killmail, Meta)
@@ -119,6 +120,7 @@ func (s *service) request(ctx context.Context, r request) ([]byte, Meta) {
 	defer func() {
 		if recov := recover(); recov != nil {
 			spew.Dump(r, recov)
+			debug.PrintStack()
 		}
 	}()
 
@@ -180,6 +182,12 @@ func (s *service) request(ctx context.Context, r request) ([]byte, Meta) {
 		time.Sleep(time.Second * 2)
 
 	}
+	if httpResponse == nil {
+		if m.Msg == nil {
+			m.Msg = errors.New("failed to successfully make ESI request")
+		}
+		return nil, m
+	}
 
 	headers := make(map[string]string)
 	for k, sv := range httpResponse.Header {
@@ -197,7 +205,7 @@ func (s *service) request(ctx context.Context, r request) ([]byte, Meta) {
 
 	httpResponse.Body.Close()
 
-	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, m.Msg, data)
+	m = newMeta(r.method, r.path, r.query, httpResponse.StatusCode, headers, nil, data)
 	s.trackESICallStatusCode(ctx, m.Code)
 
 	s.retrieveErrorReset(ctx, headers)
@@ -234,7 +242,7 @@ func (s *service) retrieveEtagHeader(h map[string]string) string {
 }
 
 // retrieveErrorCount is a helper method that retrieves the number of errors that this application
-// has triggered and how many more we can trigger before being 420'd
+// has triggered and how many more can be triggered before potentially encountereding an HTTP Status 420
 func (s *service) retrieveErrorCount(ctx context.Context, h map[string]string) {
 	// Default to a low count. This will cause the app to slow down
 	// if the header is not present to set the actual value from the header
@@ -285,7 +293,7 @@ func (s *service) trackESICallStatusCode(ctx context.Context, code int) {
 		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
 	case n >= 400 && n < 500:
 		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_4XX, &input)
-	case n > 500:
+	case n >= 500:
 		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_5XX, &input)
 	}
 

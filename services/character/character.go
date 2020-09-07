@@ -97,7 +97,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return characters, nil
 	}
 
-	var missing []uint64
+	var missing []neo.ModValue
 	for _, id := range ids {
 		found := false
 		for _, character := range characters {
@@ -115,7 +115,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return characters, nil
 	}
 
-	dbTypes, err := s.Characters(ctx, neo.InUint64{Column: "id", Value: missing})
+	dbTypes, err := s.Characters(ctx, neo.In{Column: "id", Values: missing})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -162,6 +162,8 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			continue
 		}
 
+		s.logger.WithField("count", len(expired)).Info("updating expired characters")
+
 		for _, character := range expired {
 			entry := s.logger.WithContext(ctx).WithField("character_id", character.ID)
 			seg := txn.StartSegment("handleCharacter")
@@ -170,20 +172,26 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			newCharacter, m := s.esi.GetCharactersCharacterID(ctx, character.ID, character.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
-				entry.WithError(err).Error("failed to fetch character from esi")
+				entry.WithError(m.Msg).Error("failed to fetch character from esi")
 				continue
 			}
 
 			switch m.Code {
-			case http.StatusNotModified:
+			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				character.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
+				character.UpdateError++
 
-				character.NotModifiedCount++
+				err = s.UpdateCharacter(ctx, character.ID, character)
+			case http.StatusNotModified:
 
 				if character.NotModifiedCount >= 2 && character.UpdatePriority <= 3 {
 					character.NotModifiedCount = 0
 					character.UpdatePriority++
+				} else {
+					character.NotModifiedCount++
 				}
 
+				character.UpdateError = 0
 				character.CachedUntil = time.Unix(newCharacter.CachedUntil, 0).AddDate(0, 0, int(character.UpdatePriority)).Unix()
 				character.Etag = newCharacter.Etag
 

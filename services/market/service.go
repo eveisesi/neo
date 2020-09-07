@@ -20,25 +20,24 @@ type Service interface {
 	neo.MarketRepository
 }
 
+// TODO: Research transactions and determine if needed with MDB
 type service struct {
 	redis    *redis.Client
 	esi      esi.Service
 	nr       *newrelic.Application
 	logger   *logrus.Logger
 	universe universe.Service
-	txn      neo.Starter
 	neo.MarketRepository
 	tracker tracker.Service
 }
 
-func NewService(redis *redis.Client, esi esi.Service, nr *newrelic.Application, logger *logrus.Logger, universe universe.Service, txn neo.Starter, market neo.MarketRepository, tracker tracker.Service) Service {
+func NewService(redis *redis.Client, esi esi.Service, nr *newrelic.Application, logger *logrus.Logger, universe universe.Service, market neo.MarketRepository, tracker tracker.Service) Service {
 	return &service{
 		redis,
 		esi,
 		nr,
 		logger,
 		universe,
-		txn,
 		market,
 		tracker,
 	}

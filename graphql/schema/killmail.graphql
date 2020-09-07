@@ -50,7 +50,8 @@ type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
     killmailTime: Time!
 
     system: SolarSystem! @goField(forceResolver: true)
-    attackers: [KillmailAttacker]!
+    attackers(finalBlowOnly: Boolean = false): [KillmailAttacker]!
+    @goField(forceResolver: true)
     victim: KillmailVictim!
 }
 
@@ -89,8 +90,8 @@ type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
     character: Character @goField(forceResolver: true)
     ship: Type @goField(forceResolver: true)
     position: Position
-    items: [KillmailItem]!
-    # fitted: [KillmailItem]! @goField(forceResolver: true)
+    items: [KillmailItem]! @goField(forceResolver: true)
+    fitted: [KillmailItem]! @goField(forceResolver: true)
 }
 
 type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
@@ -104,7 +105,7 @@ type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
     itemValue: Float!
     totalValue: Float!
 
-    type: Type
+    type: Type @goField(forceResolver: true)
     typeflag: TypeFlag
     items: [KillmailItem]!
 }

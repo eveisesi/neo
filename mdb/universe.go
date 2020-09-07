@@ -26,10 +26,10 @@ func NewUniverseRepository(d *mongo.Database) neo.UniverseRepository {
 		d.Collection("regions"),
 		d.Collection("systems"),
 		d.Collection("types"),
-		d.Collection("typesAttributes"),
-		d.Collection("typesCategories"),
-		d.Collection("typesFlags"),
-		d.Collection("typesGroups"),
+		d.Collection("typeAttributes"),
+		d.Collection("typeCategories"),
+		d.Collection("typeFlags"),
+		d.Collection("typeGroups"),
 	}
 }
 

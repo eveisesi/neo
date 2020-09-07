@@ -38,40 +38,40 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 	case models.CategoryAll, models.CategoryKill:
 		switch *entity {
 		case models.EntityAll:
-			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, uint(*age), uint(*limit))
+			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, *age, *limit)
 		case models.EntityCharacter:
-			mails, err = r.Services.MostValuableKills(ctx, "character_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "attackers.characterID", uint64(*id), *age, *limit)
 		case models.EntityCorporation:
-			mails, err = r.Services.MostValuableKills(ctx, "corporation_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "attackers.corporationID", uint64(*id), *age, *limit)
 		case models.EntityAlliance:
-			mails, err = r.Services.MostValuableKills(ctx, "alliance_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "attackers.allianceID", uint64(*id), *age, *limit)
 		case models.EntityShip:
-			mails, err = r.Services.MostValuableKills(ctx, "ship_type_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "attackers.shipTypeID", uint64(*id), *age, *limit)
 		case models.EntityShipGroup:
-			mails, err = r.Services.MostValuableKills(ctx, "ship_group_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "attackers.shipGroupID", uint64(*id), *age, *limit)
 		case models.EntitySystem:
-			mails, err = r.Services.MostValuable(ctx, "system_solar_id", uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "systemSolarID", uint64(*id), *age, *limit)
 		case models.EntityConstellation:
-			mails, err = r.Services.MostValuable(ctx, "constellation_id", uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "constellationID", uint64(*id), *age, *limit)
 		case models.EntityRegion:
-			mails, err = r.Services.MostValuable(ctx, "region_id", uint(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "regionID", uint64(*id), *age, *limit)
 		default:
 			return nil, errors.New("invalid entity")
 		}
 	case models.CategoryLose:
 		switch *entity {
 		case models.EntityAll:
-			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, uint(*age), uint(*limit))
+			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, *age, *limit)
 		case models.EntityCharacter:
-			mails, err = r.Services.MostValuableLosses(ctx, "character_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "victim.characterID", uint64(*id), *age, *limit)
 		case models.EntityCorporation:
-			mails, err = r.Services.MostValuableLosses(ctx, "corporation_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "victim.corporationID", uint64(*id), *age, *limit)
 		case models.EntityAlliance:
-			mails, err = r.Services.MostValuableLosses(ctx, "alliance_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "victim.allianceID", uint64(*id), *age, *limit)
 		case models.EntityShip:
-			mails, err = r.Services.MostValuableLosses(ctx, "ship_type_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "victim.ShipTypeID", uint64(*id), *age, *limit)
 		case models.EntityShipGroup:
-			mails, err = r.Services.MostValuableLosses(ctx, "ship_group_id", uint64(*id), uint(*age), uint(*limit))
+			mails, err = r.Services.MostValuable(ctx, "victim.ShipGroupID", uint64(*id), *age, *limit)
 		default:
 			return nil, errors.New("invalid entity")
 		}
@@ -121,4 +121,17 @@ type killmailResolver struct{ *Resolver }
 
 func (r *killmailResolver) System(ctx context.Context, obj *neo.Killmail) (*neo.SolarSystem, error) {
 	return r.Dataloader(ctx).SolarSystemLoader.Load(obj.SolarSystemID)
+}
+
+func (r *killmailResolver) Attackers(ctx context.Context, obj *neo.Killmail, finalBlowOnly *bool) ([]*neo.KillmailAttacker, error) {
+	if *finalBlowOnly {
+		for _, attacker := range obj.Attackers {
+			if attacker.FinalBlow {
+				return []*neo.KillmailAttacker{attacker}, nil
+			}
+		}
+		return nil, nil
+	}
+
+	return obj.Attackers, nil
 }

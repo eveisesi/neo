@@ -14,8 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/RediSearch/redisearch-go/redisearch"
-
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/mdb"
 	"github.com/eveisesi/neo/services/alliance"
@@ -32,12 +30,9 @@ import (
 	"github.com/eveisesi/neo/services/top"
 	"github.com/eveisesi/neo/services/tracker"
 	"github.com/eveisesi/neo/services/universe"
-	"golang.org/x/oauth2"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/eveisesi/neo/mysql"
 	"github.com/go-redis/redis/v7"
-	"github.com/jmoiron/sqlx"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 
@@ -46,8 +41,6 @@ import (
 	"github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin"
 	"github.com/newrelic/go-agent/v3/integrations/nrlogrus"
 	"github.com/newrelic/go-agent/v3/newrelic"
-
-	sqlDriver "github.com/go-sql-driver/mysql"
 )
 
 type MongoServices struct {
@@ -61,7 +54,6 @@ type App struct {
 	Label    string
 	NewRelic *newrelic.Application
 	Logger   *logrus.Logger
-	MySQLDB  *sqlx.DB
 	MongoDB  *mongo.Database
 	Redis    *redis.Client
 	Client   *http.Client
@@ -102,7 +94,7 @@ func New(command string, debug bool) *App {
 		hostname = "unknown"
 	}
 
-	logger, err := makeLogger(hostname, cfg.LogLevel, cfg.Env)
+	logger, err := makeLogger(hostname, command, cfg.LogLevel, cfg.Env)
 	if err != nil {
 		if logger != nil {
 			logger.WithError(err).Fatal("failed to configure logger")
@@ -114,16 +106,6 @@ func New(command string, debug bool) *App {
 	if err != nil {
 		logger.WithError(err).Warn("failed to initialize newrelic application")
 	}
-
-	mysqlDB, err := makeMySQLDB(cfg)
-	if err != nil {
-		logrus.WithError(err).Fatal("failed to make mysql db connection")
-	}
-
-	// err = mysqlDB.Ping()
-	// if err != nil {
-	// 	logger.WithError(err).Fatal("failed to ping db server")
-	// }
 
 	mongoDB, err := makeMongoDB(cfg)
 	if err != nil {
@@ -146,7 +128,7 @@ func New(command string, debug bool) *App {
 		logger.WithError(err).Fatal("failed to ping redis server")
 	}
 
-	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
+	// autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -154,8 +136,6 @@ func New(command string, debug bool) *App {
 	client.Transport = newrelic.NewRoundTripper(client.Transport)
 
 	esiClient := esi.New(redisClient, cfg.ESIHost, cfg.ESIUAgent)
-
-	txn := mysql.NewTransactioner(mysqlDB)
 
 	tracker := tracker.NewService(
 		redisClient,
@@ -188,12 +168,13 @@ func New(command string, debug bool) *App {
 		tracker,
 		mdb.NewCorporationRepository(mongoDB),
 	)
-
-	search := search.NewService(
-		autocompleter,
-		logger,
-		mysql.NewSearchRepository(mysqlDB),
-	)
+	// TODO: Add support for search service back.
+	// Need to replace data layer
+	// search := search.NewService(
+	// 	autocompleter,
+	// 	logger,
+	// 	mysql.NewSearchRepository(mysqlDB),
+	// )
 
 	top := top.NewService(
 		redisClient,
@@ -212,27 +193,26 @@ func New(command string, debug bool) *App {
 		nr,
 		logger,
 		universe,
-		txn,
 		mdb.NewMarketRepository(mongoDB),
 		tracker,
 	)
 
-	token := token.NewService(
-		client,
-		&oauth2.Config{
-			ClientID:     cfg.SSOClientID,
-			ClientSecret: cfg.SSOClientSecret,
-			RedirectURL:  cfg.SSOCallback,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  cfg.SSOAuthorizationURL,
-				TokenURL: cfg.SSOTokenURL,
-			},
-		},
-		logger,
-		redisClient,
-		cfg.SSOJWKSURL,
-		mysql.NewTokenRepository(mysqlDB),
-	)
+	// token := token.NewService(
+	// 	client,
+	// 	&oauth2.Config{
+	// 		ClientID:     cfg.SSOClientID,
+	// 		ClientSecret: cfg.SSOClientSecret,
+	// 		RedirectURL:  cfg.SSOCallback,
+	// 		Endpoint: oauth2.Endpoint{
+	// 			AuthURL:  cfg.SSOAuthorizationURL,
+	// 			TokenURL: cfg.SSOTokenURL,
+	// 		},
+	// 	},
+	// 	logger,
+	// 	redisClient,
+	// 	cfg.SSOJWKSURL,
+	// 	mysql.NewTokenRepository(mysqlDB),
+	// )
 
 	backup := backup.NewService(
 		redisClient,
@@ -256,7 +236,7 @@ func New(command string, debug bool) *App {
 		mdb.NewKillmailRepository(mongoDB),
 	)
 
-	stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(mysqlDB))
+	// stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(mysqlDB))
 
 	notifications := notifications.NewService(
 		client,
@@ -275,12 +255,12 @@ func New(command string, debug bool) *App {
 		Label:    command,
 		NewRelic: nr,
 		Logger:   logger,
-		MySQLDB:  mysqlDB,
-		MongoDB:  mongoDB,
-		Redis:    redisClient,
-		Client:   client,
-		ESI:      esiClient,
-		Config:   cfg,
+		// MySQLDB:  mysqlDB,
+		MongoDB: mongoDB,
+		Redis:   redisClient,
+		Client:  client,
+		ESI:     esiClient,
+		Config:  cfg,
 
 		Alliance:     alliance,
 		Backup:       backup,
@@ -289,12 +269,12 @@ func New(command string, debug bool) *App {
 		Killmail:     killmail,
 		Market:       market,
 		Notification: notifications,
-		Search:       search,
-		Stats:        stats,
-		Token:        token,
-		Top:          top,
-		Tracker:      tracker,
-		Universe:     universe,
+		// Search:       search,
+		// Stats:    stats,
+		// Token:    token,
+		Top:      top,
+		Tracker:  tracker,
+		Universe: universe,
 	}
 
 }
@@ -331,38 +311,6 @@ func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*n
 
 	return app, err
 
-}
-
-func makeMySQLDB(cfg *neo.Config) (*sqlx.DB, error) {
-
-	c := &sqlDriver.Config{
-		User:         cfg.MySQL.DBUser,
-		Passwd:       cfg.MySQL.DBPass,
-		Net:          "tcp",
-		Addr:         cfg.MySQL.DBHost,
-		DBName:       cfg.MySQL.DBName,
-		Timeout:      time.Second * 2,
-		ReadTimeout:  time.Second * time.Duration(cfg.MySQL.DBReadTimeout),
-		WriteTimeout: time.Second * time.Duration(cfg.MySQL.DBWriteTimeout),
-		ParseTime:    true,
-
-		// Defaults
-		Collation:            "utf8_general_ci",
-		Loc:                  time.UTC,
-		MaxAllowedPacket:     4 << 20, // 4 MiB
-		AllowNativePasswords: true,
-	}
-
-	db, err := mysql.Connect(c)
-	if err != nil {
-		return nil, err
-	}
-
-	db.SetMaxIdleConns(64)
-	db.SetMaxOpenConns(64)
-	db.SetConnMaxLifetime(time.Minute * 5)
-
-	return db, nil
 }
 
 func makeMongoDB(cfg *neo.Config) (*mongo.Database, error) {
@@ -407,7 +355,7 @@ func loadEnv() (*neo.Config, error) {
 	return &config, err
 }
 
-func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
+func makeLogger(hostname, command, logLevel, env string) (*logrus.Logger, error) {
 	logger := logrus.New()
 
 	logger.SetOutput(ioutil.Discard)
@@ -419,8 +367,8 @@ func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{
-			Filename: fmt.Sprintf("logs/error/%s.log", hostname),
-			MaxSize:  50,
+			Filename: fmt.Sprintf("logs/error/%s-%s.log", hostname, command),
+			MaxSize:  10,
 			Compress: false,
 		},
 		LogLevels: []logrus.Level{
@@ -433,7 +381,7 @@ func makeLogger(hostname, logLevel, env string) (*logrus.Logger, error) {
 
 	logger.AddHook(&writerHook{
 		Writer: &lumberjack.Logger{
-			Filename:   fmt.Sprintf("logs/info/%s.log", hostname),
+			Filename:   fmt.Sprintf("logs/info/%s-%s.log", hostname, command),
 			MaxBackups: 3,
 			MaxSize:    10,
 			Compress:   false,

@@ -2,6 +2,9 @@ package killmail
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/iancoleman/strcase"
@@ -10,52 +13,37 @@ import (
 	"github.com/eveisesi/neo"
 )
 
-var coreModFunc = func(age, limit uint) []neo.Modifier {
-	return []neo.Modifier{
-		neo.GreaterThanTime{Column: "killmail_time", Value: time.Now().AddDate(0, 0, 0-int(age))},
-		neo.LimitModifier(int(limit)),
-		neo.OrderModifier{Column: "total_value", Sort: neo.SortDesc},
+func (s *service) MostValuable(ctx context.Context, column string, id uint64, age, limit int) ([]*neo.Killmail, error) {
+
+	now := time.Now()
+	gte := time.Date(now.Year(), now.Month(), now.Day()-age, now.Hour(), 0, 0, 0, time.UTC)
+	lte := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
+
+	and := []neo.Modifier{
+		neo.GreaterThanEqualTo{Column: "killmailTime", Value: gte},
+		neo.LessThanEqualTo{Column: "killmailTime", Value: lte},
 	}
-}
-
-func (s *service) MostValuable(ctx context.Context, column string, id, age, limit uint) ([]*neo.Killmail, error) {
-	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
-		"action": "all",
-		"type":   strcase.ToLowerCamel(column),
-		"id":     id,
-	})
-
-	killmails, err := s.KillmailsFromCache(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(killmails) > 0 {
-		return killmails, nil
-	}
-
-	mods := coreModFunc(age, limit)
 	if column != "none" && id > 0 {
-		mods = append(mods, neo.EqualToUint{Column: column, Value: id})
+		and = append(and, neo.EqualTo{Column: column, Value: id})
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, []neo.Modifier{})
+	mods := []neo.Modifier{
+		neo.AndMod{
+			Values: and,
+		},
+		neo.LimitModifier(limit),
+		neo.OrderModifier{Column: "totalValue", Sort: neo.SortDesc},
+	}
+
+	modsMarshaled, err := json.Marshal(mods)
 	if err != nil {
-		return nil, err
+		fmt.Println(err)
 	}
-
-	err = s.CacheKillmailSlice(ctx, key, killmails)
-
-	return killmails, err
-
-}
-
-func (s *service) MostValuableKills(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
-		"action": "kills",
-		"type":   strcase.ToLowerCamel(column),
-		"id":     id,
+		"key":  strcase.ToLowerCamel(column),
+		"id":   id,
+		"mods": fmt.Sprintf("%x", sha256.Sum256(modsMarshaled)),
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -67,44 +55,7 @@ func (s *service) MostValuableKills(ctx context.Context, column string, id uint6
 		return killmails, nil
 	}
 
-	mods := coreModFunc(age, limit)
-	attMods := []neo.Modifier{
-		neo.EqualToUint64{Column: column, Value: id},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, attMods)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.CacheKillmailSlice(ctx, key, killmails)
-
-	return killmails, err
-}
-
-func (s *service) MostValuableLosses(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error) {
-
-	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{
-		"action": "loses",
-		"type":   strcase.ToLowerCamel(column),
-		"id":     id,
-	})
-
-	killmails, err := s.KillmailsFromCache(ctx, key)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(killmails) > 0 {
-		return killmails, nil
-	}
-
-	mods := coreModFunc(age, limit)
-	vicMods := []neo.Modifier{
-		neo.EqualToUint64{Column: column, Value: id},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods, []neo.Modifier{}, vicMods)
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}

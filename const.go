@@ -52,10 +52,9 @@ const REDIS_KILLMAIL = "neo:killmail:%d"
 const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:attackers"
 const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:victim"
 const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:victim:items"
-const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${after}"
+const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${page}"
 
-// action = kill/lose; type = CharacterID/CorporationID/etc;
-const REDIS_MV_KILLMAILS = "neo:mv:killmails:${action}:${type}:${id}"
+const REDIS_MV_KILLMAILS = "neo:mv:killmails:${key}:${id}:${mods}"
 const REDIS_BLUEPRINT_MATERIALS = "neo:blueprint:materials:%d"
 const REDIS_BLUEPRINT_PRODUCT = "neo:blueprint:product:%d"
 const REDIS_BLUEPRINT_PRODUCTTYPEID = "neo:blueprint:producttypeid:%d"
@@ -72,11 +71,11 @@ const BACKUP_KILLMAIL_RAW_PARENT_DIRECTORY_FORMAT = "static/killmails/raw/%s"
 const BACKUP_KILLMAIL_RAW_NAME_FORMAT = "%s/%d-%s.json"
 
 // NEO Queues
+const QUEUE_STOP = "neo:queue:stop"
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
 const QUEUES_KILLMAIL_RECALCULATE = "neo:killmails:recalculate"
 const QUEUES_KILLMAIL_BACKUP = "neo:killmails:backup"
 const QUEUES_KILLMAIL_STATS = "neo:killmails:stats"
-const QUEUES_KILLMAIL_ATTRIBUTES = "neo:killmails:attributes"
 const QUEUES_KILLMAIL_NOTIFICATION = "neo:notifications"
 
 // FlagIDs to FittingSlots

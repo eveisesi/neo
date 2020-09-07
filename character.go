@@ -15,16 +15,17 @@ type CharacterRespository interface {
 }
 
 type Character struct {
-	ID               uint64  `db:"id" bson:"id" json:"id"`
-	Name             string  `db:"name" bson:"name" json:"name"`
-	CorporationID    uint    `db:"corporationID" bson:"corporationID" json:"corporationID"`
-	AllianceID       *uint   `db:"allianceID" bson:"allianceID,omitempty" json:"allianceID,omitempty"`
-	FactionID        *uint   `db:"factionID" bson:"factionID,omitempty" json:"factionID,omitempty"`
-	SecurityStatus   float64 `db:"securityStatus" bson:"securityStatus" json:"securityStatus"`
-	NotModifiedCount uint    `db:"notModifiedCount" bson:"notModifiedCount" json:"notModifiedCount"`
-	UpdatePriority   uint    `db:"updatePriority" bson:"updatePriority" json:"updatePriority"`
-	Etag             string  `db:"etag" bson:"etag" json:"etag"`
-	CachedUntil      int64   `db:"cachedUntil" bson:"cachedUntil" json:"cachedUntil"`
-	CreatedAt        int64   `db:"createdAt" bson:"createdAt" json:"createdAt"`
-	UpdatedAt        int64   `db:"updatedAt" bson:"updatedAt" json:"updatedAt"`
+	ID               uint64  `bson:"id" json:"id"`
+	Name             string  `bson:"name" json:"name"`
+	CorporationID    uint    `bson:"corporationID" json:"corporationID"`
+	AllianceID       *uint   `bson:"allianceID,omitempty" json:"allianceID,omitempty"`
+	FactionID        *uint   `bson:"factionID,omitempty" json:"factionID,omitempty"`
+	SecurityStatus   float64 `bson:"securityStatus" json:"securityStatus"`
+	NotModifiedCount uint    `bson:"notModifiedCount" json:"notModifiedCount"`
+	UpdatePriority   uint    `bson:"updatePriority" json:"updatePriority"`
+	Etag             string  `bson:"etag" json:"etag"`
+	CachedUntil      int64   `bson:"cachedUntil" json:"cachedUntil"`
+	UpdateError      int64   `bson:"updateError" json:"updateError"`
+	CreatedAt        int64   `bson:"createdAt" json:"createdAt"`
+	UpdatedAt        int64   `bson:"updatedAt" json:"updatedAt"`
 }

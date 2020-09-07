@@ -7,8 +7,25 @@ import (
 	"net/http"
 
 	"github.com/eveisesi/neo"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 )
+
+type Character struct {
+	ID             uint64  `json:"id"`
+	Name           string  `json:"name"`
+	CorporationID  uint    `json:"corporation_id"`
+	AllianceID     *uint   `json:"alliance_id"`
+	FactionID      *uint   `json:"faction_id"`
+	SecurityStatus float64 `json:"security_status"`
+}
+
+func (r Character) validate() bool {
+	if r.Name == "" || r.CorporationID == 0 {
+		return false
+	}
+	return true
+}
 
 // GetCharactersCharacterID makes a HTTP GET Request to the /characters/{character_id} endpoint
 // for information about the provided character
@@ -36,19 +53,33 @@ func (s *service) GetCharactersCharacterID(ctx context.Context, id uint64, etag 
 		return nil, m
 	}
 
-	character := new(neo.Character)
+	esiCharacter := new(Character)
 
 	switch m.Code {
 	case 200:
-		err := json.Unmarshal(response, character)
+		err := json.Unmarshal(response, esiCharacter)
 		if err != nil {
 			m.Msg = errors.Wrapf(err, "unable to unmarshal response body on request %s", path)
 			return nil, m
 		}
 
-		character.ID = id
+		esiCharacter.ID = id
+
+		if !esiCharacter.validate() {
+			m.Msg = fmt.Errorf("invalid data received from ESI: %s", string(response))
+			m.Code = http.StatusUnprocessableEntity
+			return nil, m
+		}
 
 	}
+
+	character := new(neo.Character)
+	err = copier.Copy(character, esiCharacter)
+	if err != nil {
+		m.Msg = err
+		return nil, m
+	}
+
 	character.CachedUntil = s.retrieveExpiresHeader(m.Headers, 0).Unix()
 	if s.retrieveEtagHeader(m.Headers) != "" {
 		character.Etag = s.retrieveEtagHeader(m.Headers)

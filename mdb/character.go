@@ -80,9 +80,9 @@ func (r *characterRepository) DeleteCharacter(ctx context.Context, id uint64) er
 func (r *characterRepository) Expired(ctx context.Context) ([]*neo.Character, error) {
 
 	mods := []neo.Modifier{
-		neo.LessThan{Column: "cached_until", Value: time.Now().Unix()},
+		neo.LessThan{Column: "cachedUntil", Value: time.Now().Unix()},
 		neo.LimitModifier(1000),
-		neo.OrderModifier{Column: "cached_until", Sort: neo.SortAsc},
+		neo.OrderModifier{Column: "cachedUntil", Sort: neo.SortAsc},
 	}
 
 	return r.Characters(ctx, mods...)

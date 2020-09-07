@@ -61,9 +61,6 @@ type (
 
 		InvalidQueue     int64
 		PrevInvalidQueue int64
-
-		AttributionQueue   int64
-		PrevAttributeQueue int64
 	}
 )
 
@@ -128,10 +125,6 @@ func (s *service) fetchInvalidQueue() (int64, error) {
 	return s.redis.ZCount(neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchAttributeQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_ATTRIBUTES, "-inf", "+inf").Result()
-}
-
 func (s *service) EvaluateParams(param *stat) error {
 	var err error
 
@@ -175,11 +168,6 @@ func (s *service) EvaluateParams(param *stat) error {
 		return errors.Wrap(err, "fetchProcessingQueue failed")
 	}
 
-	param.AttributionQueue, err = s.fetchAttributeQueue()
-	if err != nil {
-		return errors.Wrap(err, "fetchAttributeQueue failed")
-	}
-
 	param.RecalculatingQueue, err = s.fetchRecalculatingQueue()
 	if err != nil {
 		return errors.Wrap(err, "fetchRecalculatingQueue failed")
@@ -215,15 +203,12 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevESI420 = params.ESI420
 	params.PrevESI4XX = params.ESI4XX
 	params.PrevESI5XX = params.ESI5XX
-	params.PrevESIErrorRemain = params.ESIErrorRemain
-	params.PrevESIErrorReset = params.ESIErrorReset
 	params.PrevProcessingQueue = params.ProcessingQueue
 	params.PrevRecalculatingQueue = params.RecalculatingQueue
 	params.PrevBackupQueue = params.BackupQueue
 	params.PrevStatsQueue = params.StatsQueue
 	params.PrevNotificationsQueue = params.NotificationsQueue
 	params.PrevInvalidQueue = params.InvalidQueue
-	params.PrevAttributeQueue = params.AttributionQueue
 }
 
 func (s *service) Run() error {
@@ -245,11 +230,6 @@ func (s *service) Run() error {
 					"%d: Queue Processing (%d)",
 					params.ProcessingQueue,
 					params.ProcessingQueue-params.PrevProcessingQueue,
-				),
-				fmt.Sprintf(
-					"%d: Queue Attribution (%d)",
-					params.AttributionQueue,
-					params.AttributionQueue-params.PrevAttributeQueue,
 				),
 				fmt.Sprintf(
 					"%d: Queue Recalculating (%d)",
@@ -280,6 +260,9 @@ func (s *service) Run() error {
 				fmt.Sprintf(
 					"Time: %s", time.Now().Format("15:04:05"),
 				),
+				fmt.Sprintf(
+					"Unix: %d", time.Now().Unix(),
+				),
 			},
 			[]string{
 				fmt.Sprintf(
@@ -309,14 +292,12 @@ func (s *service) Run() error {
 				),
 				"",
 				fmt.Sprintf(
-					"%d: Current Error Count(%d)",
+					"%d: Current Error Count",
 					100-params.ESIErrorRemain,
-					100-params.PrevESIErrorRemain,
 				),
 				fmt.Sprintf(
-					"%d: Reset At Unix (%d)",
+					"%d: Reset At Unix",
 					params.ESIErrorReset,
-					params.PrevESIErrorReset,
 				),
 			},
 		}

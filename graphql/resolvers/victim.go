@@ -40,22 +40,23 @@ func (r *killmailVictimResolver) Ship(ctx context.Context, obj *neo.KillmailVict
 	return r.Dataloader(ctx).TypeLoader.Load(obj.ShipTypeID)
 }
 
-// func (r *killmailVictimResolver) Fitted(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error) {
-// 	items, err := r.Dataloader(ctx).KillmailItemsLoader.Load(obj.KillmailID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	result := make([]*neo.KillmailItem, 0)
-// 	for _, item := range items {
-// 		if item.Flag == 5 {
-// 			continue
-// 		}
+func (r *killmailVictimResolver) Fitted(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error) {
 
-// 		result = append(result, item)
-// 	}
+	if len(obj.Items) == 0 {
+		return obj.Items, nil
+	}
 
-// 	return result, nil
-// }
+	result := make([]*neo.KillmailItem, 0)
+	for _, item := range obj.Items {
+		if item.Flag == 5 {
+			continue
+		}
+
+		result = append(result, item)
+	}
+
+	return result, nil
+}
 
 func (r *killmailVictimResolver) Items(ctx context.Context, obj *neo.KillmailVictim) ([]*neo.KillmailItem, error) {
 

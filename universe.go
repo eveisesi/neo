@@ -32,119 +32,110 @@ type UniverseRepository interface {
 	TypeGroups(ctx context.Context, mods ...Modifier) ([]*TypeGroup, error)
 }
 
+type SolarSystem struct {
+	ID              uint   `bson:"id" json:"id"`
+	Name            string `bson:"name" json:"name"`
+	RegionID        uint   `bson:"regionID" json:"regionID"`
+	ConstellationID uint   `bson:"constellationID" json:"constellationID"`
+	FactionID       *int   `bson:"factionID" json:"factionID"`
+	SunTypeID       *int   `bson:"sunTypeID" json:"sunTypeID"`
+	Position        struct {
+		X float64 `bson:"x" json:"x"`
+		Y float64 `bson:"y" json:"y"`
+		Z float64 `bson:"z" json:"z"`
+	} `bson:"position" json:"position"`
+	Security  float64 `bson:"security" json:"security"`
+	CreatedAt int64   `bson:"createdAt" json:"createdAt"`
+	UpdatedAt int64   `bson:"updatedAt" json:"updatedAt"`
+
+	Constellation *Constellation `bson:"-" json:"-"`
+}
+
 // Constellation is an object representing the database table.
 type Constellation struct {
-	ID       uint    `db:"id" bson:"id"`
-	Name     string  `db:"name" bson:"name"`
-	RegionID uint    `db:"region_id" bson:"regionID"`
-	PosX     float64 `db:"pos_x" bson:"-"`
-	PosY     float64 `db:"pos_y" bson:"-"`
-	PosZ     float64 `db:"pos_z" bson:"-"`
+	ID       uint   `bson:"id" json:"id"`
+	Name     string `bson:"name" json:"name"`
+	RegionID uint   `bson:"regionID" json:"regionID"`
 	Position struct {
-		X float64 `bson:"x"`
-		Y float64 `bson:"y"`
-		Z float64 `bson:"z"`
-	} `bson:"position"`
-	FactionID *int  `db:"faction_id" bson:"factionID"`
-	CreatedAt int64 `bson:"createdAt"`
-	UpdatedAt int64 `bson:"updatedAt"`
+		X float64 `bson:"x" json:"x"`
+		Y float64 `bson:"y" json:"y"`
+		Z float64 `bson:"z" json:"z"`
+	} `bson:"position" json:"position"`
+	FactionID *int  `bson:"factionID" json:"factionID"`
+	CreatedAt int64 `bson:"createdAt" json:"createdAt"`
+	UpdatedAt int64 `bson:"updatedAt" json:"updatedAt"`
 
-	Region *Region `bson:"-"`
+	Region *Region `bson:"-" json:"-"`
 }
 
 // Region is an object representing the database table.
 type Region struct {
-	ID       uint    `db:"id" bson:"id"`
-	Name     string  `db:"name" bson:"name"`
-	PosX     float64 `db:"pos_x" bson:"-"`
-	PosY     float64 `db:"pos_y" bson:"-"`
-	PosZ     float64 `db:"pos_z" bson:"-"`
+	ID       uint   `bson:"id" json:"id"`
+	Name     string `bson:"name" json:"name"`
 	Position struct {
-		X float64 `bson:"x"`
-		Y float64 `bson:"y"`
-		Z float64 `bson:"z"`
-	} `bson:"position"`
-	FactionID *uint `db:"faction_id" bson:"factionID"`
-	CreatedAt int64 `bson:"createdAt"`
-	UpdatedAt int64 `bson:"updatedAt"`
-}
-
-type SolarSystem struct {
-	ID              uint   `bson:"id"`
-	Name            string `bson:"name"`
-	RegionID        uint   `db:"region_id" bson:"regionID"`
-	ConstellationID uint   `db:"constellation_id" bson:"constellationID"`
-	FactionID       *int   `db:"faction_id" bson:"factionID"`
-	SunTypeID       *int   `db:"sun_type_id" bson:"sunTypeID"`
-	Position        struct {
-		X float64 `bson:"x"`
-		Y float64 `bson:"y"`
-		Z float64 `bson:"z"`
-	} `bson:"position"`
-	PosX      float64 `db:"pos_x" bson:"-"`
-	PosY      float64 `db:"pos_y" bson:"-"`
-	PosZ      float64 `db:"pos_z" bson:"-"`
-	Security  float64 `db:"security" bson:"security"`
-	CreatedAt int64   `bson:"createdAt"`
-	UpdatedAt int64   `bson:"updatedAt"`
-
-	Constellation *Constellation `bson:"-"`
+		X float64 `bson:"x" json:"x"`
+		Y float64 `bson:"y" json:"y"`
+		Z float64 `bson:"z" json:"z"`
+	} `bson:"position" json:"position"`
+	FactionID *uint `bson:"factionID" json:"factionID"`
+	CreatedAt int64 `bson:"createdAt" json:"createdAt"`
+	UpdatedAt int64 `bson:"updatedAt" json:"updatedAt"`
 }
 
 // Type is an object representing the database table.
 type Type struct {
-	ID            uint   `bson:"id"`
-	GroupID       uint   `bson:"groupID"`
-	Name          string `bson:"name"`
-	Description   string `bson:"description"`
-	Published     bool   `bson:"published"`
-	MarketGroupID *uint  `bson:"marketGroupID"`
-	CreatedAt     int64  `bson:"createdAt"`
-	UpdatedAt     int64  `bson:"updatedAt"`
+	ID            uint   `bson:"id" json:"id"`
+	GroupID       uint   `bson:"groupID" json:"groupID"`
+	Name          string `bson:"name" json:"name"`
+	Description   string `bson:"description" json:"description"`
+	Published     bool   `bson:"published" json:"published"`
+	MarketGroupID *uint  `bson:"marketGroupID" json:"marketGroupID"`
+	CreatedAt     int64  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt     int64  `bson:"updatedAt" json:"updatedAt"`
 
-	Group *TypeGroup `bson:"-"`
+	Group *TypeGroup `bson:"-" json:"-"`
 }
 
 // TypeAttribute is an object representing the database table.
 type TypeAttribute struct {
-	TypeID      uint  `bson:"typeID"`
-	AttributeID uint  `bson:"attributeID"`
-	Value       int64 `bson:"value"`
-	CreatedAt   int64 `bson:"createdAt"`
-	UpdatedAt   int64 `bson:"updatedAt"`
+	TypeID      uint  `bson:"typeID" json:"typeID"`
+	AttributeID uint  `bson:"attributeID" json:"attributeID"`
+	Value       int64 `bson:"value" json:"value"`
+	CreatedAt   int64 `bson:"createdAt" json:"createdAt"`
+	UpdatedAt   int64 `bson:"updatedAt" json:"updatedAt"`
 }
 
 // TypeCategory is an object representing the database table.
 type TypeCategory struct {
-	ID        uint   `bson:"id"`
-	Name      string `bson:"name"`
-	Published bool   `bson:"published"`
-	CreatedAt int64  `bson:"createdAt"`
-	UpdatedAt int64  `bson:"updatedAt"`
+	ID        uint   `bson:"id" json:"id"`
+	Name      string `bson:"name" json:"name"`
+	Published bool   `bson:"published" json:"published"`
+	CreatedAt int64  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt int64  `bson:"updatedAt" json:"updatedAt"`
 }
 
 // TypeFlag is an object representing the database table.
 type TypeFlag struct {
-	ID        uint   `bson:"id"`
-	Name      string `bson:"name"`
-	Text      string `bson:"text"`
-	CreatedAt int64  `bson:"createdAt"`
-	UpdatedAt int64  `bson:"updatedAt"`
+	ID        uint   `bson:"id" json:"id"`
+	Name      string `bson:"name" json:"name"`
+	Text      string `bson:"text" json:"text"`
+	CreatedAt int64  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt int64  `bson:"updatedAt" json:"updatedAt"`
 }
 
 // TypeGroup is an object representing the database table.
 type TypeGroup struct {
-	ID         uint   `bson:"id"`
-	CategoryID uint   `bson:"categoryID"`
-	Name       string `bson:"name"`
-	Published  bool   `bson:"published"`
-	CreatedAt  int64  `bson:"createdAt"`
-	UpdatedAt  int64  `bson:"updatedAt"`
+	ID         uint   `bson:"id" json:"id"`
+	CategoryID uint   `bson:"categoryID" json:"categoryID"`
+	Name       string `bson:"name" json:"name"`
+	Published  bool   `bson:"published" json:"published"`
+	CreatedAt  int64  `bson:"createdAt" json:"createdAt"`
+	UpdatedAt  int64  `bson:"updatedAt" json:"updatedAt"`
 }
 
 // TypeMaterial is an object representing the database table.
 type TypeMaterial struct {
-	TypeID         uint `boil:"type_id" bson:"typeID" toml:"typeID" yaml:"typeID"`
-	MaterialTypeID uint `boil:"material_type_id" bson:"materialTypeID" toml:"materialTypeID" yaml:"materialTypeID"`
-	Quantity       uint `boil:"quantity" bson:"quantity" toml:"quantity" yaml:"quantity"`
+	TypeID         uint `bson:"typeID" json:"typeID"`
+	MaterialTypeID uint `bson:"materialTypeID" json:"materialTypeID"`
+	Quantity       uint `bson:"quantity" json:"quantity"`
 }

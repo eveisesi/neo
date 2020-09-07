@@ -20,7 +20,11 @@ type ColValIn struct {
 	Values []ModValue
 }
 
-type ColValOr struct {
+type OrMod struct {
+	Values []Modifier
+}
+
+type AndMod struct {
 	Values []Modifier
 }
 
@@ -74,31 +78,6 @@ type LessThanEqualTo ColVal
 type NotEqual ColVal
 type In ColValIn
 type NotIn ColValIn
-
-// Legacy Modifiers, will most likely be deprecated after we move off of MySQL
-// should Mongo perform
-type EqualToStr ColValStr
-type NotEqualToStr ColValStr
-type EqualToTime ColValTime
-type NotEqualToTime ColValTime
-type GreaterThanTime ColValTime
-type LessThanTime ColValTime
-type EqualToBool ColValBool
-type NotEqualToBool ColValBool
-type GreaterThanUint64 ColValUint64
-type GreaterThanEqualToUint64 ColValUint64
-type LessThanUint64 ColValUint64
-type LessThanEqualToUint64 ColValUint64
-type EqualToUint64 ColValUint64
-type NotEqualToUint64 ColValUint64
-type GreaterThanUint ColValUint
-type GreaterThanEqualToUint ColValUint
-type LessThanUint ColValUint
-type LessThanEqualToUint ColValUint
-type EqualToUint ColValUint
-type NotEqualToUint ColValUint
-type InUint ColValSlcUint
-type InUint64 ColValSlcUint64
 type LimitModifier int
 
 type OrderModifier struct {
@@ -106,11 +85,11 @@ type OrderModifier struct {
 	Sort   Sort
 }
 
-type Sort string
+type Sort int
 
 const (
-	SortAsc  Sort = "ASC"
-	SortDesc Sort = "DESC"
+	SortAsc  Sort = 1
+	SortDesc Sort = -1
 )
 
 var AllSort = []Sort{
@@ -126,6 +105,6 @@ func (e Sort) IsValid() bool {
 	return false
 }
 
-func (e Sort) String() string {
-	return string(e)
+func (e Sort) Value() int {
+	return int(e)
 }

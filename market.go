@@ -24,21 +24,21 @@ type HistoricalRecord struct {
 }
 
 type PriceBuilt struct {
-	TypeID uint      `db:"type_id" json:"typeID"`
-	Date   time.Time `db:"date" json:"date"`
-	Price  float64   `db:"price" json:"price"`
+	TypeID uint    `bson:"typeID" json:"typeID"`
+	Date   string  `bson:"date" json:"date"`
+	Price  float64 `bson:"price" json:"price"`
 }
 
 type MarketPrices struct {
-	AdjustedPrice float64 `json:"adjusted_price"`
-	AveragePrice  float64 `json:"average_price"`
-	TypeID        uint    `json:"type_id"`
+	AdjustedPrice float64 `bson:"adjustedPrice" json:"adjustedPrice"`
+	AveragePrice  float64 `bson:"averagePrice" json:"averagePrice"`
+	TypeID        uint    `bson:"typeID" json:"typeID"`
 }
 
 type MarketGroup struct {
-	MarketGroupID uint   `json:"market_group_id"`
-	ParentGroupID uint   `json:"parent_group_id"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Types         []uint `json:"types"`
+	MarketGroupID uint   `bson:"marketGroupID" json:"marketGroupID"`
+	ParentGroupID uint   `bson:"parentGroupID" json:"parentGroupID"`
+	Name          string `bson:"name" json:"name"`
+	Description   string `bson:"description" json:"description"`
+	Types         []uint `bson:"types" json:"types"`
 }

@@ -3,7 +3,6 @@ package mdb
 import (
 	"context"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -34,10 +33,6 @@ func (r *killmailRepository) Killmails(ctx context.Context, mods ...neo.Modifier
 	filters := BuildFilters(mods...)
 	opts := BuildFindOptions(mods...)
 
-	spew.Dump(filters, opts)
-
-	return nil, nil
-
 	var killmails = make([]*neo.Killmail, 0)
 	result, err := r.killmails.Find(ctx, filters, opts)
 	if err != nil {
@@ -61,10 +56,6 @@ func (r *killmailRepository) CreateKillmail(ctx context.Context, killmail *neo.K
 
 	return nil
 
-}
-
-func (r *killmailRepository) Recent(ctx context.Context, limit, offset int) ([]*neo.Killmail, error) {
-	return nil, nil
 }
 
 func (r *killmailRepository) Exists(ctx context.Context, id uint) (bool, error) {

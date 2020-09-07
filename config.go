@@ -2,14 +2,6 @@ package neo
 
 type Config struct {
 	// db configuration
-	MySQL struct {
-		DBUser         string `required:"true"`
-		DBPass         string `required:"true"`
-		DBHost         string `required:"true"`
-		DBName         string `required:"true"`
-		DBReadTimeout  int    `default:"30"`
-		DBWriteTimeout int    `default:"30"`
-	}
 	Mongo struct {
 		DBUser     string `required:"true"`
 		DBPass     string `required:"true"`

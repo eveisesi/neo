@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -131,8 +130,6 @@ func (r *corporationRepository) MemberCountByAllianceID(ctx context.Context, id 
 	if err != nil {
 		return 0, err
 	}
-
-	spew.Dump(output)
 
 	return 0, nil
 }

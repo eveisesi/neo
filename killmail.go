@@ -12,7 +12,6 @@ type KillmailRepository interface {
 	// Update(ctx context.Context, id uint, killmail *Killmail) error
 
 	Exists(ctx context.Context, id uint) (bool, error)
-	Recent(ctx context.Context, limit, offset int) ([]*Killmail, error)
 	// Recalculable(ctx context.Context, limit int, after uint) ([]*Killmail, error)
 }
 

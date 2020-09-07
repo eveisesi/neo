@@ -9,9 +9,24 @@ import (
 	"strconv"
 
 	"github.com/eveisesi/neo"
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null"
 )
+
+type MarketPrices struct {
+	AdjustedPrice float64 `json:"adjusted_price"`
+	AveragePrice  float64 `json:"average_price"`
+	TypeID        uint    `json:"type_id"`
+}
+
+type MarketGroup struct {
+	MarketGroupID uint   `json:"market_group_id"`
+	ParentGroupID uint   `json:"parent_group_id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	Types         []uint `json:"types"`
+}
 
 func (s *service) GetMarketGroups(ctx context.Context) ([]int, Meta) {
 
@@ -46,11 +61,17 @@ func (s *service) GetMarketGroupsMarketGroupID(ctx context.Context, id int) (*ne
 		return nil, m
 	}
 
-	group := new(neo.MarketGroup)
-	err := json.Unmarshal(response, group)
+	esiGroup := new(MarketGroup)
+	err := json.Unmarshal(response, esiGroup)
 	if err != nil {
 		m.Msg = errors.Wrapf(err, "unable to unmarshal response body on request %s", path)
 		return nil, m
+	}
+
+	var group = new(neo.MarketGroup)
+	err = copier.Copy(group, esiGroup)
+	if err != nil {
+		m.Msg = errors.Wrap(err, "unable to copy esi type MarketGroup to neo MarketGroup ")
 	}
 
 	return group, m

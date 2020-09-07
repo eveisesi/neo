@@ -139,9 +139,13 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 }
 
 func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error) {
-	offset := (neo.KILLMAILS_PER_PAGE * page) - neo.KILLMAILS_PER_PAGE
 
-	return s.killmails.Recent(ctx, neo.KILLMAILS_PER_PAGE, offset)
+	mods := []neo.Modifier{
+		neo.LimitModifier(50),
+		neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc},
+	}
+
+	return s.killmails.Killmails(ctx, mods...)
 }
 
 func (s *service) KillmailsFromCache(ctx context.Context, key string) ([]*neo.Killmail, error) {
@@ -179,12 +183,12 @@ func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails 
 
 }
 
-func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "characters",
-		"id":    id,
-		"after": after,
+		"type": "characters",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -197,15 +201,17 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after u
 	}
 
 	mods := []neo.Modifier{
-		neo.EqualTo{Column: "victim.characterID", Value: id},
-		neo.EqualTo{Column: "attackers.characterID", Value: id},
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.EqualTo{Column: "victim.characterID", Value: id},
+				neo.EqualTo{Column: "attackers.characterID", Value: id},
+			},
+		},
 	}
 
-	if after > 0 {
-		mods = append(mods, neo.LessThan{Column: "id", Value: after})
-	}
+	mods = append(mods, neo.LimitModifier(50))
 
-	killmails, err = s.killmails.Killmails(ctx, mods)
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -216,12 +222,12 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, after u
 
 }
 
-func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "corporations",
-		"id":    id,
-		"after": after,
+		"type": "corporations",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -233,14 +239,19 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, after u
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.EqualTo{Column: "victim.corporationID", Value: id},
+				neo.EqualTo{Column: "attackers.corporationID", Value: id},
+			},
+		},
 	}
-	victimMods := []neo.Modifier{neo.EqualToUint{Column: "corporation_id", Value: id}}
-	attMods := []neo.Modifier{neo.EqualToUint{Column: "corporation_id", Value: id}}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, victimMods, attMods)
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -251,12 +262,12 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, after u
 
 }
 
-func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "alliances",
-		"id":    id,
-		"after": after,
+		"type": "alliances",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -268,14 +279,19 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, after uint
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.EqualTo{Column: "victim.allianceID", Value: id},
+				neo.EqualTo{Column: "attackers.allianceID", Value: id},
+			},
+		},
 	}
-	victimMods := []neo.Modifier{neo.EqualToUint{Column: "alliance_id", Value: id}}
-	attMods := []neo.Modifier{neo.EqualToUint{Column: "alliance_id", Value: id}}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, victimMods, attMods)
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -286,12 +302,12 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, after uint
 
 }
 
-func (s *service) KillmailsByShipID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "ships",
-		"id":    id,
-		"after": after,
+		"type": "ships",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -303,14 +319,19 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, after uint) ([
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.EqualTo{Column: "victim.shipTypeID", Value: id},
+				neo.EqualTo{Column: "attackers.shipTypeID", Value: id},
+			},
+		},
 	}
-	victimMods := []neo.Modifier{neo.EqualToUint{Column: "ship_type_id", Value: id}}
-	attMods := []neo.Modifier{neo.EqualToUint{Column: "ship_type_id", Value: id}}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, victimMods, attMods)
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +342,7 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, after uint) ([
 
 }
 
-func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	allowed := tools.IsGroupAllowed(id)
 	if !allowed {
@@ -329,9 +350,9 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uin
 	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "shipGroup",
-		"id":    id,
-		"after": after,
+		"type": "shipGroup",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -343,14 +364,19 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uin
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.EqualTo{Column: "victim.shipGroupID", Value: id},
+				neo.EqualTo{Column: "attackers.shipGroupID", Value: id},
+			},
+		},
 	}
-	vicMods := []neo.Modifier{neo.EqualToUint{Column: "ship_group_id", Value: id}}
-	attMods := []neo.Modifier{neo.EqualToUint{Column: "ship_group_id", Value: id}}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, vicMods, attMods)
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -361,12 +387,12 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, after uin
 
 }
 
-func (s *service) KillmailsBySystemID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "systems",
-		"id":    id,
-		"after": after,
+		"type": "systems",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -378,12 +404,14 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, after uint) 
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{neo.EqualToUint{Column: "solar_system_id", Value: id}}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.EqualTo{Column: "solarSystemID", Value: id},
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, []neo.Modifier{}, []neo.Modifier{})
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -394,12 +422,12 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, after uint) 
 
 }
 
-func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "constellation",
-		"id":    id,
-		"after": after,
+		"type": "constellation",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -411,12 +439,14 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, after
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{neo.EqualToUint{Column: "constellation_id", Value: id}}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.EqualTo{Column: "constellationID", Value: id},
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, []neo.Modifier{}, []neo.Modifier{})
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}
@@ -431,12 +461,12 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, after
 
 }
 
-func (s *service) KillmailsByRegionID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
-		"type":  "region",
-		"id":    id,
-		"after": after,
+		"type": "region",
+		"id":   id,
+		"page": page,
 	})
 
 	killmails, err := s.KillmailsFromCache(ctx, key)
@@ -448,12 +478,14 @@ func (s *service) KillmailsByRegionID(ctx context.Context, id uint, after uint) 
 		return killmails, nil
 	}
 
-	coreMods := []neo.Modifier{neo.EqualToUint{Column: "region_id", Value: id}}
-	if after > 0 {
-		coreMods = append(coreMods, neo.LessThanUint{Column: "id", Value: after})
+	mods := []neo.Modifier{
+		neo.EqualTo{Column: "regionID", Value: id},
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, coreMods, []neo.Modifier{}, []neo.Modifier{})
+	mods = append(mods, neo.LimitModifier(50))
+	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
+
+	killmails, err = s.killmails.Killmails(ctx, mods...)
 	if err != nil {
 		return nil, err
 	}

@@ -16,7 +16,7 @@ import (
 	"github.com/urfave/cli"
 )
 
-func (s *service) HistoryExporter(min, max string, datehold bool, threshold int64) error {
+func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, datehold bool, threshold int64) error {
 
 	txn := s.newrelic.StartTransaction("import history")
 	ctx := newrelic.NewContext(context.Background(), txn)
@@ -25,10 +25,6 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 	current, err := s.redis.WithContext(ctx).Get(neo.ZKB_HISTORY_DATE).Result()
 	if err != nil && err.Error() != "redis: nil" {
 		s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
-	}
-	// If Current is an empty string, set it to the passed in max string
-	if current == "" {
-		current = min
 	}
 
 	// Date Parsing to get time.Time's to deal with
@@ -41,11 +37,35 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 	if max == "" {
 		now := time.Now()
 		maxdate = time.Date(now.Year(), now.Month(), now.Day()-1, 0, 0, 0, 0, time.UTC)
+		max = maxdate.Format("20060102")
 	} else {
 		maxdate, err = time.Parse("20060102", max)
 		if err != nil {
 			s.logger.WithError(err).Fatal("unable to parse provided date")
 		}
+	}
+
+	if !overrideCurrent {
+		if current == "" {
+			if direction == "max" {
+				current = max
+			} else {
+				current = min
+			}
+		}
+	} else {
+		if direction == "max" {
+			current = max
+		} else {
+			current = min
+		}
+	}
+
+	incrementer := 0
+	if direction == "max" {
+		incrementer = -1
+	} else {
+		incrementer = 1
 	}
 
 	currentdate, err := time.Parse("20060102", current)
@@ -131,7 +151,7 @@ func (s *service) HistoryExporter(min, max string, datehold bool, threshold int6
 			continue
 		}
 
-		currentdate = currentdate.AddDate(0, 0, 1)
+		currentdate = currentdate.AddDate(0, 0, incrementer)
 		_, err = s.redis.WithContext(ctx).Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 		if err != nil {
 			s.logger.WithError(err).Error("redis returned invalid response while setting egress date")

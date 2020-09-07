@@ -23,7 +23,7 @@ type (
 	Service interface {
 		ProcessMessage(ctx context.Context, entry *logrus.Entry, message []byte) (*neo.Killmail, error)
 		// Business Appliances
-		HistoryExporter(mindate, maxdate string, datehold bool, threshold int64) error
+		HistoryExporter(mindate, maxdate, direction string, overrideCurrent, datehold bool, threshold int64) error
 		Importer(gLimit, gSleep int64) error
 		Websocket() error
 		// Recalculator(gLimit int64)
@@ -44,20 +44,18 @@ type (
 		KillmailsByConstellationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
 		KillmailsByRegionID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
 
-		// Attackers
-		AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error)
-		AttackersByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailAttacker, error)
+		// // Attackers
+		// AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error)
+		// AttackersByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailAttacker, error)
 
-		// Items
-		ItemsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error)
+		// // Items
+		// ItemsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error)
 
-		// Victim
-		VictimByKillmailID(ctx context.Context, id uint) (*neo.KillmailVictim, error)
-		VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error)
+		// // Victim
+		// VictimByKillmailID(ctx context.Context, id uint) (*neo.KillmailVictim, error)
+		// VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error)
 
-		MostValuable(ctx context.Context, column string, id, age, limit uint) ([]*neo.Killmail, error)
-		MostValuableKills(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error)
-		MostValuableLosses(ctx context.Context, column string, id uint64, age, limit uint) ([]*neo.Killmail, error)
+		MostValuable(ctx context.Context, column string, id uint64, age, limit int) ([]*neo.Killmail, error)
 	}
 
 	WSPayload struct {
