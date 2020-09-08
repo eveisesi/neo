@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
+	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
 
@@ -134,33 +135,27 @@ func (s *service) Run(start, end time.Time) {
 
 }
 
-func (s *service) GateKeeper(ctx context.Context) {
+func (s *service) Watchman(ctx context.Context) bool {
 
-	for {
-		status, err := s.redis.WithContext(ctx).Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			break
-		}
-
-		if status == neo.COUNT_STATUS_DOWNTIME {
-			s.logger.WithContext(ctx).WithField("status", status).Info("loop manager blocking process due to downtime")
-			time.Sleep(time.Second)
-			continue
-		} else if status == neo.COUNT_STATUS_RED {
-			s.logger.WithContext(ctx).WithField("status", status).Error("loop manager blocking process due to red alert")
-			time.Sleep(time.Second)
-			continue
-		} else if status == neo.COUNT_STATUS_YELLOW {
-			s.logger.WithContext(ctx).WithField("status", status).Warning("slowing down due to status")
-			time.Sleep(time.Millisecond * 250)
-			break
-		} else if status == neo.COUNT_STATUS_GREEN {
-			break
-		}
-
-		s.logger.WithContext(ctx).Info("Gatekeeper preventing process for proceeding")
-		time.Sleep(time.Second)
-
+	status, err := s.redis.WithContext(ctx).Get(neo.REDIS_ESI_TRACKING_STATUS).Int64()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		newrelic.FromContext(ctx).NoticeError(err)
+		s.logger.WithContext(ctx).WithError(err).WithField("status", status).Info("loop manager blocking process due to downtime")
+		return false
 	}
+
+	if status == neo.COUNT_STATUS_DOWNTIME {
+		s.logger.WithContext(ctx).WithField("status", status).Info("loop manager blocking process due to downtime")
+		return false
+	} else if status == neo.COUNT_STATUS_RED {
+		s.logger.WithContext(ctx).WithField("status", status).Error("loop manager blocking process due to red alert")
+		return false
+	} else if status == neo.COUNT_STATUS_YELLOW {
+		s.logger.WithContext(ctx).WithField("status", status).Warning("slowing down due to status")
+		time.Sleep(time.Millisecond * 250)
+		return true
+	}
+
+	return true
 
 }

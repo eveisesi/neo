@@ -68,7 +68,12 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 		}
 
 		for i, result := range results {
-			s.tracker.GateKeeper(ctx)
+		LoopStart:
+			proceed := s.tracker.Watchman(ctx)
+			if !proceed {
+				time.Sleep(time.Second)
+				goto LoopStart
+			}
 			message := result.Member.(string)
 			limit.ExecuteWithTicket(func(workerID int) {
 				s.handleMessage(ctx, []byte(message), i, gSleep)

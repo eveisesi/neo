@@ -27,6 +27,11 @@ func init() {
 	app.UsageText = "neo [parent] [child command] [--options]"
 	app.Usage = "Service that manages all services related to Neo and its stable operation"
 	app.Version = "v0.0.1"
+	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name: "debug",
+		},
+	}
 	app.Commands = []cli.Command{
 		cli.Command{
 			Name: "time",
@@ -112,14 +117,19 @@ func init() {
 			Name:        "updater",
 			Description: "Updater ensures that all updatable records in the database are update date according to their CacheUntil timestamp.",
 			Action: func(c *cli.Context) error {
-				app := core.New("updater", false)
+
+				debug := c.GlobalBool("debug")
+
+				app := core.New("updater", debug)
 
 				var wg sync.WaitGroup
 
-				wg.Add(3)
+				wg.Add(1)
 				go app.Character.UpdateExpired(context.Background())
-				go app.Corporation.UpdateExpired(context.Background())
-				go app.Alliance.UpdateExpired(context.Background())
+				// wg.Add(1)
+				// go app.Corporation.UpdateExpired(context.Background())
+				// wg.Add(1)
+				// go app.Alliance.UpdateExpired(context.Background())
 
 				wg.Wait()
 

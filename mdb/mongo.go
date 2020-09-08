@@ -5,10 +5,8 @@ import (
 	"net/url"
 
 	"github.com/eveisesi/neo"
-	"github.com/newrelic/go-agent/v3/integrations/nrmongo"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,13 +15,14 @@ import (
 
 func Connect(ctx context.Context, uri *url.URL) (*mongo.Client, error) {
 
-	monitor := nrmongo.NewCommandMonitor(nil)
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri.String()).SetMonitor(monitor))
+	// monitor := nrmongo.NewCommandMonitor(nil)
+	// .SetMonitor(monitor)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri.String()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to mongo db")
 	}
 
-	err = client.Ping(ctx, readpref.PrimaryPreferred())
+	err = client.Ping(ctx, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to ping mongo db")
 	}

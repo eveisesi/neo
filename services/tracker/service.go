@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	Run(start, end time.Time)
-	GateKeeper(ctx context.Context)
+	Watchman(ctx context.Context) bool
 }
 
 type service struct {

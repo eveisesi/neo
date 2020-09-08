@@ -142,8 +142,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
-		txn := s.newrelic.StartTransaction("updateExpiredCorporations")
-		ctx = newrelic.NewContext(ctx, txn)
+
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
 			s.logger.WithError(err).Error("Failed to fetch expired corporations")
@@ -159,19 +158,31 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		s.logger.WithField("count", len(expired)).Info("updating expired corporations")
 
 		for _, corporation := range expired {
+		LoopStart:
 			entry := s.logger.WithContext(ctx).WithField("corporationID", corporation.ID)
-			s.tracker.GateKeeper(ctx)
-			seg := txn.StartSegment("handleCorporation")
-			seg.AddAttribute("id", corporation.ID)
+			proceed := s.tracker.Watchman(ctx)
+			if !proceed {
+				entry.Info("cannot proceed. watchman says no")
+				time.Sleep(time.Second * 3)
+				goto LoopStart
+			}
+			txn := s.newrelic.StartTransaction("update-expired-corporations")
+			txn.AddAttribute("corporationID", corporation.ID)
+			ctx = newrelic.NewContext(ctx, txn)
+
 			newCorporation, m := s.esi.GetCorporationsCorporationID(ctx, corporation.ID, corporation.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
+				txn.End()
 				entry.WithError(m.Msg).Error("failed to fetch corporation from esi")
 				continue
 			}
 
+			entry = entry.WithField("status_code", m.Code)
+
 			switch m.Code {
 			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				entry.Error("bad status code received from ESI")
 				corporation.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
 				corporation.UpdateError++
 
@@ -199,15 +210,13 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			if err != nil {
 				txn.NoticeError(err)
 				entry.WithError(err).Error("failed to update corporation")
-				continue
+
 			}
 
-			entry.WithField("status_code", m.Code).Debug("corporation successfully updated")
-			seg.End()
+			txn.End()
 			time.Sleep(time.Millisecond * 50)
 		}
 		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("corporations successfully updated")
-		txn.End()
 		time.Sleep(time.Second)
 
 	}

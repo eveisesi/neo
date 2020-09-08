@@ -141,18 +141,15 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
-		txn := s.newrelic.StartTransaction("updateExpiredAlliances")
-		ctx = newrelic.NewContext(ctx, txn)
 
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
-			txn.NoticeError(err)
-			s.logger.WithError(err).Error("Failed to fetch expired alliances")
+			s.logger.WithContext(ctx).WithError(err).Error("Failed to fetch expired alliances")
 			return
 		}
 
 		if len(expired) == 0 {
-			s.logger.Info("no expired alliances found")
+			s.logger.WithContext(ctx).Info("no expired alliances found")
 			time.Sleep(time.Minute * 5)
 			continue
 		}
@@ -160,20 +157,33 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		s.logger.WithField("count", len(expired)).Info("updating expired alliances")
 
 		for _, alliance := range expired {
+		LoopStart:
 			entry := s.logger.WithContext(ctx).WithField("allianceID", alliance.ID)
-			s.tracker.GateKeeper(ctx)
-			seg := txn.StartSegment("handleAlliance")
-			seg.AddAttribute("id", alliance.ID)
+			proceed := s.tracker.Watchman(ctx)
+			if !proceed {
+				entry.Info("cannot proceed. watchman says no")
+				time.Sleep(time.Second * 3)
+				goto LoopStart
+			}
+
+			txn := s.newrelic.StartTransaction("update-expired-alliance")
+			ctx = newrelic.NewContext(ctx, txn)
+			txn.AddAttribute("allianceID", alliance.ID)
 
 			newAlliance, m := s.esi.GetAlliancesAllianceID(ctx, alliance.ID, alliance.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
+				txn.End()
 				entry.WithError(m.Msg).Error("failed to fetch alliance from esi")
 				continue
 			}
 
+			entry = entry.WithField("status_code", m.Code)
+
 			switch m.Code {
 			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				entry.Error("bad status code received from ESI")
+
 				alliance.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
 				alliance.UpdateError++
 
@@ -203,13 +213,11 @@ func (s *service) UpdateExpired(ctx context.Context) {
 				entry.WithError(err).Error("failed to update alliance")
 			}
 
-			entry.WithField("status_code", m.Code).Debug("alliance successfully updated")
-			seg.End()
+			txn.End()
 
 			time.Sleep(time.Millisecond * 50)
 		}
 		s.logger.WithField("count", len(expired)).Info("alliances successfully updated")
-		txn.End()
 		time.Sleep(time.Second)
 
 	}

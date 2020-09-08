@@ -202,7 +202,12 @@ func (s *service) FetchHistory(ctx context.Context) {
 	limiter := limiter.NewConcurrencyLimiter(20)
 
 	for _, v := range groups {
-		s.tracker.GateKeeper(ctx)
+	LoopStart:
+		proceed := s.tracker.Watchman(ctx)
+		if !proceed {
+			time.Sleep(time.Second)
+			goto LoopStart
+		}
 		limiter.Execute(func() {
 			s.processGroup(ctx, v)
 		})

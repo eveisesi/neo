@@ -147,8 +147,6 @@ func (s *service) CreateCharacter(ctx context.Context, character *neo.Character)
 func (s *service) UpdateExpired(ctx context.Context) {
 
 	for {
-		txn := s.newrelic.StartTransaction("updateExpiredCharacters")
-		ctx = newrelic.NewContext(ctx, txn)
 
 		expired, err := s.Expired(ctx)
 		if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
@@ -165,19 +163,32 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		s.logger.WithField("count", len(expired)).Info("updating expired characters")
 
 		for _, character := range expired {
+		LoopStart:
 			entry := s.logger.WithContext(ctx).WithField("character_id", character.ID)
-			seg := txn.StartSegment("handleCharacter")
-			seg.AddAttribute("id", character.ID)
-			s.tracker.GateKeeper(ctx)
+			proceed := s.tracker.Watchman(ctx)
+			if !proceed {
+				entry.Info("cannot proceed. watchman says no")
+				time.Sleep(time.Second * 3)
+				goto LoopStart
+			}
+
+			txn := s.newrelic.StartTransaction("update-expired-characters")
+			txn.AddAttribute("characterID", character.ID)
+			ctx = newrelic.NewContext(ctx, txn)
+
 			newCharacter, m := s.esi.GetCharactersCharacterID(ctx, character.ID, character.Etag)
 			if m.IsErr() {
 				txn.NoticeError(m.Msg)
+				txn.End()
 				entry.WithError(m.Msg).Error("failed to fetch character from esi")
 				continue
 			}
 
+			entry = entry.WithField("status_code", m.Code)
+
 			switch m.Code {
 			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
+				entry.Error("bad status code received from ESI")
 				character.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
 				character.UpdateError++
 
@@ -204,15 +215,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			if err != nil {
 				txn.NoticeError(err)
 				entry.WithError(err).Error("failed to update character")
-				continue
 			}
 
-			entry.WithField("status_code", m.Code).Debug("character successfully updated")
-			seg.End()
-			time.Sleep(time.Millisecond * 50)
+			txn.End()
+			time.Sleep(time.Second)
 		}
 		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("characters successfully updated")
-		txn.End()
 		time.Sleep(time.Second)
 
 	}

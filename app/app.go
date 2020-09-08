@@ -39,7 +39,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin"
-	"github.com/newrelic/go-agent/v3/integrations/nrlogrus"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -119,9 +118,9 @@ func New(command string, debug bool) *App {
 		IdleCheckFrequency: time.Second * 10,
 	})
 
-	redisClient.AddHook(redisHook{
-		cfg: cfg,
-	})
+	// redisClient.AddHook(redisHook{
+	// 	cfg: cfg,
+	// })
 
 	_, err = redisClient.Ping().Result()
 	if err != nil {
@@ -292,7 +291,7 @@ func makeNewRelicApp(cfg *neo.Config, logger *logrus.Logger, command string) (*n
 		newrelic.ConfigAppName(appName),
 		newrelic.ConfigLicense(cfg.NewRelicLicensenKey),
 		newrelic.ConfigDistributedTracerEnabled(true),
-		newrelic.ConfigLogger(nrlogrus.Transform(logger)),
+		// newrelic.ConfigLogger(nrlogrus.Transform(logger)),
 		// newrelic.ConfigDebugLogger(os.Stdout),
 		func(config *newrelic.Config) {
 			config.Labels = map[string]string{
