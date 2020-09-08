@@ -38,7 +38,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/newrelic/go-agent/v3/integrations/logcontext/nrlogrusplugin"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -393,13 +392,9 @@ func makeLogger(hostname, command, logLevel, env string) (*logrus.Logger, error)
 	}
 
 	logger.SetLevel(level)
-	logger.SetFormatter(&nrlogrusplugin.ContextFormatter{})
-
-	if env != "production" {
-		logger.SetFormatter(&logrus.TextFormatter{
-			FullTimestamp: true,
-		})
-	}
+	logger.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp: true,
+	})
 
 	return logger, err
 }
