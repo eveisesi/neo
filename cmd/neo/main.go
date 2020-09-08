@@ -126,10 +126,10 @@ func init() {
 
 				wg.Add(1)
 				go app.Character.UpdateExpired(context.Background())
-				// wg.Add(1)
-				// go app.Corporation.UpdateExpired(context.Background())
-				// wg.Add(1)
-				// go app.Alliance.UpdateExpired(context.Background())
+				wg.Add(1)
+				go app.Corporation.UpdateExpired(context.Background())
+				wg.Add(1)
+				go app.Alliance.UpdateExpired(context.Background())
 
 				wg.Wait()
 

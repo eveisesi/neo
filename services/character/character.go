@@ -218,7 +218,7 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			}
 
 			txn.End()
-			time.Sleep(time.Second)
+			time.Sleep(time.Millisecond * 100)
 		}
 		s.logger.WithContext(ctx).WithField("count", len(expired)).Info("characters successfully updated")
 		time.Sleep(time.Second)
