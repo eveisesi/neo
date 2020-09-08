@@ -78,6 +78,15 @@ type LessThanEqualTo ColVal
 type NotEqual ColVal
 type In ColValIn
 type NotIn ColValIn
+
+type Exists struct {
+	Column string
+}
+
+type NotExists struct {
+	Column string
+}
+
 type LimitModifier int
 
 type OrderModifier struct {

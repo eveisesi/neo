@@ -62,6 +62,10 @@ func BuildFilters(modifiers ...neo.Modifier) primitive.D {
 			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthan, Value: o.Value}}})
 		case neo.LessThanEqualTo:
 			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthanequal, Value: o.Value}}})
+		case neo.Exists:
+			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: "$exists", Value: true}}})
+		case neo.NotExists:
+			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: "$exists", Value: false}}})
 		case neo.OrMod:
 			arr := primitive.A{}
 			for _, mod := range o.Values {

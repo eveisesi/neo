@@ -77,7 +77,12 @@ func (r *corporationRepository) UpdateCorporation(ctx context.Context, id uint, 
 func (r *corporationRepository) Expired(ctx context.Context) ([]*neo.Corporation, error) {
 	mods := []neo.Modifier{
 		neo.LessThan{Column: "cachedUntil", Value: time.Now().Unix()},
-		neo.LessThan{Column: "updateError", Value: 3},
+		neo.OrMod{
+			Values: []neo.Modifier{
+				neo.NotExists{Column: "updateError"},
+				neo.LessThan{Column: "updateError", Value: 3},
+			},
+		},
 		neo.LimitModifier(1000),
 		neo.OrderModifier{Column: "cachedUntil", Sort: neo.SortAsc},
 	}
