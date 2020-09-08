@@ -65,7 +65,6 @@ func (s *service) GetCorporationsCorporationID(ctx context.Context, id uint, eta
 
 		esiCorporation.ID = id
 		if !esiCorporation.validate() {
-			m.Msg = errors.New("invalid data received from ESI.")
 			m.Code = http.StatusUnprocessableEntity
 			return nil, m
 		}

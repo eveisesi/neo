@@ -179,11 +179,12 @@ func (s *service) UpdateExpired(ctx context.Context) {
 			}
 
 			entry = entry.WithField("status_code", m.Code)
-
+			txn.AddAttribute("status_code", m.Code)
 			switch m.Code {
-			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound:
-				entry.Error("bad status code received from ESI")
-
+			case http.StatusInternalServerError, http.StatusBadRequest, http.StatusNotFound, http.StatusUnprocessableEntity:
+				err = errors.New("bad status code received from ESI")
+				txn.NoticeError(err)
+				entry.WithError(err).Errorln()
 				alliance.CachedUntil = time.Now().Add(time.Minute * 2).Unix()
 				alliance.UpdateError++
 

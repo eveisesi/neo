@@ -64,7 +64,6 @@ func (s *service) GetAlliancesAllianceID(ctx context.Context, id uint, etag stri
 		esiAlliance.ID = id
 
 		if !esiAlliance.validate() {
-			m.Msg = errors.New("invalid data received from ESI.")
 			m.Code = http.StatusUnprocessableEntity
 			return nil, m
 		}

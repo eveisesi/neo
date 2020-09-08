@@ -66,7 +66,6 @@ func (s *service) GetCharactersCharacterID(ctx context.Context, id uint64, etag 
 		esiCharacter.ID = id
 
 		if !esiCharacter.validate() {
-			m.Msg = fmt.Errorf("invalid data received from ESI: %s", string(response))
 			m.Code = http.StatusUnprocessableEntity
 			return nil, m
 		}

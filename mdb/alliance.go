@@ -77,6 +77,7 @@ func (r *allianceRepository) Expired(ctx context.Context) ([]*neo.Alliance, erro
 
 	mods := []neo.Modifier{
 		neo.LessThan{Column: "cachedUntil", Value: time.Now().Unix()},
+		neo.LessThan{Column: "updateError", Value: 3},
 		neo.LimitModifier(1000),
 		neo.OrderModifier{Column: "cachedUntil", Sort: neo.SortAsc},
 	}
