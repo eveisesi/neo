@@ -312,7 +312,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			entry.WithError(err).Error("encountered error querying killmail count for date")
 		}
 
-		if killmailCount != totalEntry {
+		if killmailCount < totalEntry {
 			totalAttempts++
 			if totalAttempts > 2 {
 				entry.Fatal("killmail count does not equal history api after multiple attempts")
