@@ -153,7 +153,12 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			entry.WithError(err).Error("encountered error querying killmail count for date")
 		}
 
-		fmt.Printf("%s: %d\tKMCount: %d\n", currentStr, totalEntry, killmailCount)
+		entry = entry.WithFields(logrus.Fields{
+			"currentDate":   currentStr,
+			"totalEntry":    totalEntry,
+			"killmailCount": killmailCount,
+			"pass":          totalEntry == killmailCount,
+		})
 
 		if stats {
 			current = current.AddDate(0, 0, int(incrementer))
@@ -311,6 +316,11 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			if totalAttempts > 2 {
 				entry.Fatal("killmail count does not equal history api after multiple attempts")
 			}
+			entry.WithFields(logrus.Fields{
+				"killmailCount": killmailCount,
+				"totalEntry":    totalEntry,
+			}).Info("count do not equal, trying again.")
+			time.Sleep(time.Second)
 		} else {
 			// TODO: Write this fact to the DB and then also check this table
 			// before counting killmails and after calling ZKillboard
