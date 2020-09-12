@@ -1,7 +1,17 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/eveisesi/neo"
 	core "github.com/eveisesi/neo/app"
+	"github.com/eveisesi/neo/mdb"
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
@@ -10,36 +20,57 @@ func test() cli.Command {
 		Name: "test",
 		Action: func(c *cli.Context) error {
 			app := core.New("f", false)
+			current := time.Date(2020, 9, 11, 0, 0, 0, 0, time.UTC)
 
-			startDate := c.String("startDate")
-			endDate := c.String("endDate")
-			incrementer := c.Int64("incrementer")
-			stats := c.Bool("stats")
+			ctx := context.Background()
 
-			app.History.Run(startDate, endDate, incrementer, stats)
+			countKillmailsFilters := []neo.Modifier{
+				neo.GreaterThanEqualTo{Column: "killmailTime", Value: time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, time.UTC)},
+				neo.LessThanEqualTo{Column: "killmailTime", Value: time.Date(current.Year(), current.Month(), current.Day(), 23, 59, 59, 0, time.UTC)},
+			}
+
+			kr := mdb.NewKillmailRepository(app.MongoDB)
+
+			localKillmails, err := kr.Killmails(ctx, countKillmailsFilters...)
+			if err != nil {
+				app.Logger.WithError(err).Error("encountered error querying killmail count for date")
+			}
+
+			res, err := http.Get("https://zkillboard.com/api/history/20200911.json")
+			if err != nil {
+				app.Logger.WithError(err).Error("failed to make request to zkillboard api")
+
+			}
+
+			defer res.Body.Close()
+			if res.StatusCode != http.StatusOK {
+				app.Logger.Fatal("bad status code received from zkill api")
+			}
+
+			data, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				app.Logger.WithError(err).Fatal("failed to read response body")
+			}
+
+			var remoteMap = make(map[string]string)
+			err = json.Unmarshal(data, &remoteMap)
+			if err != nil {
+				app.Logger.WithError(err).Fatal("failed to decode response body")
+			}
+
+			for _, localKM := range localKillmails {
+				if _, ok := remoteMap[strconv.Itoa(int(localKM.ID))]; !ok {
+
+					app.Logger.WithFields(logrus.Fields{
+						"id":   localKM.ID,
+						"hash": localKM.Hash,
+					}).Info("localKM does not show up in remote source")
+
+				}
+
+			}
 
 			return nil
-		},
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:     "startDate",
-				Usage:    "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
-				Required: true,
-			},
-			cli.StringFlag{
-				Name:     "endDate",
-				Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
-				Required: true,
-			},
-			cli.Int64Flag{
-				Name:     "incrementer",
-				Usage:    "Direction to traverse dates in. Option are min and max. If min, script will start at the provided mindate and increment one day to max. If max, script will start at maxdate and decrement to min.",
-				Required: true,
-			},
-			cli.BoolFlag{
-				Name:  "stats",
-				Usage: "Fetch Totals from ZKillboard and compare count to current db, but do not run fetch",
-			},
 		},
 	}
 }

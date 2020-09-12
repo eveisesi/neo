@@ -165,7 +165,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			continue
 		}
 
-		if killmailCount == totalEntry {
+		if killmailCount >= totalEntry {
 			// TODO: Write this fact to the DB and then also check this table
 			// before counting killmails and after calling ZKillboard
 			entry.Info("killmail count equal history api, skipping date")
@@ -277,6 +277,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			}
 
 			if len(missing) == 0 {
+				entry.Info("no killmails missing, breaking hashes loop")
 				break
 			}
 
