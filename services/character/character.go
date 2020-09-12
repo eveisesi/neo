@@ -54,6 +54,10 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 		return nil, m.Msg
 	}
 
+	if m.Code == http.StatusUnprocessableEntity {
+		return nil, errors.New("invalid character received from ESI, skipping create and cache")
+	}
+
 	// ESI has the character. Lets insert it into the db, and cache it is redis
 	err = s.CharacterRespository.CreateCharacter(ctx, character)
 	if err != nil {

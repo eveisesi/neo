@@ -53,6 +53,10 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 		return nil, m.Msg
 	}
 
+	if m.Code == http.StatusUnprocessableEntity {
+		return nil, errors.New("invalid corporation received from ESI, skipping create and cache")
+	}
+
 	// ESI has the corporation. Lets insert it into the db, and cache it is redis
 	err = s.CorporationRespository.CreateCorporation(ctx, corporation)
 	if err != nil {

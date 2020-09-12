@@ -31,6 +31,9 @@ func init() {
 		cli.BoolFlag{
 			Name: "debug",
 		},
+		// cli.BoolFlag{
+		// 	Name: "profile",
+		// },
 	}
 	app.Commands = []cli.Command{
 		cli.Command{

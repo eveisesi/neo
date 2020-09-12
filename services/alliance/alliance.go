@@ -52,6 +52,10 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 		return nil, m.Msg
 	}
 
+	if m.Code == http.StatusUnprocessableEntity {
+		return nil, errors.New("invalid alliance received from ESI, skipping create and cache")
+	}
+
 	// ESI has the alliance. Lets insert it into the db, and cache it is redis
 	err = s.AllianceRespository.CreateAlliance(ctx, alliance)
 	if err != nil {

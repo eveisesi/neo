@@ -92,47 +92,36 @@ func killmail() cli.Command {
 				Name:  "history",
 				Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 				Action: func(c *cli.Context) error {
-					app := core.New("killmail-history", false)
-					maxdate := c.String("maxdate")
-					mindate := c.String("mindate")
-					threshold := c.Int64("threshold")
-					direction := c.String("direction")
-					datehold := c.Bool("datehold")
-					overrideCurrent := c.Bool("overrideCurrent")
+					app := core.New("f", false)
 
-					err := app.Killmail.HistoryExporter(mindate, maxdate, direction, overrideCurrent, datehold, threshold)
-					if err != nil {
-						return cli.NewExitError(err, 1)
-					}
+					startDate := c.String("startDate")
+					endDate := c.String("endDate")
+					incrementer := c.Int64("incrementer")
+					stats := c.Bool("stats")
 
-					return cli.NewExitError(nil, 0)
+					app.History.Run(startDate, endDate, incrementer, stats)
+
+					return nil
 				},
 				Flags: []cli.Flag{
 					cli.StringFlag{
-						Name:  "maxdate",
-						Usage: "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
-					},
-					cli.StringFlag{
-						Name:     "mindate",
-						Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
+						Name:     "startDate",
+						Usage:    "Date to start the loop at when calling the zkillboard history api. (Format: YYYYMMDD)",
 						Required: true,
 					},
 					cli.StringFlag{
-						Name:     "direction",
+						Name:     "endDate",
+						Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
+						Required: true,
+					},
+					cli.Int64Flag{
+						Name:     "incrementer",
 						Usage:    "Direction to traverse dates in. Option are min and max. If min, script will start at the provided mindate and increment one day to max. If max, script will start at maxdate and decrement to min.",
 						Required: true,
 					},
 					cli.BoolFlag{
-						Name:  "overrideCurrent",
-						Usage: "Override cached current date so that the process can be reset if desired",
-					},
-					cli.BoolFlag{
-						Name:  "datehold",
-						Usage: "Hold after each date until the processing queue has reached a threshold. Threshold must be defined, else this command will be ignored",
-					},
-					cli.IntFlag{
-						Name:  "threshold",
-						Usage: "Threshold that the queue must be below process processing the next date",
+						Name:  "stats",
+						Usage: "Fetch Totals from ZKillboard and compare count to current db, but do not run fetch",
 					},
 				},
 			},

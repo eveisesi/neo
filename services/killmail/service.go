@@ -32,7 +32,6 @@ type (
 
 		// Killmails
 		Killmail(ctx context.Context, id uint) (*neo.Killmail, error)
-		// Killmails(ctx context.Context, coreMods []neo.Modifier, vicMods []neo.Modifier, attMods []neo.Modifier) ([]*neo.Killmail, error)
 		FullKillmail(ctx context.Context, id uint, withNames bool) (*neo.Killmail, error)
 		RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error)
 		KillmailsByCharacterID(ctx context.Context, id uint64, after uint) ([]*neo.Killmail, error)
@@ -43,17 +42,6 @@ type (
 		KillmailsBySystemID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
 		KillmailsByConstellationID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
 		KillmailsByRegionID(ctx context.Context, id uint, after uint) ([]*neo.Killmail, error)
-
-		// // Attackers
-		// AttackersByKillmailID(ctx context.Context, id uint) ([]*neo.KillmailAttacker, error)
-		// AttackersByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailAttacker, error)
-
-		// // Items
-		// ItemsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailItem, error)
-
-		// // Victim
-		// VictimByKillmailID(ctx context.Context, id uint) (*neo.KillmailVictim, error)
-		// VictimsByKillmailIDs(ctx context.Context, ids []uint) ([]*neo.KillmailVictim, error)
 
 		MostValuable(ctx context.Context, column string, id uint64, age, limit int) ([]*neo.Killmail, error)
 	}
@@ -111,9 +99,6 @@ func NewService(
 
 	// Repositories
 	killmails neo.KillmailRepository,
-	// attackers neo.KillmailAttackerRepository,
-	// items neo.KillmailItemRepository,
-	// victim neo.KillmailVictimRepository,
 ) Service {
 	return &service{
 		client,
@@ -130,9 +115,6 @@ func NewService(
 		market,
 		tracker,
 		killmails,
-		// attackers,
-		// items,
-		// victim,
 	}
 }
 

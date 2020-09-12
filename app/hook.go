@@ -1,55 +1,47 @@
 package app
 
-import (
-	"context"
+// type ctxKey int
 
-	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
-	"github.com/newrelic/go-agent/v3/newrelic"
-)
+// const (
+// 	dsCtx ctxKey = iota
+// )
 
-type ctxKey int
+// type redisHook struct {
+// 	cfg *neo.Config
+// }
 
-const (
-	dsCtx ctxKey = iota
-)
+// func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
 
-type redisHook struct {
-	cfg *neo.Config
-}
+// 	txn := newrelic.FromContext(ctx)
+// 	if txn == nil {
+// 		return ctx, nil
+// 	}
 
-func (r redisHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
+// 	ds := &newrelic.DatastoreSegment{
+// 		StartTime:    txn.StartSegmentNow(),
+// 		Product:      newrelic.DatastoreRedis,
+// 		Operation:    cmd.Name(),
+// 		PortPathOrID: r.cfg.RedisAddr,
+// 	}
 
-	txn := newrelic.FromContext(ctx)
-	if txn == nil {
-		return ctx, nil
-	}
+// 	ctx = context.WithValue(ctx, dsCtx, ds)
 
-	ds := &newrelic.DatastoreSegment{
-		StartTime:    txn.StartSegmentNow(),
-		Product:      newrelic.DatastoreRedis,
-		Operation:    cmd.Name(),
-		PortPathOrID: r.cfg.RedisAddr,
-	}
+// 	return ctx, nil
 
-	ctx = context.WithValue(ctx, dsCtx, ds)
+// }
 
-	return ctx, nil
+// func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
+// 	if seg, ok := ctx.Value(dsCtx).(*newrelic.DatastoreSegment); ok {
+// 		seg.End()
+// 	}
 
-}
+// 	return nil
+// }
 
-func (r redisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
-	if seg, ok := ctx.Value(dsCtx).(*newrelic.DatastoreSegment); ok {
-		seg.End()
-	}
+// func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmd []redis.Cmder) (context.Context, error) {
+// 	return ctx, nil
+// }
 
-	return nil
-}
-
-func (r redisHook) BeforeProcessPipeline(ctx context.Context, cmd []redis.Cmder) (context.Context, error) {
-	return ctx, nil
-}
-
-func (r redisHook) AfterProcessPipeline(ctx context.Context, cmd []redis.Cmder) error {
-	return nil
-}
+// func (r redisHook) AfterProcessPipeline(ctx context.Context, cmd []redis.Cmder) error {
+// 	return nil
+// }

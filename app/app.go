@@ -21,6 +21,7 @@ import (
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/esi"
+	"github.com/eveisesi/neo/services/history"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/market"
 	"github.com/eveisesi/neo/services/notifications"
@@ -41,13 +42,6 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-type MongoServices struct {
-	Alliance    alliance.Service
-	Character   character.Service
-	Corporation corporation.Service
-	Market      market.Service
-}
-
 type App struct {
 	Label    string
 	NewRelic *newrelic.Application
@@ -59,12 +53,11 @@ type App struct {
 	Spaces   *session.Session
 	ESI      esi.Service
 
-	Mongo MongoServices
-
 	Alliance     alliance.Service
 	Backup       backup.Service
 	Character    character.Service
 	Corporation  corporation.Service
+	History      history.Service
 	Killmail     killmail.Service
 	Market       market.Service
 	Search       search.Service
@@ -116,10 +109,6 @@ func New(command string, debug bool) *App {
 		IdleTimeout:        time.Second * 120,
 		IdleCheckFrequency: time.Second * 10,
 	})
-
-	// redisClient.AddHook(redisHook{
-	// 	cfg: cfg,
-	// })
 
 	_, err = redisClient.Ping().Result()
 	if err != nil {
@@ -234,6 +223,15 @@ func New(command string, debug bool) *App {
 		mdb.NewKillmailRepository(mongoDB),
 	)
 
+	history := history.NewService(
+		client,
+		redisClient,
+		logger,
+		nr,
+		cfg,
+		mdb.NewKillmailRepository(mongoDB),
+	)
+
 	// stats := stats.NewService(redisClient, logger, nr, killmail, mysql.NewStatRepository(mysqlDB))
 
 	notifications := notifications.NewService(
@@ -264,6 +262,7 @@ func New(command string, debug bool) *App {
 		Backup:       backup,
 		Character:    character,
 		Corporation:  corporation,
+		History:      history,
 		Killmail:     killmail,
 		Market:       market,
 		Notification: notifications,

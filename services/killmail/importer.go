@@ -132,8 +132,6 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 
 func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, message []byte) (*neo.Killmail, error) {
 
-	// var wg sync.WaitGroup
-
 	txn := newrelic.FromContext(ctx)
 
 	var payload = neo.Message{}
@@ -155,10 +153,6 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		entry.WithError(err).
 			Error("error encountered checking if killmail exists")
 		return nil, err
-	}
-	if exists {
-		entry.Info("skipping existing killmail")
-		return nil, nil
 	}
 
 	killmail, m := s.esi.GetKillmailsKillmailIDKillmailHash(ctx, payload.ID, payload.Hash)
@@ -191,8 +185,18 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		return nil, err
 	}
 
-	// wg.Add(1)
-	// go s.backupKillmail(ctx, &wg, killmail.KillmailTime, payload, m.Data)
+	killDate := time.Date(killmail.KillmailTime.Year(), killmail.KillmailTime.Month(), killmail.KillmailTime.Day(), 0, 0, 0, 0, time.UTC)
+
+	err = s.killmails.CreateHash(ctx, &neo.KillHash{ID: killmail.ID, Hash: killmail.Hash, Date: killDate})
+	if err != nil {
+		txn.NoticeError(err)
+		entry.WithError(err).Error("failed to log kill hash in killhash repository")
+	}
+
+	if exists {
+		// entry.Info("skipping existing killmail")
+		return nil, nil
+	}
 
 	entry = entry.WithField("killtime", killmail.KillmailTime.Format("2006-01-02 15:04:05"))
 	s.primeKillmailNodes(ctx, killmail, entry)

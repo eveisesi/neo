@@ -8,11 +8,23 @@ import (
 type KillmailRepository interface {
 	Killmail(ctx context.Context, id uint) (*Killmail, error)
 	Killmails(ctx context.Context, mods ...Modifier) ([]*Killmail, error)
+	CountKillmails(ctx context.Context, mods ...Modifier) (int64, error)
 	CreateKillmail(ctx context.Context, killmail *Killmail) error
 	// Update(ctx context.Context, id uint, killmail *Killmail) error
 
 	Exists(ctx context.Context, id uint) (bool, error)
 	// Recalculable(ctx context.Context, limit int, after uint) ([]*Killmail, error)
+
+	KillHashesByDate(ctx context.Context, date time.Time) ([]*KillHash, error)
+	CreateHash(ctx context.Context, hash *KillHash) error
+	// CreateHashes(ctx context.Context, hashes []*KillHash) error
+	DeleteHashesByDate(ctx context.Context, date time.Time) error
+}
+
+type KillHash struct {
+	ID   uint      `bson:"id" json:"id"`
+	Hash string    `bson:"hash" json:"hash"`
+	Date time.Time `bson:"date" json:"date"`
 }
 
 type Killmail struct {
