@@ -24,17 +24,6 @@ services:
             - .env
         volumes:
             - ./logs:/app/logs
-    cron:
-        image: ${DOCKER_IMAGE}
-        network_mode: "host"
-        restart: on-failure
-        command: ./neo cron
-        container_name: cron
-        hostname: cron
-        env_file:
-            - .env
-        volumes:
-            - ./logs:/app/logs
     listen:
         image: ${DOCKER_IMAGE}
         network_mode: "host"
