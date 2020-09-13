@@ -10,22 +10,35 @@ import (
 
 type Service interface {
 	Build(ctx context.Context) error
-	Fetch(ctx context.Context, term string) ([]*neo.SearchableEntity, error)
-	neo.SearchRepository
+	Fetch(ctx context.Context, term string) ([]neo.SearchableEntity, error)
+	SearchableEntities(ctx context.Context) ([]neo.SearchableEntity, error)
 }
 
 type service struct {
-	*redisearch.Autocompleter
-	*logrus.Logger
-	neo.SearchRepository
+	autocompleter *redisearch.Autocompleter
+	logger        *logrus.Logger
+	character     neo.CharacterRespository
+	corporation   neo.CorporationRespository
+	alliance      neo.AllianceRespository
+	universe      neo.UniverseRepository
 }
 
-func NewService(autocompleter *redisearch.Autocompleter, logger *logrus.Logger, search neo.SearchRepository) Service {
+func NewService(
+	autocompleter *redisearch.Autocompleter,
+	logger *logrus.Logger,
+	character neo.CharacterRespository,
+	corporation neo.CorporationRespository,
+	alliance neo.AllianceRespository,
+	universe neo.UniverseRepository,
+) Service {
 
 	return &service{
 		autocompleter,
 		logger,
-		search,
+		character,
+		corporation,
+		alliance,
+		universe,
 	}
 
 }

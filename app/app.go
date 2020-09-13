@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -115,7 +116,7 @@ func New(command string, debug bool) *App {
 		logger.WithError(err).Fatal("failed to ping redis server")
 	}
 
-	// autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
+	autocompleter := redisearch.NewAutocompleter(cfg.RedisAddr, "autocomplete")
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -157,11 +158,14 @@ func New(command string, debug bool) *App {
 	)
 	// TODO: Add support for search service back.
 	// Need to replace data layer
-	// search := search.NewService(
-	// 	autocompleter,
-	// 	logger,
-	// 	mysql.NewSearchRepository(mysqlDB),
-	// )
+	search := search.NewService(
+		autocompleter,
+		logger,
+		mdb.NewCharacterRepository(mongoDB),
+		mdb.NewCorporationRepository(mongoDB),
+		mdb.NewAllianceRepository(mongoDB),
+		mdb.NewUniverseRepository(mongoDB),
+	)
 
 	top := top.NewService(
 		redisClient,
@@ -251,12 +255,11 @@ func New(command string, debug bool) *App {
 		Label:    command,
 		NewRelic: nr,
 		Logger:   logger,
-		// MySQLDB:  mysqlDB,
-		MongoDB: mongoDB,
-		Redis:   redisClient,
-		Client:  client,
-		ESI:     esiClient,
-		Config:  cfg,
+		MongoDB:  mongoDB,
+		Redis:    redisClient,
+		Client:   client,
+		ESI:      esiClient,
+		Config:   cfg,
 
 		Alliance:     alliance,
 		Backup:       backup,
@@ -266,7 +269,7 @@ func New(command string, debug bool) *App {
 		Killmail:     killmail,
 		Market:       market,
 		Notification: notifications,
-		// Search:       search,
+		Search:       search,
 		// Stats:    stats,
 		// Token:    token,
 		Top:      top,

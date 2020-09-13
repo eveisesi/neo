@@ -50,7 +50,7 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 		case models.EntityShipGroup:
 			mails, err = r.Services.MostValuable(ctx, "attackers.shipGroupID", uint64(*id), *age, *limit)
 		case models.EntitySystem:
-			mails, err = r.Services.MostValuable(ctx, "systemSolarID", uint64(*id), *age, *limit)
+			mails, err = r.Services.MostValuable(ctx, "solarSystemID", uint64(*id), *age, *limit)
 		case models.EntityConstellation:
 			mails, err = r.Services.MostValuable(ctx, "constellationID", uint64(*id), *age, *limit)
 		case models.EntityRegion:
