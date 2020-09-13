@@ -161,6 +161,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 		})
 
 		if stats {
+			entry.Infoln()
 			current = current.AddDate(0, 0, int(incrementer))
 			continue
 		}
