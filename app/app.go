@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
@@ -314,6 +315,7 @@ func makeMongoDB(cfg *neo.Config) (*mongo.Database, error) {
 
 	q := url.Values{}
 	q.Set("authMechanism", cfg.Mongo.DBAuthMech)
+	q.Set("maxIdleTimeMS", strconv.FormatInt(int64(time.Second*10), 10))
 	c := &url.URL{
 		Scheme:   "mongodb",
 		Host:     cfg.Mongo.DBHost,
