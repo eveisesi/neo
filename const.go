@@ -13,6 +13,8 @@ var ErrRedisNil = errors.New("redis: nil")
 var ErrEsiMaxAttempts = errors.New("max attempts exceeded")
 var ErrEsiTypeNotFound = errors.New("type not found")
 
+const DEFAULT_PAGE_SIZE = 50
+
 // ESI Timestamp Format
 const ESI_EXPIRES_HEADER_FORMAT = "Mon, 02 Jan 2006 15:04:05 MST"
 

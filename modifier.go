@@ -88,6 +88,7 @@ type NotExists struct {
 }
 
 type LimitModifier int
+type SkipModifier int
 
 type OrderModifier struct {
 	Column string

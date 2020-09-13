@@ -1432,11 +1432,7 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
         age: Int = 7
         limit: Int = 6
     ): [Killmail]!
-    killmailsByEntityID(
-        entity: Entity!
-        id: Int!
-        page: Int = 999999999
-    ): [Killmail]!
+    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
 }
 
 enum Category {

@@ -106,6 +106,8 @@ func BuildFindOptions(modifiers ...neo.Modifier) *options.FindOptions {
 		switch o := a.(type) {
 		case neo.LimitModifier:
 			opts.SetLimit(int64(o))
+		case neo.SkipModifier:
+			opts.SetSkip(int64(o))
 		case neo.OrderModifier:
 			switch o.Sort {
 			case neo.SortAsc:

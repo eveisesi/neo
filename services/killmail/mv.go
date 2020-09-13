@@ -60,7 +60,7 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute)
 
 	return killmails, err
 }

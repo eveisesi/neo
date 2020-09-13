@@ -88,10 +88,7 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 		}
 	}
 
-	kmVictim, err := s.VictimByKillmailID(ctx, id)
-	if err != nil {
-		entry.WithError(err).Error("Failed to retrieve killmail victim")
-	}
+	kmVictim := killmail.Victim
 
 	if kmVictim != nil && withNames {
 		if kmVictim.CharacterID != nil {
@@ -140,12 +137,52 @@ func (s *service) FullKillmail(ctx context.Context, id uint, withNames bool) (*n
 
 func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmail, error) {
 
+	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
+		"type": "recent",
+		"id":   0,
+		"page": page,
+	})
+
+	entry := s.logger.WithFields(logrus.Fields{
+		"key":   key,
+		"class": "RecentKillmails",
+	})
+	entry.Info("checking cache")
+
+	killmails, err := s.KillmailsFromCache(ctx, key)
+	if err != nil {
+		entry.WithError(err).Error("failed to check cache")
+		return nil, err
+	}
+
+	if len(killmails) > 0 {
+		entry.Info("cache hit. returning results")
+		return killmails, nil
+	}
+	entry.Info("cache miss, fetch results from db")
+
 	mods := []neo.Modifier{
 		neo.LimitModifier(50),
 		neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc},
 	}
 
-	return s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, mods...)
+	if err != nil {
+		entry.WithError(err).Error("failed to fetch results from db")
+		return nil, err
+	}
+
+	entry = entry.WithField("count", len(killmails))
+	entry.Info("killmails retrieve, caching results")
+
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
+	if err != nil {
+		entry.WithError(err).Error("failed to cache results")
+	}
+
+	entry.Info("return killmails")
+
+	return killmails, err
 }
 
 func (s *service) KillmailsFromCache(ctx context.Context, key string) ([]*neo.Killmail, error) {
@@ -166,7 +203,11 @@ func (s *service) KillmailsFromCache(ctx context.Context, key string) ([]*neo.Ki
 
 }
 
-func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails []*neo.Killmail) error {
+func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails []*neo.Killmail, duration time.Duration) error {
+
+	if duration == 0 {
+		duration = time.Minute
+	}
 
 	bSlice, err := json.Marshal(killmails)
 	if err != nil {
@@ -174,7 +215,7 @@ func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails 
 		return err
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*30).Result()
+	_, err = s.redis.WithContext(ctx).Set(key, bSlice, duration).Result()
 	if err != nil {
 		s.logger.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to cache killmail chunk in redis")
 	}
@@ -201,6 +242,9 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page ui
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.OrMod{
 			Values: []neo.Modifier{
 				neo.EqualTo{Column: "victim.characterID", Value: id},
@@ -216,7 +260,7 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page ui
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -240,6 +284,9 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page ui
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.OrMod{
 			Values: []neo.Modifier{
 				neo.EqualTo{Column: "victim.corporationID", Value: id},
@@ -256,7 +303,7 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page ui
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -280,6 +327,9 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint)
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.OrMod{
 			Values: []neo.Modifier{
 				neo.EqualTo{Column: "victim.allianceID", Value: id},
@@ -296,7 +346,7 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint)
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -320,6 +370,9 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.OrMod{
 			Values: []neo.Modifier{
 				neo.EqualTo{Column: "victim.shipTypeID", Value: id},
@@ -336,7 +389,7 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -365,6 +418,9 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.OrMod{
 			Values: []neo.Modifier{
 				neo.EqualTo{Column: "victim.shipGroupID", Value: id},
@@ -381,7 +437,7 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -405,6 +461,9 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) (
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.EqualTo{Column: "solarSystemID", Value: id},
 	}
 
@@ -416,7 +475,7 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) (
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -440,6 +499,9 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page 
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.EqualTo{Column: "constellationID", Value: id},
 	}
 
@@ -455,7 +517,7 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page 
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
@@ -479,6 +541,9 @@ func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint) (
 	}
 
 	mods := []neo.Modifier{
+		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
+		neo.SkipModifier(neo.DEFAULT_PAGE_SIZE * int(page)),
+		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
 		neo.EqualTo{Column: "regionID", Value: id},
 	}
 
@@ -494,7 +559,7 @@ func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint) (
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute*2)
 
 	return killmails, err
 
