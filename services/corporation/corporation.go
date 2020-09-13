@@ -162,14 +162,8 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		s.logger.WithField("count", len(expired)).Info("updating expired corporations")
 
 		for _, corporation := range expired {
-		LoopStart:
+			s.tracker.Watchman(ctx)
 			entry := s.logger.WithContext(ctx).WithField("corporationID", corporation.ID)
-			proceed := s.tracker.Watchman(ctx)
-			if !proceed {
-				entry.Info("cannot proceed. watchman says no")
-				time.Sleep(time.Second * 3)
-				goto LoopStart
-			}
 			txn := s.newrelic.StartTransaction("update-expired-corporations")
 			txn.AddAttribute("corporationID", corporation.ID)
 			ctx = newrelic.NewContext(ctx, txn)

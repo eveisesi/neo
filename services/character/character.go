@@ -167,14 +167,9 @@ func (s *service) UpdateExpired(ctx context.Context) {
 		s.logger.WithField("count", len(expired)).Info("updating expired characters")
 
 		for _, character := range expired {
-		LoopStart:
+
+			s.tracker.Watchman(ctx)
 			entry := s.logger.WithContext(ctx).WithField("character_id", character.ID)
-			proceed := s.tracker.Watchman(ctx)
-			if !proceed {
-				entry.Info("cannot proceed. watchman says no")
-				time.Sleep(time.Second * 3)
-				goto LoopStart
-			}
 
 			txn := s.newrelic.StartTransaction("update-expired-characters")
 			txn.AddAttribute("characterID", character.ID)
