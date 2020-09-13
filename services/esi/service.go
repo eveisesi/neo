@@ -153,6 +153,11 @@ func (s *service) request(ctx context.Context, r request) ([]byte, Meta) {
 	for {
 
 		if attempts >= s.maxattempts {
+			if httpResponse != nil && httpResponse.StatusCode > 0 {
+				m.Code = httpResponse.StatusCode
+			} else {
+				m.Code = http.StatusInternalServerError
+			}
 			m.Msg = errors.New("max attempts exceeded")
 			break
 		}
