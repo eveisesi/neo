@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/neo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -49,8 +48,6 @@ func (r *killmailRepository) Killmails(ctx context.Context, operators ...*neo.Op
 
 	filters := BuildFilters(operators...)
 	options := BuildFindOptions(operators...)
-
-	spew.Dump(filters)
 
 	var killmails = make([]*neo.Killmail, 0)
 	result, err := r.killmails.Find(ctx, filters, options)
