@@ -16,32 +16,6 @@ func cronCommand() cli.Command {
 	return cli.Command{
 		Name:  "cron",
 		Usage: "Spins up the crons",
-		// Action: func(ctx *cli.Context) error {
-		// 	app := core.New("cron", false)
-
-		// 	c := cron.New(
-		// 		cron.WithLocation(time.UTC),
-		// 		cron.WithLogger(
-		// 			cron.PrintfLogger(
-		// 				// log.New(
-		// 				// 	os.Stdout,
-		// 				// 	"cron: ", log.LstdFlags,
-		// 				// ),
-		// 				app.Logger,
-		// 			),
-		// 		),
-		// 		cron.WithSeconds(),
-		// 	)
-
-		// 	registerAutocompleteCron(c, app)
-		// 	registerEsiServerStatusCron(c, app)
-		// 	registerMarketDataCron(c, app)
-		// 	registerTrackingJanitorCron(c, app)
-
-		// 	c.Run()
-
-		// 	return nil
-		// },
 		Subcommands: []cli.Command{
 			cli.Command{
 				// Runs every day at 11:10
