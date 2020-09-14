@@ -50,14 +50,14 @@ func (s *service) Run(start, end time.Time) {
 			if status != neo.COUNT_STATUS_DOWNTIME {
 				s.logger.WithFields(logrus.Fields{
 					neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-				}).Error("updating status in redis")
+				}).Error("players less than one hundred, enter down time")
 				s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
 			}
 		} else if vip > 0 {
 			if status != neo.COUNT_STATUS_DOWNTIME {
 				s.logger.WithFields(logrus.Fields{
 					neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-				}).Error("updating status in redis")
+				}).Error("vip greater than zero, enter down time")
 				s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
 			}
 		} else {
@@ -66,14 +66,14 @@ func (s *service) Run(start, end time.Time) {
 				if now.Unix() < start.Unix() || now.Unix() > end.Unix() {
 					s.logger.WithFields(logrus.Fields{
 						neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_GREEN,
-					}).Info("updating status in redis")
+					}).Info("outside of downtime window, exiting downtime")
 					s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
 				}
 			} else if status != neo.COUNT_STATUS_DOWNTIME {
 				if now.Unix() >= start.Unix() && now.Unix() <= end.Unix() {
 					s.logger.WithFields(logrus.Fields{
 						neo.REDIS_ESI_TRACKING_STATUS: neo.COUNT_STATUS_DOWNTIME,
-					}).Info("updating status in redis")
+					}).Info("inside downtime window, enter downtime mode")
 					s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_DOWNTIME, 0)
 				}
 			}
@@ -114,18 +114,16 @@ func (s *service) Run(start, end time.Time) {
 					s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_RED, 0)
 				}
 			}
+			if status > neo.COUNT_STATUS_GREEN && status < neo.COUNT_STATUS_DOWNTIME {
+				ts, err := s.redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
+				if err != nil {
+					continue
+				}
 
-		}
-
-		if status > neo.COUNT_STATUS_GREEN && status < neo.COUNT_STATUS_DOWNTIME {
-			ts, err := s.redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
-			if err != nil {
-				continue
-			}
-
-			if now.Unix() > ts && status != neo.COUNT_STATUS_GREEN {
-				s.logger.Info("set tracking green. error count has been reset")
-				s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
+				if now.Unix() > ts && status != neo.COUNT_STATUS_GREEN {
+					s.logger.Info("set tracking green. error count has been reset")
+					s.redis.Set(neo.REDIS_ESI_TRACKING_STATUS, neo.COUNT_STATUS_GREEN, 0)
+				}
 			}
 		}
 
