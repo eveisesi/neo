@@ -11,3 +11,33 @@ services:
       - .env
     volumes:
       - ./logs:/app/logs
+  tqstatus:
+    image: latest
+    network_mode: "host"
+    command: ./neo cron tqstatus
+    container_name: tqstatus
+    hostname: tqstatus
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+  marketdata:
+    image: latest
+    network_mode: "host"
+    command: ./neo cron marketdata
+    container_name: marketdata
+    hostname: marketdata
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
+  janitor:
+    image: latest
+    network_mode: "host"
+    command: ./neo cron janitor
+    container_name: janitor
+    hostname: janitor
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs
