@@ -27,13 +27,13 @@ func (r *allianceRepository) Alliance(ctx context.Context, id uint) (*neo.Allian
 	return alliance, err
 
 }
-func (r *allianceRepository) Alliances(ctx context.Context, mods ...neo.Modifier) ([]*neo.Alliance, error) {
+func (r *allianceRepository) Alliances(ctx context.Context, operators ...*neo.Operator) ([]*neo.Alliance, error) {
 
-	pds := BuildFilters(mods...)
-	pos := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var alliances = make([]*neo.Alliance, 0)
-	result, err := r.c.Find(ctx, pds, pos)
+	result, err := r.c.Find(ctx, filters, options)
 	if err != nil {
 		return nil, err
 	}
@@ -75,18 +75,16 @@ func (r *allianceRepository) UpdateAlliance(ctx context.Context, id uint, allian
 
 func (r *allianceRepository) Expired(ctx context.Context) ([]*neo.Alliance, error) {
 
-	mods := []neo.Modifier{
-		neo.LessThan{Column: "cachedUntil", Value: time.Now().Unix()},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.NotExists{Column: "updateError"},
-				neo.LessThan{Column: "updateError", Value: 3},
-			},
-		},
-		neo.LimitModifier(1000),
-		neo.OrderModifier{Column: "cachedUntil", Sort: neo.SortAsc},
+	operators := []*neo.Operator{
+		neo.NewLessThanOperator("cachedUntil", time.Now().Unix()),
+		neo.NewOrOperator(
+			neo.NewExistsOperator("updateError", false),
+			neo.NewLessThanOperator("updateError", 3),
+		),
+		neo.NewLimitOperator(1000),
+		neo.NewOrderOperator("cachedUntil", neo.SortAsc),
 	}
 
-	return r.Alliances(ctx, mods...)
+	return r.Alliances(ctx, operators...)
 
 }

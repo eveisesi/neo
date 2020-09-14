@@ -6,7 +6,7 @@ import (
 
 type CharacterRespository interface {
 	Character(ctx context.Context, id uint64) (*Character, error)
-	Characters(ctx context.Context, mods ...Modifier) ([]*Character, error)
+	Characters(ctx context.Context, operators ...*Operator) ([]*Character, error)
 	CreateCharacter(ctx context.Context, character *Character) error
 	UpdateCharacter(ctx context.Context, id uint64, character *Character) error
 	DeleteCharacter(ctx context.Context, id uint64) error

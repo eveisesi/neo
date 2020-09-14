@@ -16,26 +16,21 @@ import (
 func (s *service) MostValuable(ctx context.Context, column string, id uint64, age, limit int) ([]*neo.Killmail, error) {
 
 	now := time.Now()
-	gte := time.Date(now.Year(), now.Month(), now.Day()-age, now.Hour(), 0, 0, 0, time.UTC)
-	lte := time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)
-
-	and := []neo.Modifier{
-		neo.GreaterThanEqualTo{Column: "killmailTime", Value: gte},
-		neo.LessThanEqualTo{Column: "killmailTime", Value: lte},
+	and := []*neo.Operator{
+		neo.NewGreaterThanEqualToOperator("killmailTime", time.Date(now.Year(), now.Month(), now.Day()-age, now.Hour(), 0, 0, 0, time.UTC)),
+		neo.NewLessThanEqualToOperator("killmailTime", time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)),
 	}
 	if column != "none" && id > 0 {
-		and = append(and, neo.EqualTo{Column: column, Value: id})
+		and = append(and, neo.NewEqualOperator(column, id))
 	}
 
-	mods := []neo.Modifier{
-		neo.AndMod{
-			Values: and,
-		},
-		neo.LimitModifier(limit),
-		neo.OrderModifier{Column: "totalValue", Sort: neo.SortDesc},
+	operators := []*neo.Operator{
+		neo.NewAndOperator(and...),
+		neo.NewLimitOperator(int64(limit)),
+		neo.NewOrderOperator("totalValue", neo.SortDesc),
 	}
 
-	modsMarshaled, err := json.Marshal(mods)
+	modsMarshaled, err := json.Marshal(operators)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -55,7 +50,7 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 		return killmails, nil
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}

@@ -43,84 +43,95 @@ const (
 	notin            string = "$nin"
 	and              string = "$and"
 	or               string = "$or"
+	exists           string = "$exists"
 )
 
-func BuildFilters(modifiers ...neo.Modifier) primitive.D {
+func BuildFilters(operators ...*neo.Operator) primitive.D {
 
-	var mods = make(primitive.D, 0)
-	for _, a := range modifiers {
-		switch o := a.(type) {
-		case neo.EqualTo:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: equal, Value: o.Value}}})
-		case neo.NotEqualTo:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: notequal, Value: o.Value}}})
-		case neo.GreaterThanEqualTo:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: greaterthanequal, Value: o.Value}}})
-		case neo.GreaterThan:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: greaterthan, Value: o.Value}}})
-		case neo.LessThan:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthan, Value: o.Value}}})
-		case neo.LessThanEqualTo:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: lessthanequal, Value: o.Value}}})
-		case neo.Exists:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: "$exists", Value: true}}})
-		case neo.NotExists:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: "$exists", Value: false}}})
-		case neo.OrMod:
-			arr := primitive.A{}
-			for _, mod := range o.Values {
-				arr = append(arr, BuildFilters(mod))
-			}
-			mods = append(mods, primitive.E{Key: or, Value: arr})
-		case neo.AndMod:
+	var ops = make(primitive.D, 0)
+	for _, a := range operators {
+		switch a.Operation {
+		case neo.EqualOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: equal, Value: a.Value}}})
+		case neo.NotEqualOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: notequal, Value: a.Value}}})
+		case neo.GreaterThanOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: greaterthan, Value: a.Value}}})
+		case neo.GreaterThanEqualToOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: greaterthanequal, Value: a.Value}}})
+		case neo.LessThanOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: lessthan, Value: a.Value}}})
+		case neo.LessThanEqualToOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: lessthanequal, Value: a.Value}}})
+		case neo.ExistsOp:
+			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: exists, Value: a.Value.(bool)}}})
+		case neo.OrOp:
 
-			arr := primitive.A{}
-			for _, mod := range o.Values {
-				arr = append(arr, BuildFilters(mod))
-			}
-			mods = append(mods, primitive.E{Key: and, Value: arr})
+			switch o := a.Value.(type) {
+			case []*neo.Operator:
+				arr := make(primitive.A, 0)
 
-		case neo.In:
+				for _, op := range o {
+					arr = append(arr, BuildFilters(op))
+				}
 
-			arr := primitive.A{}
-			for _, value := range o.Values {
-				arr = append(arr, value)
+				ops = append(ops, primitive.E{Key: or, Value: arr})
+			default:
+				// Invalid type provided. Skip over and don't evaluate
 			}
 
-			// element := primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}}
+		case neo.AndOp:
+			switch o := a.Value.(type) {
+			case []*neo.Operator:
+				arr := make(primitive.A, 0)
+				for _, op := range o {
+					arr = append(arr, BuildFilters(op))
+				}
 
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}})
-		case neo.NotIn:
-			mods = append(mods, primitive.E{Key: o.Column, Value: primitive.D{primitive.E{Key: notin, Value: o.Values}}})
+				ops = append(ops, primitive.E{Key: and, Value: arr})
+			}
+
+		case neo.InOp:
+			switch o := a.Value.(type) {
+			case []neo.OpValue:
+				arr := make(primitive.A, 0)
+				for _, value := range o {
+					arr = append(arr, value)
+				}
+
+				ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}})
+			}
+		case neo.NotInOp:
+			switch o := a.Value.(type) {
+			case []neo.OpValue:
+				arr := make(primitive.A, 0)
+				for _, value := range o {
+					arr = append(arr, value)
+				}
+
+				ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: notin, Value: arr}}})
+			}
 		}
-
 	}
 
-	return mods
+	return ops
+
 }
 
-func BuildFindOptions(modifiers ...neo.Modifier) *options.FindOptions {
-
+func BuildFindOptions(ops ...*neo.Operator) *options.FindOptions {
 	var opts = options.Find()
-	for _, a := range modifiers {
-		switch o := a.(type) {
-		case neo.LimitModifier:
-			opts.SetLimit(int64(o))
-		case neo.SkipModifier:
-			opts.SetSkip(int64(o))
-		case neo.OrderModifier:
-			switch o.Sort {
-			case neo.SortAsc:
-				opts.SetSort(primitive.D{primitive.E{Key: o.Column, Value: 1}})
-			case neo.SortDesc:
-				opts.SetSort(primitive.D{primitive.E{Key: o.Column, Value: -1}})
-			}
-
+	for _, a := range ops {
+		switch a.Operation {
+		case neo.LimitOp:
+			opts.SetLimit(a.Value.(int64))
+		case neo.SkipOp:
+			opts.SetSkip(a.Value.(int64))
+		case neo.OrderOp:
+			opts.SetSort(primitive.D{primitive.E{Key: a.Column, Value: a.Value}})
 		}
 	}
 
 	return opts
-
 }
 
 const duplicateKeyError = 11000

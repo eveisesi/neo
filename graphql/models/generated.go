@@ -6,7 +6,58 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 )
+
+type BooleanFilterInput struct {
+	Eq *bool `json:"eq"`
+	Ne *bool `json:"ne"`
+}
+
+type IntFilterInput struct {
+	Eq  *int `json:"eq"`
+	Ne  *int `json:"ne"`
+	Lt  *int `json:"lt"`
+	Gt  *int `json:"gt"`
+	Lte *int `json:"lte"`
+	Gte *int `json:"gte"`
+}
+
+type KillmailFilter struct {
+	MoonID                 *IntFilterInput     `json:"moonID"`
+	SolarSystemID          *IntFilterInput     `json:"solarSystemID"`
+	WarID                  *IntFilterInput     `json:"warID"`
+	IsNpc                  *BooleanFilterInput `json:"isNPC"`
+	IsAwox                 *BooleanFilterInput `json:"isAwox"`
+	IsSolo                 *BooleanFilterInput `json:"isSolo"`
+	DroppedValue           *IntFilterInput     `json:"droppedValue"`
+	DestroyedValue         *IntFilterInput     `json:"destroyedValue"`
+	FittedValue            *IntFilterInput     `json:"fittedValue"`
+	TotalValue             *IntFilterInput     `json:"totalValue"`
+	AttackersAllianceID    *IntFilterInput     `json:"attackersAllianceID"`
+	AttackersCorporationID *IntFilterInput     `json:"attackersCorporationID"`
+	AttackersCharacterID   *IntFilterInput     `json:"attackersCharacterID"`
+	AttackersFactionID     *IntFilterInput     `json:"attackersFactionID"`
+	AttackersDamageDone    *IntFilterInput     `json:"attackersDamageDone"`
+	AttackersFinalBlow     *BooleanFilterInput `json:"attackersFinalBlow"`
+	AttackersShipTypeID    *IntFilterInput     `json:"attackersShipTypeID"`
+	AttackersWeaponTypeID  *IntFilterInput     `json:"attackersWeaponTypeID"`
+	VictimAllianceID       *IntFilterInput     `json:"victimAllianceID"`
+	VictimCorporationID    *IntFilterInput     `json:"victimCorporationID"`
+	VictimCharacterID      *IntFilterInput     `json:"victimCharacterID"`
+	VictimFactionID        *IntFilterInput     `json:"victimFactionID"`
+	VictimDamageTaken      *IntFilterInput     `json:"victimDamageTaken"`
+	VictimShiptypeID       *IntFilterInput     `json:"victimShiptypeID"`
+}
+
+type TimeFilterInput struct {
+	Eq  *time.Time `json:"eq"`
+	Ne  *time.Time `json:"ne"`
+	Lt  *time.Time `json:"lt"`
+	Gt  *time.Time `json:"gt"`
+	Lte *time.Time `json:"lte"`
+	Gte *time.Time `json:"gte"`
+}
 
 type Category string
 

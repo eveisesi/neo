@@ -6,7 +6,7 @@ import (
 
 type CorporationRespository interface {
 	Corporation(ctx context.Context, id uint) (*Corporation, error)
-	Corporations(ctx context.Context, mods ...Modifier) ([]*Corporation, error)
+	Corporations(ctx context.Context, operators ...*Operator) ([]*Corporation, error)
 	CreateCorporation(ctx context.Context, corporation *Corporation) error
 	UpdateCorporation(ctx context.Context, id uint, corporation *Corporation) error
 

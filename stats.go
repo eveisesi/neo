@@ -10,9 +10,9 @@ import (
 )
 
 type StatsRepository interface {
-	AllStats(ctx context.Context, mods ...Modifier) ([]*Stat, error)
+	AllStats(ctx context.Context, operators ...*Operator) ([]*Stat, error)
 	CreateStats(ctx context.Context, stats []*Stat) error
-	DeleteStats(ctx context.Context, mods ...Modifier) error
+	DeleteStats(ctx context.Context, operators ...*Operator) error
 }
 
 // Stat is an object representing the database table.

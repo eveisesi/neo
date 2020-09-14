@@ -143,9 +143,9 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 		}
 		missingDateCounter = 0
 
-		countKillmailsFilters := []neo.Modifier{
-			neo.GreaterThanEqualTo{Column: "killmailTime", Value: time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, time.UTC)},
-			neo.LessThanEqualTo{Column: "killmailTime", Value: time.Date(current.Year(), current.Month(), current.Day(), 23, 59, 59, 0, time.UTC)},
+		countKillmailsFilters := []*neo.Operator{
+			neo.NewGreaterThanEqualToOperator("killmailTime", time.Date(current.Year(), current.Month(), current.Day(), 0, 0, 0, 0, time.UTC)),
+			neo.NewLessThanEqualToOperator("killmailTime", time.Date(current.Year(), current.Month(), current.Day(), 23, 59, 59, 0, time.UTC)),
 		}
 
 		killmailCount, err := s.CountKillmails(ctx, countKillmailsFilters...)
@@ -255,7 +255,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 				i++
 			}
 
-			killmails, err := s.Killmails(ctx, neo.In{Column: "id", Values: ids})
+			killmails, err := s.Killmails(ctx, neo.NewInOperator("id", ids))
 			if err != nil {
 				entry.WithError(err).Error("failed to query killmails for array of killIDs")
 				return

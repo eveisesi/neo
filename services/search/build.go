@@ -80,7 +80,7 @@ func (s *service) Build(ctx context.Context) error {
 func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntity, error) {
 
 	entities := make([]neo.SearchableEntity, 0)
-	characters, err := s.character.Characters(ctx, []neo.Modifier{}...)
+	characters, err := s.character.Characters(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch characters")
 		return nil, errors.New("failed to fetch characters")
@@ -96,7 +96,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	corporations, err := s.corporation.Corporations(ctx, []neo.Modifier{}...)
+	corporations, err := s.corporation.Corporations(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch corporations")
 		return nil, errors.New("failed to fetch corporations")
@@ -112,7 +112,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	alliances, err := s.alliance.Alliances(ctx, []neo.Modifier{}...)
+	alliances, err := s.alliance.Alliances(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch alliances")
 		return nil, errors.New("failed to fetch alliances")
@@ -129,7 +129,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 	}
 
 	groupIDs := make([]neo.ModValue, 0)
-	shipGroups, err := s.universe.TypeGroups(ctx, neo.EqualTo{Column: "categoryID", Value: 6})
+	shipGroups, err := s.universe.TypeGroups(ctx, neo.NewEqualOperator("categoryID", 6))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch ship groups")
 		return nil, errors.New("failed to fetch ship groups")
@@ -139,7 +139,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		groupIDs = append(groupIDs, group.ID)
 	}
 
-	ships, err := s.universe.Types(ctx, neo.In{Column: "groupID", Values: groupIDs})
+	ships, err := s.universe.Types(ctx, neo.NewInOperator("groupID", groupIDs))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch ships")
 		return nil, errors.New("failed to fetch ships")
@@ -155,7 +155,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	solarSystems, err := s.universe.SolarSystems(ctx, []neo.Modifier{}...)
+	solarSystems, err := s.universe.SolarSystems(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch solar systems")
 		return nil, errors.New("failed to fetch solar systems")
@@ -171,7 +171,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	constellations, err := s.universe.Constellations(ctx, []neo.Modifier{}...)
+	constellations, err := s.universe.Constellations(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch constellations")
 		return nil, errors.New("failed to fetch constellations")
@@ -187,7 +187,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	regions, err := s.universe.Regions(ctx, []neo.Modifier{}...)
+	regions, err := s.universe.Regions(ctx, nil)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch regions")
 		return nil, errors.New("failed to fetch regions")

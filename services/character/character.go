@@ -119,7 +119,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return characters, nil
 	}
 
-	dbTypes, err := s.Characters(ctx, neo.In{Column: "id", Values: missing})
+	dbTypes, err := s.Characters(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

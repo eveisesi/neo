@@ -7,8 +7,8 @@ import (
 
 type KillmailRepository interface {
 	Killmail(ctx context.Context, id uint) (*Killmail, error)
-	Killmails(ctx context.Context, mods ...Modifier) ([]*Killmail, error)
-	CountKillmails(ctx context.Context, mods ...Modifier) (int64, error)
+	Killmails(ctx context.Context, operators ...*Operator) ([]*Killmail, error)
+	CountKillmails(ctx context.Context, operators ...*Operator) (int64, error)
 	CreateKillmail(ctx context.Context, killmail *Killmail) error
 	// Update(ctx context.Context, id uint, killmail *Killmail) error
 

@@ -117,7 +117,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return alliances, nil
 	}
 
-	dbTypes, err := s.Alliances(ctx, neo.In{Column: "id", Values: missing})
+	dbTypes, err := s.Alliances(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

@@ -83,29 +83,34 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 
 }
 
-func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, after *int) ([]*neo.Killmail, error) {
+func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int, filter *models.KillmailFilter) ([]*neo.Killmail, error) {
 
 	var mails []*neo.Killmail
+
+	ops, err := buildOperators(filter)
+	if err != nil {
+		return nil, err
+	}
 
 	switch entity {
 	case models.EntityAll:
 		return nil, errors.New("All Type is not supported on this query")
 	case models.EntityCharacter:
-		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), uint(*after))
+		mails, err = r.Services.KillmailsByCharacterID(ctx, uint64(id), uint(*page), ops...)
 	case models.EntityCorporation:
-		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByCorporationID(ctx, uint(id), uint(*page), ops...)
 	case models.EntityAlliance:
-		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByAllianceID(ctx, uint(id), uint(*page), ops...)
 	case models.EntityShip:
-		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByShipID(ctx, uint(id), uint(*page), ops...)
 	case models.EntityShipGroup:
-		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByShipGroupID(ctx, uint(id), uint(*page), ops...)
 	case models.EntitySystem:
-		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsBySystemID(ctx, uint(id), uint(*page), ops...)
 	case models.EntityConstellation:
-		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByConstellationID(ctx, uint(id), uint(*page), ops...)
 	case models.EntityRegion:
-		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), uint(*after))
+		mails, err = r.Services.KillmailsByRegionID(ctx, uint(id), uint(*page), ops...)
 	default:
 		return nil, errors.New("invalid entity")
 	}

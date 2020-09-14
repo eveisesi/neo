@@ -176,7 +176,7 @@ type ComplexityRoot struct {
 		GroupByGroupID                 func(childComplexity int, id int) int
 		Killmail                       func(childComplexity int, id int) int
 		KillmailRecent                 func(childComplexity int, page *int) int
-		KillmailsByEntityID            func(childComplexity int, entity models.Entity, id int, page *int) int
+		KillmailsByEntityID            func(childComplexity int, entity models.Entity, id int, page *int, filter *models.KillmailFilter) int
 		MvByEntityID                   func(childComplexity int, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) int
 		QueryPlaceholder               func(childComplexity int) int
 		RegionByRegionID               func(childComplexity int, id int) int
@@ -285,7 +285,7 @@ type QueryResolver interface {
 	Killmail(ctx context.Context, id int) (*neo.Killmail, error)
 	KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error)
 	MvByEntityID(ctx context.Context, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error)
-	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int) ([]*neo.Killmail, error)
+	KillmailsByEntityID(ctx context.Context, entity models.Entity, id int, page *int, filter *models.KillmailFilter) ([]*neo.Killmail, error)
 	TypeByTypeID(ctx context.Context, id int) (*neo.Type, error)
 	GroupByGroupID(ctx context.Context, id int) (*neo.TypeGroup, error)
 	CategoryByGroupID(ctx context.Context, id int) (*neo.TypeCategory, error)
@@ -990,7 +990,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.KillmailsByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int)), true
+		return e.complexity.Query.KillmailsByEntityID(childComplexity, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int), args["filter"].(*models.KillmailFilter)), true
 
 	case "Query.mvByEntityID":
 		if e.complexity.Query.MvByEntityID == nil {
@@ -1372,6 +1372,31 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
     alliance: Alliance
 }
 `, BuiltIn: false},
+	&ast.Source{Name: "graphql/schema/filters.graphql", Input: `input IntFilterInput {
+    eq: Int
+    ne: Int
+    lt: Int
+    gt: Int
+    lte: Int
+    gte: Int
+    # in: [Int!]
+    # nin: [Int!]
+}
+
+input BooleanFilterInput {
+    eq: Boolean
+    ne: Boolean
+}
+
+input TimeFilterInput {
+    eq: Time
+    ne: Time
+    lt: Time
+    gt: Time
+    lte: Time
+    gte: Time
+}
+`, BuiltIn: false},
 	&ast.Source{Name: "graphql/schema/killmail.graphql", Input: `extend type Query {
     killmail(id: Int!): Killmail!
     killmailRecent(page: Int = 1): [Killmail]!
@@ -1383,7 +1408,43 @@ type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
         age: Int = 7
         limit: Int = 6
     ): [Killmail]!
-    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+    killmailsByEntityID(
+        entity: Entity!
+        id: Int!
+        page: Int = 1
+        filter: KillmailFilter
+    ): [Killmail]!
+}
+
+input KillmailFilter {
+    moonID: IntFilterInput
+    solarSystemID: IntFilterInput
+    warID: IntFilterInput
+    isNPC: BooleanFilterInput
+    isAwox: BooleanFilterInput
+    isSolo: BooleanFilterInput
+    droppedValue: IntFilterInput
+    destroyedValue: IntFilterInput
+    fittedValue: IntFilterInput
+    totalValue: IntFilterInput
+
+    # killmailTime: TimeFilterInput
+
+    attackersAllianceID: IntFilterInput
+    attackersCorporationID: IntFilterInput
+    attackersCharacterID: IntFilterInput
+    attackersFactionID: IntFilterInput
+    attackersDamageDone: IntFilterInput
+    attackersFinalBlow: BooleanFilterInput
+    attackersShipTypeID: IntFilterInput
+    attackersWeaponTypeID: IntFilterInput
+
+    victimAllianceID: IntFilterInput
+    victimCorporationID: IntFilterInput
+    victimCharacterID: IntFilterInput
+    victimFactionID: IntFilterInput
+    victimDamageTaken: IntFilterInput
+    victimShiptypeID: IntFilterInput
 }
 
 enum Category {
@@ -1748,6 +1809,14 @@ func (ec *executionContext) field_Query_killmailsByEntityID_args(ctx context.Con
 		}
 	}
 	args["page"] = arg2
+	var arg3 *models.KillmailFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		arg3, err = ec.unmarshalOKillmailFilter2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐKillmailFilter(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg3
 	return args, nil
 }
 
@@ -4816,7 +4885,7 @@ func (ec *executionContext) _Query_killmailsByEntityID(ctx context.Context, fiel
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().KillmailsByEntityID(rctx, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int))
+		return ec.resolvers.Query().KillmailsByEntityID(rctx, args["entity"].(models.Entity), args["id"].(int), args["page"].(*int), args["filter"].(*models.KillmailFilter))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7282,6 +7351,282 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputBooleanFilterInput(ctx context.Context, obj interface{}) (models.BooleanFilterInput, error) {
+	var it models.BooleanFilterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eq":
+			var err error
+			it.Eq, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ne":
+			var err error
+			it.Ne, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputIntFilterInput(ctx context.Context, obj interface{}) (models.IntFilterInput, error) {
+	var it models.IntFilterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eq":
+			var err error
+			it.Eq, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ne":
+			var err error
+			it.Ne, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+			it.Lt, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gt":
+			var err error
+			it.Gt, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lte":
+			var err error
+			it.Lte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gte":
+			var err error
+			it.Gte, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputKillmailFilter(ctx context.Context, obj interface{}) (models.KillmailFilter, error) {
+	var it models.KillmailFilter
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "moonID":
+			var err error
+			it.MoonID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "solarSystemID":
+			var err error
+			it.SolarSystemID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "warID":
+			var err error
+			it.WarID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isNPC":
+			var err error
+			it.IsNpc, err = ec.unmarshalOBooleanFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isAwox":
+			var err error
+			it.IsAwox, err = ec.unmarshalOBooleanFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isSolo":
+			var err error
+			it.IsSolo, err = ec.unmarshalOBooleanFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "droppedValue":
+			var err error
+			it.DroppedValue, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "destroyedValue":
+			var err error
+			it.DestroyedValue, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fittedValue":
+			var err error
+			it.FittedValue, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "totalValue":
+			var err error
+			it.TotalValue, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersAllianceID":
+			var err error
+			it.AttackersAllianceID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersCorporationID":
+			var err error
+			it.AttackersCorporationID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersCharacterID":
+			var err error
+			it.AttackersCharacterID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersFactionID":
+			var err error
+			it.AttackersFactionID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersDamageDone":
+			var err error
+			it.AttackersDamageDone, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersFinalBlow":
+			var err error
+			it.AttackersFinalBlow, err = ec.unmarshalOBooleanFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersShipTypeID":
+			var err error
+			it.AttackersShipTypeID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "attackersWeaponTypeID":
+			var err error
+			it.AttackersWeaponTypeID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimAllianceID":
+			var err error
+			it.VictimAllianceID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimCorporationID":
+			var err error
+			it.VictimCorporationID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimCharacterID":
+			var err error
+			it.VictimCharacterID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimFactionID":
+			var err error
+			it.VictimFactionID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimDamageTaken":
+			var err error
+			it.VictimDamageTaken, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "victimShiptypeID":
+			var err error
+			it.VictimShiptypeID, err = ec.unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTimeFilterInput(ctx context.Context, obj interface{}) (models.TimeFilterInput, error) {
+	var it models.TimeFilterInput
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eq":
+			var err error
+			it.Eq, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "ne":
+			var err error
+			it.Ne, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lt":
+			var err error
+			it.Lt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gt":
+			var err error
+			it.Gt, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "lte":
+			var err error
+			it.Lte, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "gte":
+			var err error
+			it.Gte, err = ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -9522,6 +9867,18 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOBooleanFilterInput2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx context.Context, v interface{}) (models.BooleanFilterInput, error) {
+	return ec.unmarshalInputBooleanFilterInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOBooleanFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx context.Context, v interface{}) (*models.BooleanFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOBooleanFilterInput2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐBooleanFilterInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) unmarshalOCategory2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐCategory(ctx context.Context, v interface{}) (models.Category, error) {
 	var res models.Category
 	return res, res.UnmarshalGQL(v)
@@ -9669,6 +10026,18 @@ func (ec *executionContext) marshalOInt2ᚖuint64(ctx context.Context, sel ast.S
 	return ec.marshalOInt2uint64(ctx, sel, *v)
 }
 
+func (ec *executionContext) unmarshalOIntFilterInput2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx context.Context, v interface{}) (models.IntFilterInput, error) {
+	return ec.unmarshalInputIntFilterInput(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOIntFilterInput2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx context.Context, v interface{}) (*models.IntFilterInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOIntFilterInput2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐIntFilterInput(ctx, v)
+	return &res, err
+}
+
 func (ec *executionContext) marshalOKillmail2githubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx context.Context, sel ast.SelectionSet, v neo.Killmail) graphql.Marshaler {
 	return ec._Killmail(ctx, sel, &v)
 }
@@ -9689,6 +10058,18 @@ func (ec *executionContext) marshalOKillmailAttacker2ᚖgithubᚗcomᚋeveisesi�
 		return graphql.Null
 	}
 	return ec._KillmailAttacker(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOKillmailFilter2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐKillmailFilter(ctx context.Context, v interface{}) (models.KillmailFilter, error) {
+	return ec.unmarshalInputKillmailFilter(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOKillmailFilter2ᚖgithubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐKillmailFilter(ctx context.Context, v interface{}) (*models.KillmailFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOKillmailFilter2githubᚗcomᚋeveisesiᚋneoᚋgraphqlᚋmodelsᚐKillmailFilter(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) marshalOKillmailItem2githubᚗcomᚋeveisesiᚋneoᚐKillmailItem(ctx context.Context, sel ast.SelectionSet, v neo.KillmailItem) graphql.Marshaler {
@@ -9734,6 +10115,29 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return ec.marshalOString2string(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	return graphql.UnmarshalTime(v)
+}
+
+func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	return graphql.MarshalTime(v)
+}
+
+func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOTime2timeᚐTime(ctx, v)
+	return &res, err
+}
+
+func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec.marshalOTime2timeᚐTime(ctx, sel, *v)
 }
 
 func (ec *executionContext) marshalOType2githubᚗcomᚋeveisesiᚋneoᚐType(ctx context.Context, sel ast.SelectionSet, v neo.Type) graphql.Marshaler {

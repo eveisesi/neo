@@ -54,7 +54,7 @@ const REDIS_KILLMAIL = "neo:killmail:%d"
 const REDIS_KILLMAIL_ATTACKERS = "neo:killmail:%d:attackers"
 const REDIS_KILLMAIL_VICTIM = "neo:killmail:%d:victim"
 const REDIS_KILLMAIL_VICTIM_ITEMS = "neo:killmail:%d:victim:items"
-const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${page}"
+const REDIS_KILLMAILS_BY_ENTITY = "neo:killmails:${type}:${id}:${page}:${ops}"
 
 const REDIS_MV_KILLMAILS = "neo:mv:killmails:${key}:${id}:${mods}"
 const REDIS_BLUEPRINT_MATERIALS = "neo:blueprint:materials:%d"

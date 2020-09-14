@@ -1,0 +1,24 @@
+input IntFilterInput {
+    eq: Int
+    ne: Int
+    lt: Int
+    gt: Int
+    lte: Int
+    gte: Int
+    # in: [Int!]
+    # nin: [Int!]
+}
+
+input BooleanFilterInput {
+    eq: Boolean
+    ne: Boolean
+}
+
+input TimeFilterInput {
+    eq: Time
+    ne: Time
+    lt: Time
+    gt: Time
+    lte: Time
+    gte: Time
+}

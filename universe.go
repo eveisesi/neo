@@ -6,30 +6,30 @@ import (
 
 type UniverseRepository interface {
 	Constellation(ctx context.Context, id uint) (*Constellation, error)
-	Constellations(ctx context.Context, mods ...Modifier) ([]*Constellation, error)
+	Constellations(ctx context.Context, operators ...*Operator) ([]*Constellation, error)
 
 	Region(ctx context.Context, id uint) (*Region, error)
-	Regions(ctx context.Context, mods ...Modifier) ([]*Region, error)
+	Regions(ctx context.Context, operators ...*Operator) ([]*Region, error)
 
 	SolarSystem(ctx context.Context, id uint) (*SolarSystem, error)
-	SolarSystems(ctx context.Context, mods ...Modifier) ([]*SolarSystem, error)
+	SolarSystems(ctx context.Context, operators ...*Operator) ([]*SolarSystem, error)
 	CreateSolarSystem(ctx context.Context, system *SolarSystem) error
 
 	Type(ctx context.Context, id uint) (*Type, error)
-	Types(ctx context.Context, mods ...Modifier) ([]*Type, error)
+	Types(ctx context.Context, operators ...*Operator) ([]*Type, error)
 	CreateType(ctx context.Context, invType *Type) error
 
-	TypeAttributes(ctx context.Context, mods ...Modifier) ([]*TypeAttribute, error)
+	TypeAttributes(ctx context.Context, operators ...*Operator) ([]*TypeAttribute, error)
 	CreateTypeAttributes(ctx context.Context, attributes []*TypeAttribute) error
 
 	TypeCategory(ctx context.Context, id uint) (*TypeCategory, error)
-	TypeCategories(ctx context.Context, mods ...Modifier) ([]*TypeCategory, error)
+	TypeCategories(ctx context.Context, operators ...*Operator) ([]*TypeCategory, error)
 
 	TypeFlag(ctx context.Context, id uint) (*TypeFlag, error)
-	TypeFlags(ctx context.Context, mods ...Modifier) ([]*TypeFlag, error)
+	TypeFlags(ctx context.Context, operators ...*Operator) ([]*TypeFlag, error)
 
 	TypeGroup(ctx context.Context, id uint) (*TypeGroup, error)
-	TypeGroups(ctx context.Context, mods ...Modifier) ([]*TypeGroup, error)
+	TypeGroups(ctx context.Context, operators ...*Operator) ([]*TypeGroup, error)
 }
 
 type SolarSystem struct {

@@ -91,9 +91,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return constellations, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbConstellations, err := s.UniverseRepository.Constellations(ctx, mods)
+	dbConstellations, err := s.UniverseRepository.Constellations(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

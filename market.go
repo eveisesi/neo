@@ -14,7 +14,7 @@ type MarketRepository interface {
 	CreateHistoricalRecord(ctx context.Context, records []*HistoricalRecord) ([]*HistoricalRecord, error)
 
 	Price(ctx context.Context, typeID uint, date string) (*HistoricalRecord, error)
-	Prices(ctx context.Context, mods ...Modifier) ([]*HistoricalRecord, error)
+	Prices(ctx context.Context, operators ...*Operator) ([]*HistoricalRecord, error)
 }
 
 type HistoricalRecord struct {

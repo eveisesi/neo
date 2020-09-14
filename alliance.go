@@ -6,7 +6,7 @@ import (
 
 type AllianceRespository interface {
 	Alliance(ctx context.Context, id uint) (*Alliance, error)
-	Alliances(ctx context.Context, mods ...Modifier) ([]*Alliance, error)
+	Alliances(ctx context.Context, operators ...*Operator) ([]*Alliance, error)
 	CreateAlliance(ctx context.Context, alliance *Alliance) error
 	UpdateAlliance(ctx context.Context, id uint, alliance *Alliance) error
 

@@ -32,9 +32,9 @@ func (r *killmailRepository) Killmail(ctx context.Context, id uint) (*neo.Killma
 
 }
 
-func (r *killmailRepository) CountKillmails(ctx context.Context, mods ...neo.Modifier) (int64, error) {
+func (r *killmailRepository) CountKillmails(ctx context.Context, operators ...*neo.Operator) (int64, error) {
 
-	filters := BuildFilters(mods...)
+	filters := BuildFilters(operators...)
 
 	count, err := r.killmails.CountDocuments(ctx, filters)
 	if err != nil {
@@ -45,13 +45,15 @@ func (r *killmailRepository) CountKillmails(ctx context.Context, mods ...neo.Mod
 
 }
 
-func (r *killmailRepository) Killmails(ctx context.Context, mods ...neo.Modifier) ([]*neo.Killmail, error) {
+func (r *killmailRepository) Killmails(ctx context.Context, operators ...*neo.Operator) ([]*neo.Killmail, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
+
+	spew.Dump(filters)
 
 	var killmails = make([]*neo.Killmail, 0)
-	result, err := r.killmails.Find(ctx, filters, opts)
+	result, err := r.killmails.Find(ctx, filters, options)
 	if err != nil {
 		return killmails, err
 	}
@@ -88,9 +90,9 @@ func (r *killmailRepository) Exists(ctx context.Context, id uint) (bool, error) 
 
 func (r *killmailRepository) KillHashesByDate(ctx context.Context, date time.Time) ([]*neo.KillHash, error) {
 
-	filters := BuildFilters(neo.EqualTo{Column: "Date", Value: date})
-
-	spew.Dump("KillHashesByDate", filters)
+	filters := BuildFilters(
+		neo.NewEqualOperator("Date", date),
+	)
 
 	var hashes = make([]*neo.KillHash, 0)
 	result, err := r.killhashes.Find(ctx, filters)
@@ -118,9 +120,9 @@ func (r *killmailRepository) CreateHash(ctx context.Context, hash *neo.KillHash)
 
 func (r *killmailRepository) DeleteHashesByDate(ctx context.Context, date time.Time) error {
 
-	filters := BuildFilters(neo.EqualTo{Column: "Date", Value: date})
-
-	spew.Dump("DeleteHashesByDate", filters)
+	filters := BuildFilters(
+		neo.NewEqualOperator("Date", date),
+	)
 
 	_, err := r.killhashes.DeleteMany(ctx, filters)
 	if err != nil {

@@ -75,7 +75,6 @@ type GreaterThan ColVal
 type GreaterThanEqualTo ColVal
 type LessThan ColVal
 type LessThanEqualTo ColVal
-type NotEqual ColVal
 type In ColValIn
 type NotIn ColValIn
 
@@ -95,26 +94,26 @@ type OrderModifier struct {
 	Sort   Sort
 }
 
-type Sort int
+// type Sort int
 
-const (
-	SortAsc  Sort = 1
-	SortDesc Sort = -1
-)
+// const (
+// 	SortAsc  Sort = 1
+// 	SortDesc Sort = -1
+// )
 
-var AllSort = []Sort{
-	SortAsc,
-	SortDesc,
-}
+// var AllSort = []Sort{
+// 	SortAsc,
+// 	SortDesc,
+// }
 
-func (e Sort) IsValid() bool {
-	switch e {
-	case SortAsc, SortDesc:
-		return true
-	}
-	return false
-}
+// func (e Sort) IsValid() bool {
+// 	switch e {
+// 	case SortAsc, SortDesc:
+// 		return true
+// 	}
+// 	return false
+// }
 
-func (e Sort) Value() int {
-	return int(e)
-}
+// func (e Sort) Value() int {
+// 	return int(e)
+// }

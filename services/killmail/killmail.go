@@ -2,6 +2,7 @@ package killmail
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -161,12 +162,12 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(50),
-		neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc},
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(50),
+		neo.NewOrderOperator("killmailTime", neo.SortDesc),
 	}
 
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		entry.WithError(err).Error("failed to fetch results from db")
 		return nil, err
@@ -224,12 +225,32 @@ func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails 
 
 }
 
-func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("killmailTime", neo.SortDesc),
+		neo.NewOrOperator(
+			neo.NewEqualOperator("victim.characterID", id),
+			neo.NewEqualOperator("attackers.characterID", id),
+		),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "characters",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -248,21 +269,10 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page ui
 		entry.Info("cache hit. returning results")
 		return killmails, nil
 	}
+
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.EqualTo{Column: "victim.characterID", Value: id},
-				neo.EqualTo{Column: "attackers.characterID", Value: id},
-			},
-		},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
@@ -278,12 +288,32 @@ func (s *service) KillmailsByCharacterID(ctx context.Context, id uint64, page ui
 
 }
 
-func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewOrOperator(
+			neo.NewEqualOperator("victim.corporationID", id),
+			neo.NewEqualOperator("attackers.corporationID", id),
+		),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "corporations",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -304,19 +334,7 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page ui
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.EqualTo{Column: "victim.corporationID", Value: id},
-				neo.EqualTo{Column: "attackers.corporationID", Value: id},
-			},
-		},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
@@ -335,12 +353,32 @@ func (s *service) KillmailsByCorporationID(ctx context.Context, id uint, page ui
 
 }
 
-func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewOrOperator(
+			neo.NewEqualOperator("victim.allianceID", id),
+			neo.NewEqualOperator("attackers.allianceID", id),
+		),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "alliances",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -361,19 +399,7 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint)
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.EqualTo{Column: "victim.allianceID", Value: id},
-				neo.EqualTo{Column: "attackers.allianceID", Value: id},
-			},
-		},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
@@ -392,12 +418,32 @@ func (s *service) KillmailsByAllianceID(ctx context.Context, id uint, page uint)
 
 }
 
-func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewOrOperator(
+			neo.NewEqualOperator("victim.shipTypeID", id),
+			neo.NewEqualOperator("attackers.shipTypeID", id),
+		),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "ships",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -415,22 +461,7 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]
 		return killmails, nil
 	}
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.EqualTo{Column: "victim.shipTypeID", Value: id},
-				neo.EqualTo{Column: "attackers.shipTypeID", Value: id},
-			},
-		},
-	}
-
-	mods = append(mods, neo.LimitModifier(50))
-	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
@@ -441,17 +472,37 @@ func (s *service) KillmailsByShipID(ctx context.Context, id uint, page uint) ([]
 
 }
 
-func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
 
 	allowed := tools.IsGroupAllowed(id)
 	if !allowed {
 		return nil, errors.New("invalid group id. Only published group ids are allowed")
 	}
 
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewOrOperator(
+			neo.NewEqualOperator("victim.shipGroupID", id),
+			neo.NewEqualOperator("attackers.shipGroupID", id),
+		),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
+
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "shipGroup",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -472,19 +523,7 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc},
-		neo.OrMod{
-			Values: []neo.Modifier{
-				neo.EqualTo{Column: "victim.shipGroupID", Value: id},
-				neo.EqualTo{Column: "attackers.shipGroupID", Value: id},
-			},
-		},
-	}
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		entry.WithError(err).Error("failed to fetch results from db")
 		return nil, err
@@ -504,12 +543,29 @@ func (s *service) KillmailsByShipGroupID(ctx context.Context, id uint, page uint
 
 }
 
-func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewEqualOperator("solarSystemID", id),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "systems",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -530,17 +586,7 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) (
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.EqualTo{Column: "solarSystemID", Value: id},
-	}
-
-	mods = append(mods, neo.LimitModifier(50))
-	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		entry.WithError(err).Error("failed to fetch results from db")
 		return nil, err
@@ -560,12 +606,29 @@ func (s *service) KillmailsBySystemID(ctx context.Context, id uint, page uint) (
 
 }
 
-func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewEqualOperator("constellationID", id),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "constellation",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -586,17 +649,7 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page 
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.EqualTo{Column: "constellationID", Value: id},
-	}
-
-	mods = append(mods, neo.LimitModifier(50))
-	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
@@ -611,12 +664,29 @@ func (s *service) KillmailsByConstellationID(ctx context.Context, id uint, page 
 
 }
 
-func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint) ([]*neo.Killmail, error) {
+func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint, additionalOperators ...*neo.Operator) ([]*neo.Killmail, error) {
+
+	operators := []*neo.Operator{
+		neo.NewLimitOperator(neo.DEFAULT_PAGE_SIZE),
+		neo.NewSkipOperator(int64((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE)),
+		neo.NewOrderOperator("id", neo.SortDesc),
+		neo.NewEqualOperator("regionID", id),
+	}
+
+	if len(additionalOperators) > 0 {
+		operators = append(operators, additionalOperators...)
+	}
+
+	opsMarshaled, err := json.Marshal(operators)
+	if err != nil {
+		return nil, err
+	}
 
 	var key = format.Formatm(neo.REDIS_KILLMAILS_BY_ENTITY, format.Values{
 		"type": "region",
 		"id":   id,
 		"page": page,
+		"ops":  fmt.Sprintf("%x", sha256.Sum256(opsMarshaled)),
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
@@ -637,17 +707,7 @@ func (s *service) KillmailsByRegionID(ctx context.Context, id uint, page uint) (
 	}
 	entry.Info("cache miss, fetch results from db")
 
-	mods := []neo.Modifier{
-		neo.LimitModifier(neo.DEFAULT_PAGE_SIZE),
-		neo.SkipModifier((neo.DEFAULT_PAGE_SIZE * int(page)) - neo.DEFAULT_PAGE_SIZE),
-		neo.OrderModifier{Column: "id", Sort: neo.SortDesc},
-		neo.EqualTo{Column: "regionID", Value: id},
-	}
-
-	mods = append(mods, neo.LimitModifier(50))
-	mods = append(mods, neo.OrderModifier{Column: "killmailTime", Sort: neo.SortDesc})
-
-	killmails, err = s.killmails.Killmails(ctx, mods...)
+	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		entry.WithError(err).Error("failed to fetch results from db")
 		return nil, err

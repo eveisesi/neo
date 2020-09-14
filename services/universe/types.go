@@ -119,9 +119,7 @@ func (s *service) TypesByTypeIDs(ctx context.Context, ids []uint) ([]*neo.Type, 
 		return types, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbTypes, err := s.UniverseRepository.Types(ctx, mods)
+	dbTypes, err := s.UniverseRepository.Types(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -164,7 +162,7 @@ func (s *service) TypeAttributes(ctx context.Context, id uint) ([]*neo.TypeAttri
 		return attributes, nil
 	}
 
-	attributes, err = s.UniverseRepository.TypeAttributes(ctx, id)
+	attributes, err = s.UniverseRepository.TypeAttributes(ctx, neo.NewEqualOperator("typeID", id))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to query database for type attributes")
 	}
@@ -226,9 +224,7 @@ func (s *service) TypeAttributesByTypeIDs(ctx context.Context, ids []uint) ([]*n
 		return final, nil
 	}
 
-	mods := neo.In{Column: "typeID", Values: missing}
-
-	dbAttributes, err := s.UniverseRepository.TypeAttributes(ctx, mods)
+	dbAttributes, err := s.UniverseRepository.TypeAttributes(ctx, neo.NewInOperator("typeID", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing attributes")
 	}
@@ -341,9 +337,7 @@ func (s *service) TypeCategoriesByCategoryIDs(ctx context.Context, ids []uint) (
 		return categories, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbCategory, err := s.UniverseRepository.TypeCategories(ctx, mods)
+	dbCategory, err := s.UniverseRepository.TypeCategories(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -448,9 +442,7 @@ func (s *service) TypeFlagsByTypeFlagIDs(ctx context.Context, ids []uint) ([]*ne
 		return flags, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbFlags, err := s.UniverseRepository.TypeFlags(ctx, mods)
+	dbFlags, err := s.UniverseRepository.TypeFlags(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
@@ -555,9 +547,7 @@ func (s *service) TypeGroupsByGroupIDs(ctx context.Context, ids []uint) ([]*neo.
 		return groups, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbGroups, err := s.UniverseRepository.TypeGroups(ctx, mods)
+	dbGroups, err := s.UniverseRepository.TypeGroups(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}

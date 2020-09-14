@@ -9,7 +9,43 @@ extend type Query {
         age: Int = 7
         limit: Int = 6
     ): [Killmail]!
-    killmailsByEntityID(entity: Entity!, id: Int!, page: Int = 1): [Killmail]!
+    killmailsByEntityID(
+        entity: Entity!
+        id: Int!
+        page: Int = 1
+        filter: KillmailFilter
+    ): [Killmail]!
+}
+
+input KillmailFilter {
+    moonID: IntFilterInput
+    solarSystemID: IntFilterInput
+    warID: IntFilterInput
+    isNPC: BooleanFilterInput
+    isAwox: BooleanFilterInput
+    isSolo: BooleanFilterInput
+    droppedValue: IntFilterInput
+    destroyedValue: IntFilterInput
+    fittedValue: IntFilterInput
+    totalValue: IntFilterInput
+
+    # killmailTime: TimeFilterInput
+
+    attackersAllianceID: IntFilterInput
+    attackersCorporationID: IntFilterInput
+    attackersCharacterID: IntFilterInput
+    attackersFactionID: IntFilterInput
+    attackersDamageDone: IntFilterInput
+    attackersFinalBlow: BooleanFilterInput
+    attackersShipTypeID: IntFilterInput
+    attackersWeaponTypeID: IntFilterInput
+
+    victimAllianceID: IntFilterInput
+    victimCorporationID: IntFilterInput
+    victimCharacterID: IntFilterInput
+    victimFactionID: IntFilterInput
+    victimDamageTaken: IntFilterInput
+    victimShiptypeID: IntFilterInput
 }
 
 enum Category {

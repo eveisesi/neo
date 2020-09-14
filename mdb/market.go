@@ -31,13 +31,13 @@ func (r *marketRepository) Price(ctx context.Context, typeID uint, date string) 
 
 }
 
-func (r *marketRepository) Prices(ctx context.Context, mods ...neo.Modifier) ([]*neo.HistoricalRecord, error) {
+func (r *marketRepository) Prices(ctx context.Context, operators ...*neo.Operator) ([]*neo.HistoricalRecord, error) {
 
-	filters := BuildFilters(mods...)
-	findOptions := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var prices = make([]*neo.HistoricalRecord, 0)
-	result, err := r.c.Find(ctx, filters, findOptions)
+	result, err := r.c.Find(ctx, filters, options)
 	if err != nil {
 		return nil, err
 	}

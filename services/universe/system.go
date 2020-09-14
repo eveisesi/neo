@@ -114,9 +114,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 		return systems, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbSystems, err := s.UniverseRepository.SolarSystems(ctx, mods)
+	dbSystems, err := s.UniverseRepository.SolarSystems(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing solar system ids")
 	}

@@ -43,13 +43,13 @@ func (r *universeRepository) Constellation(ctx context.Context, id uint) (*neo.C
 
 }
 
-func (r *universeRepository) Constellations(ctx context.Context, mods ...neo.Modifier) ([]*neo.Constellation, error) {
+func (r *universeRepository) Constellations(ctx context.Context, operators ...*neo.Operator) ([]*neo.Constellation, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var constellations = make([]*neo.Constellation, 0)
-	result, err := r.constellations.Find(ctx, filters, opts)
+	result, err := r.constellations.Find(ctx, filters, options)
 	if err != nil {
 		return constellations, err
 	}
@@ -70,13 +70,13 @@ func (r *universeRepository) Region(ctx context.Context, id uint) (*neo.Region, 
 
 }
 
-func (r *universeRepository) Regions(ctx context.Context, mods ...neo.Modifier) ([]*neo.Region, error) {
+func (r *universeRepository) Regions(ctx context.Context, operators ...*neo.Operator) ([]*neo.Region, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var regions = make([]*neo.Region, 0)
-	result, err := r.regions.Find(ctx, filters, opts)
+	result, err := r.regions.Find(ctx, filters, options)
 	if err != nil {
 		return regions, err
 	}
@@ -108,13 +108,13 @@ func (r *universeRepository) CreateSolarSystem(ctx context.Context, system *neo.
 
 }
 
-func (r *universeRepository) SolarSystems(ctx context.Context, mods ...neo.Modifier) ([]*neo.SolarSystem, error) {
+func (r *universeRepository) SolarSystems(ctx context.Context, operators ...*neo.Operator) ([]*neo.SolarSystem, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var systems = make([]*neo.SolarSystem, 0)
-	result, err := r.systems.Find(ctx, filters, opts)
+	result, err := r.systems.Find(ctx, filters, options)
 	if err != nil {
 		return systems, err
 	}
@@ -144,13 +144,13 @@ func (r *universeRepository) CreateType(ctx context.Context, item *neo.Type) err
 
 }
 
-func (r *universeRepository) Types(ctx context.Context, mods ...neo.Modifier) ([]*neo.Type, error) {
+func (r *universeRepository) Types(ctx context.Context, operators ...*neo.Operator) ([]*neo.Type, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var items = make([]*neo.Type, 0)
-	result, err := r.items.Find(ctx, filters, opts)
+	result, err := r.items.Find(ctx, filters, options)
 	if err != nil {
 		return items, err
 	}
@@ -174,13 +174,13 @@ func (r *universeRepository) CreateTypeAttributes(ctx context.Context, attribute
 
 }
 
-func (r *universeRepository) TypeAttributes(ctx context.Context, mods ...neo.Modifier) ([]*neo.TypeAttribute, error) {
+func (r *universeRepository) TypeAttributes(ctx context.Context, operators ...*neo.Operator) ([]*neo.TypeAttribute, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var attributes = make([]*neo.TypeAttribute, 0)
-	result, err := r.attributes.Find(ctx, filters, opts)
+	result, err := r.attributes.Find(ctx, filters, options)
 	if err != nil {
 		return attributes, err
 	}
@@ -199,13 +199,13 @@ func (r *universeRepository) TypeCategory(ctx context.Context, id uint) (*neo.Ty
 	return category, err
 }
 
-func (r *universeRepository) TypeCategories(ctx context.Context, mods ...neo.Modifier) ([]*neo.TypeCategory, error) {
+func (r *universeRepository) TypeCategories(ctx context.Context, operators ...*neo.Operator) ([]*neo.TypeCategory, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var categories = make([]*neo.TypeCategory, 0)
-	result, err := r.categories.Find(ctx, filters, opts)
+	result, err := r.categories.Find(ctx, filters, options)
 	if err != nil {
 		return categories, err
 	}
@@ -224,13 +224,13 @@ func (r *universeRepository) TypeFlag(ctx context.Context, id uint) (*neo.TypeFl
 	return flag, err
 }
 
-func (r *universeRepository) TypeFlags(ctx context.Context, mods ...neo.Modifier) ([]*neo.TypeFlag, error) {
+func (r *universeRepository) TypeFlags(ctx context.Context, operators ...*neo.Operator) ([]*neo.TypeFlag, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var flags = make([]*neo.TypeFlag, 0)
-	result, err := r.flags.Find(ctx, filters, opts)
+	result, err := r.flags.Find(ctx, filters, options)
 	if err != nil {
 		return flags, err
 	}
@@ -249,13 +249,13 @@ func (r *universeRepository) TypeGroup(ctx context.Context, id uint) (*neo.TypeG
 	return group, err
 }
 
-func (r *universeRepository) TypeGroups(ctx context.Context, mods ...neo.Modifier) ([]*neo.TypeGroup, error) {
+func (r *universeRepository) TypeGroups(ctx context.Context, operators ...*neo.Operator) ([]*neo.TypeGroup, error) {
 
-	filters := BuildFilters(mods...)
-	opts := BuildFindOptions(mods...)
+	filters := BuildFilters(operators...)
+	options := BuildFindOptions(operators...)
 
 	var groups = make([]*neo.TypeGroup, 0)
-	result, err := r.groups.Find(ctx, filters, opts)
+	result, err := r.groups.Find(ctx, filters, options)
 	if err != nil {
 		return groups, err
 	}

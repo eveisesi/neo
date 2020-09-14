@@ -91,9 +91,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Re
 		return regions, nil
 	}
 
-	mods := neo.In{Column: "id", Values: missing}
-
-	dbRegions, err := s.UniverseRepository.Regions(ctx, mods)
+	dbRegions, err := s.UniverseRepository.Regions(ctx, neo.NewInOperator("id", missing))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
