@@ -229,7 +229,7 @@ func (s *service) processGroup(ctx context.Context, v int) {
 
 	for _, t := range group.Types {
 
-		s.logger.WithField("type_id", t).Info("processing historical records for type")
+		s.logger.WithField("type_id", t).Debug("processing historical records for type")
 
 		info, err := s.universe.Type(ctx, t)
 		if err != nil {
