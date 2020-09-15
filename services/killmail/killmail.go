@@ -142,6 +142,7 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 		"type": "recent",
 		"id":   0,
 		"page": page,
+		"ops":  "none",
 	})
 
 	entry := s.logger.WithFields(logrus.Fields{
