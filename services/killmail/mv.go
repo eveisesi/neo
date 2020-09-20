@@ -18,7 +18,7 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 	now := time.Now()
 	and := []*neo.Operator{
 		neo.NewGreaterThanEqualToOperator("killmailTime", time.Date(now.Year(), now.Month(), now.Day()-age, now.Hour(), 0, 0, 0, time.UTC)),
-		neo.NewLessThanEqualToOperator("killmailTime", time.Date(now.Year(), now.Month(), now.Day(), now.Hour()-1, 0, 0, 0, time.UTC)),
+		neo.NewLessThanEqualToOperator("killmailTime", time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), 0, 0, 0, time.UTC)),
 	}
 	if column != "none" && id > 0 {
 		and = append(and, neo.NewEqualOperator(column, id))
