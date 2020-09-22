@@ -163,12 +163,14 @@ func (r *universeRepository) Types(ctx context.Context, operators ...*neo.Operat
 
 func (r *universeRepository) CreateTypeAttributes(ctx context.Context, attributes []*neo.TypeAttribute) error {
 
-	for _, attribute := range attributes {
+	attrInterface := make([]interface{}, len(attributes))
+	for i, attribute := range attributes {
 		attribute.CreatedAt = time.Now().Unix()
 		attribute.UpdatedAt = time.Now().Unix()
+		attrInterface[i] = attribute
 	}
 
-	_, err := r.items.InsertOne(ctx, attributes)
+	_, err := r.items.InsertMany(ctx, attrInterface)
 
 	return err
 
