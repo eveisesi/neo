@@ -58,10 +58,12 @@ func (s *service) Type(ctx context.Context, id uint) (*neo.Type, error) {
 		return invType, errors.Wrap(err, "unable to insert type into db")
 	}
 
-	// ESI has the type attributes. Lets insert it into the db, and cache it is redis
-	err = s.UniverseRepository.CreateTypeAttributes(ctx, attributes)
-	if err != nil {
-		return invType, errors.Wrap(err, "unable to insert type into db")
+	if len(attributes) > 0 {
+		// ESI has the type attributes. Lets insert it into the db, and cache it is redis
+		err = s.UniverseRepository.CreateTypeAttributes(ctx, attributes)
+		if err != nil {
+			return invType, errors.Wrap(err, "unable to insert type into db")
+		}
 	}
 
 	byteSlice, err := json.Marshal(invType)
