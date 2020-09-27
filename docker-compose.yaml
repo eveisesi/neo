@@ -2,74 +2,75 @@ version: "3.7"
 
 services:
     import:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo killmail import --gLimit ${PROCESS_LIMIT} --gSleep ${PROCESS_SLEEP}
         container_name: import
         hostname: import
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
             - ./static:/app/static
     serve:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo serve
         container_name: serve
         hostname: serve
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
     listen:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo listen
         container_name: listen
         hostname: listen
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
     tracker:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo tracking
         container_name: tracker
         hostname: tracker
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
     notifier:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo notifications
         container_name: notifier
         hostname: notifier
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
     updater:
-        image: ${DOCKER_IMAGE}
+        image: ${BACKEND_IMAGE}
         network_mode: "host"
         restart: on-failure
         command: ./neo updater
         container_name: updater
         hostname: updater
         env_file:
-            - .env
+            - backend/.env
         volumes:
             - ./logs:/app/logs
     ui:
-        image: docker.pkg.github.com/eveisesi/nuxt-ui/nuxt-ui:0.1.0
+        image: ${FRONTEND_IMAGE}
+        restart: on-failure
         container_name: ui
         hostname: ui
         environment:

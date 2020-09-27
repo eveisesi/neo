@@ -12,3 +12,6 @@ pull:
 
 latest:
 	@echo $(LATEST_TAG)
+
+
+	
