@@ -1,16 +1,14 @@
-generate: boiler gqlgen
+LATEST_TAG := $(shell git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | tr - \~ | sort -V | tr \~ - | tail -1 | tr -d \v)
 
-gqlgen:
-	go run scripts/gqlgen/gqlgen.go
+build-be:
+	docker build backend/. -tag backend:latest
 
-build:
-	go build -o neo cmd/neo/*.go
+build-fe:
+	docker build frontend/. -tag frontend:latest
 
-serve: build
-	./neo serve
+pull:
+	docker pull docker.pkg.github.com/eveisesi/neo/frontend:$(LATEST_TAG)
+	docker pull docker.pkg.github.com/eveisesi/neo/backend:$(LATEST_TAG)
 
-top: build
-	./neo top
-
-clean:
-	rm -f neo
+latest:
+	@echo $(LATEST_TAG)
