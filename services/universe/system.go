@@ -16,7 +16,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 	var system = new(neo.SolarSystem)
 	var key = fmt.Sprintf(neo.REDIS_SYSTEM, id)
 
-	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 			return nil, errors.Wrap(err, "unable to marshal system for cache")
 		}
 
-		_, err = s.redis.Set(key, bSystem, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSystem, time.Minute*60).Result()
 
 		return system, errors.Wrap(err, "failed to cache solar system in redis")
 	}
@@ -63,7 +63,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 		return system, errors.Wrap(err, "unable to marshal system for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 
 	return system, errors.Wrap(err, "failed to cache solar system in redis")
 }
@@ -73,7 +73,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 	var systems = make([]*neo.SolarSystem, 0)
 	for _, v := range ids {
 		key := fmt.Sprintf(neo.REDIS_SYSTEM, v)
-		result, err := s.redis.Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -127,7 +127,7 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 			return nil, errors.Wrap(err, "unable to marshal system to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache solar system in redis")
 		}

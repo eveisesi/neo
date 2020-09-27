@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 )
 

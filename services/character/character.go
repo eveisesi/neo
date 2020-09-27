@@ -18,7 +18,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 	var character = new(neo.Character)
 	var key = fmt.Sprintf(neo.REDIS_CHARACTER, id)
 
-	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 			return nil, errors.Wrap(err, "unable to marshal character for cache")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
 
 		return character, errors.Wrap(err, "failed to cache character in redis")
 	}
@@ -69,7 +69,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 		return character, errors.Wrap(err, "unable to marshal character for cache")
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 
 	return character, errors.Wrap(err, "failed to cache character in redis")
 }
@@ -79,7 +79,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 	var characters = make([]*neo.Character, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_CHARACTER, id)
-		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -132,7 +132,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 			return nil, errors.Wrap(err, "unable to marshal character to slice of bytes")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache character in redis")
 		}

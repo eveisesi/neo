@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
@@ -291,7 +291,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 		i := 0
 		for {
 
-			count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+			count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 			if err != nil {
 				s.logger.WithError(err).Fatal("unable to get count of redis zset")
 			}
@@ -356,7 +356,7 @@ func (s *service) handleHashes(ctx context.Context, missing []neo.Message) {
 
 		members = append(members, &redis.Z{Score: float64(msg.ID), Member: data})
 		if len(members) >= 250 {
-			_, err := s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+			_, err := s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 			if err != nil {
 				// Log error message
 				s.logger.WithError(err).Error("failed to add historical hashes to redis queue")
@@ -368,7 +368,7 @@ func (s *service) handleHashes(ctx context.Context, missing []neo.Message) {
 
 	}
 
-	_, err := s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+	_, err := s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 	if err != nil {
 		// Log error message
 		s.logger.Error("failed to add historical hashes to redis queue")
@@ -376,7 +376,7 @@ func (s *service) handleHashes(ctx context.Context, missing []neo.Message) {
 		time.Sleep(time.Second)
 	}
 
-	count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+	count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to get count of redis zset")
 	}

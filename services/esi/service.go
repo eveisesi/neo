@@ -18,7 +18,7 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/volatiletech/null"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 )
 
@@ -261,7 +261,7 @@ func (s *service) retrieveErrorCount(ctx context.Context, h map[string]string) {
 	}
 
 	mx.Lock()
-	s.redis.WithContext(ctx).Set(neo.REDIS_ESI_ERROR_COUNT, count, 0)
+	s.redis.Set(ctx, neo.REDIS_ESI_ERROR_COUNT, count, 0)
 	mx.Unlock()
 
 }
@@ -279,7 +279,7 @@ func (s *service) retrieveErrorReset(ctx context.Context, h map[string]string) {
 	}
 
 	mx.Lock()
-	s.redis.WithContext(ctx).Set(neo.REDIS_ESI_ERROR_RESET, time.Now().Add(time.Second*time.Duration(seconds)).Unix(), 0)
+	s.redis.Set(ctx, neo.REDIS_ESI_ERROR_RESET, time.Now().Add(time.Second*time.Duration(seconds)).Unix(), 0)
 	mx.Unlock()
 
 }
@@ -291,15 +291,15 @@ func (s *service) trackESICallStatusCode(ctx context.Context, code int) {
 
 	switch n := code; {
 	case n == http.StatusOK:
-		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_OK, &input)
+		s.redis.ZAdd(ctx, neo.REDIS_ESI_TRACKING_OK, &input)
 	case n == http.StatusNotModified:
-		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, &input)
+		s.redis.ZAdd(ctx, neo.REDIS_ESI_TRACKING_NOT_MODIFIED, &input)
 	case n == 420:
-		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
+		s.redis.ZAdd(ctx, neo.REDIS_ESI_TRACKING_CALM_DOWN, &input)
 	case n >= 400 && n < 500:
-		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_4XX, &input)
+		s.redis.ZAdd(ctx, neo.REDIS_ESI_TRACKING_4XX, &input)
 	case n >= 500:
-		s.redis.WithContext(ctx).ZAdd(neo.REDIS_ESI_TRACKING_5XX, &input)
+		s.redis.ZAdd(ctx, neo.REDIS_ESI_TRACKING_5XX, &input)
 	}
 
 }

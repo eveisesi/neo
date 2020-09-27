@@ -66,8 +66,8 @@ func cronCommand() cli.Command {
 							return errors.New("unable to acquire tq server status")
 						}
 
-						app.Redis.WithContext(ctx).Set(neo.TQ_PLAYER_COUNT, serverStatus.Players, 0)
-						app.Redis.WithContext(ctx).Set(neo.TQ_VIP_MODE, serverStatus.VIP.Bool, 0)
+						app.Redis.Set(ctx, neo.TQ_PLAYER_COUNT, serverStatus.Players, 0)
+						app.Redis.Set(ctx, neo.TQ_VIP_MODE, serverStatus.VIP.Bool, 0)
 
 						app.Logger.WithContext(ctx).Info("done checking tq server status")
 						txn.End()
@@ -123,7 +123,7 @@ func cronCommand() cli.Command {
 					}
 					count := int64(0)
 					for _, set := range sets {
-						a, err := app.Redis.WithContext(ctx).ZRemRangeByScore(set, "-inf", strconv.FormatInt(ts, 10)).Result()
+						a, err := app.Redis.ZRemRangeByScore(context.Background(), set, "-inf", strconv.FormatInt(ts, 10)).Result()
 						if err != nil {
 							app.Logger.WithContext(ctx).WithError(err).WithField("set", set).Error("failed to fetch current count of set from redis")
 							return err

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -22,7 +22,7 @@ func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, d
 	ctx := newrelic.NewContext(context.Background(), txn)
 
 	// Attempt to fetch Current Date from Redis
-	current, err := s.redis.WithContext(ctx).Get(neo.ZKB_HISTORY_DATE).Result()
+	current, err := s.redis.Get(ctx, neo.ZKB_HISTORY_DATE).Result()
 	if err != nil && err.Error() != "redis: nil" {
 		s.logger.WithError(err).Fatal("redis returned invalid response to query for egress date")
 	}
@@ -74,12 +74,12 @@ func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, d
 	}
 
 	if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
-		s.redis.WithContext(ctx).Del(neo.ZKB_HISTORY_DATE)
+		s.redis.Del(ctx, neo.ZKB_HISTORY_DATE)
 		return nil
 	}
 
 	// Store the new currentdate in Redis in case we panic
-	_, err = s.redis.WithContext(ctx).Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
+	_, err = s.redis.Set(ctx, neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 	if err != nil {
 		s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 	}
@@ -152,7 +152,7 @@ func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, d
 		}
 
 		currentdate = currentdate.AddDate(0, 0, incrementer)
-		_, err = s.redis.WithContext(ctx).Set(neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
+		_, err = s.redis.Set(ctx, neo.ZKB_HISTORY_DATE, currentdate.Format("20060102"), -1).Result()
 		if err != nil {
 			s.logger.WithError(err).Error("redis returned invalid response while setting egress date")
 		}
@@ -162,14 +162,14 @@ func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, d
 		entry.Info("finished with hashes && done pulling killmail history for date")
 
 		if currentdate.Unix() > maxdate.Unix() || currentdate.Unix() < mindate.Unix() {
-			s.redis.WithContext(ctx).Del(neo.ZKB_HISTORY_DATE)
+			s.redis.Del(ctx, neo.ZKB_HISTORY_DATE)
 			return nil
 		}
 
 		if datehold && threshold > 0 {
 			i := 0
 			for {
-				count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+				count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 				if err != nil {
 					s.logger.WithError(err).Fatal("unable to get count of redis zset")
 				}
@@ -195,7 +195,7 @@ func (s *service) HistoryExporter(min, max, direction string, overrideCurrent, d
 func (s *service) handleHashes(ctx context.Context, hashes map[string]string) {
 
 	// Make Sure the Redis Server is still alive and nothing has happened to it
-	pong, err := s.redis.WithContext(ctx).Ping().Result()
+	pong, err := s.redis.Ping(ctx).Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to ping redis server")
 	}
@@ -234,7 +234,7 @@ func (s *service) handleHashes(ctx context.Context, hashes map[string]string) {
 
 		members = append(members, &redis.Z{Score: float64(killmailID), Member: msg})
 		if len(members) >= 250 {
-			_, err := s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+			_, err := s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 			if err != nil {
 				// Log error message
 				s.logger.Error("failed to add historical hashes to redis queue")
@@ -246,7 +246,7 @@ func (s *service) handleHashes(ctx context.Context, hashes map[string]string) {
 
 	}
 
-	_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
+	_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, members...).Result()
 	if err != nil {
 		// Log error message
 		s.logger.Error("failed to add historical hashes to redis queue")
@@ -254,7 +254,7 @@ func (s *service) handleHashes(ctx context.Context, hashes map[string]string) {
 		time.Sleep(time.Second)
 	}
 
-	count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+	count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 	if err != nil {
 		s.logger.WithError(err).Fatal("unable to get count of redis zset")
 	}

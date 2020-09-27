@@ -1,12 +1,13 @@
 package top
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/inancgumus/screen"
 	"github.com/jedib0t/go-pretty/table"
 	"github.com/pkg/errors"
@@ -73,122 +74,123 @@ func NewService(redis *redis.Client) Service {
 	return s
 }
 
-func (s *service) fetchESI200() (int64, error) {
-	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_OK, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+func (s *service) fetchESI200(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.REDIS_ESI_TRACKING_OK, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 }
 
-func (s *service) fetchESI304() (int64, error) {
-	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_NOT_MODIFIED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+func (s *service) fetchESI304(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.REDIS_ESI_TRACKING_NOT_MODIFIED, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 }
 
-func (s *service) fetchESI420() (int64, error) {
-	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_CALM_DOWN, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+func (s *service) fetchESI420(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.REDIS_ESI_TRACKING_CALM_DOWN, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 }
 
-func (s *service) fetchESI4XX() (int64, error) {
-	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_4XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+func (s *service) fetchESI4XX(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.REDIS_ESI_TRACKING_4XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 }
 
-func (s *service) fetchESI5XX() (int64, error) {
-	return s.redis.ZCount(neo.REDIS_ESI_TRACKING_5XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
+func (s *service) fetchESI5XX(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.REDIS_ESI_TRACKING_5XX, strconv.FormatInt(time.Now().Add(time.Minute*-5).UnixNano(), 10), strconv.FormatInt(time.Now().UnixNano(), 10)).Result()
 }
 
-func (s *service) fetchESIErrorReset() (int64, error) {
-	return s.redis.Get(neo.REDIS_ESI_ERROR_RESET).Int64()
+func (s *service) fetchESIErrorReset(ctx context.Context) (int64, error) {
+	return s.redis.Get(ctx, neo.REDIS_ESI_ERROR_RESET).Int64()
 }
 
-func (s *service) fetchESIErrorRemain() (int64, error) {
-	return s.redis.Get(neo.REDIS_ESI_ERROR_COUNT).Int64()
+func (s *service) fetchESIErrorRemain(ctx context.Context) (int64, error) {
+	return s.redis.Get(ctx, neo.REDIS_ESI_ERROR_COUNT).Int64()
 }
 
-func (s *service) fetchProcessingQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+func (s *service) fetchProcessingQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchRecalculatingQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
+func (s *service) fetchRecalculatingQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_RECALCULATE, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchBackupQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_BACKUP, "-inf", "+inf").Result()
+func (s *service) fetchBackupQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_BACKUP, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchStatsQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
+func (s *service) fetchStatsQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchNotificationQueue() (int64, error) {
-	return s.redis.ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
+func (s *service) fetchNotificationQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
 }
 
-func (s *service) fetchInvalidQueue() (int64, error) {
-	return s.redis.ZCount(neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
+func (s *service) fetchInvalidQueue(ctx context.Context) (int64, error) {
+	return s.redis.ZCount(ctx, neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
 }
 
 func (s *service) EvaluateParams(param *stat) error {
 	var err error
+	ctx := context.Background()
 
-	param.ESI200, err = s.fetchESI200()
+	param.ESI200, err = s.fetchESI200(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESI200 failed ")
 	}
 
-	param.ESI304, err = s.fetchESI304()
+	param.ESI304, err = s.fetchESI304(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESI304 failed")
 	}
 
-	param.ESI420, err = s.fetchESI420()
+	param.ESI420, err = s.fetchESI420(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESI420 failed")
 	}
 
-	param.ESI4XX, err = s.fetchESI4XX()
+	param.ESI4XX, err = s.fetchESI4XX(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESI4XX failed")
 	}
 
-	param.ESI5XX, err = s.fetchESI5XX()
+	param.ESI5XX, err = s.fetchESI5XX(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESI5XX failed")
 	}
 
-	param.ESIErrorRemain, err = s.fetchESIErrorRemain()
+	param.ESIErrorRemain, err = s.fetchESIErrorRemain(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESIErrorRemain failed")
 	}
 
-	param.ESIErrorReset, err = s.fetchESIErrorReset()
+	param.ESIErrorReset, err = s.fetchESIErrorReset(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchESIErrorReset failed")
 	}
 
-	param.ProcessingQueue, err = s.fetchProcessingQueue()
+	param.ProcessingQueue, err = s.fetchProcessingQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchProcessingQueue failed")
 	}
 
-	param.RecalculatingQueue, err = s.fetchRecalculatingQueue()
+	param.RecalculatingQueue, err = s.fetchRecalculatingQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchRecalculatingQueue failed")
 	}
 
-	param.BackupQueue, err = s.fetchBackupQueue()
+	param.BackupQueue, err = s.fetchBackupQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchBackupQueue failed")
 	}
 
-	param.StatsQueue, err = s.fetchStatsQueue()
+	param.StatsQueue, err = s.fetchStatsQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchStatsQueue failed")
 	}
 
-	param.NotificationsQueue, err = s.fetchNotificationQueue()
+	param.NotificationsQueue, err = s.fetchNotificationQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchStatsQueue failed")
 	}
 
-	param.InvalidQueue, err = s.fetchInvalidQueue()
+	param.InvalidQueue, err = s.fetchInvalidQueue(ctx)
 	if err != nil {
 		return errors.Wrap(err, "fetchInvalidQueue failed")
 	}

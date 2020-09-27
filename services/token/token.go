@@ -82,8 +82,10 @@ func (s *service) GetTokenForCode(ctx context.Context, state, code string) (*neo
 
 func (s *service) getSignatureKey(token *jwt.Token) (interface{}, error) {
 
+	ctx := context.Background()
+
 	key := "neo:jwk"
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != "redis: nil" {
 		return nil, errors.Wrap(err, "unexpected error looking for jwk in redis")
 	}
@@ -103,7 +105,7 @@ func (s *service) getSignatureKey(token *jwt.Token) (interface{}, error) {
 			return nil, errors.Wrap(err, "faile dto read jwk response body")
 		}
 
-		_, err = s.redis.Set(key, buf, time.Minute*3600).Result()
+		_, err = s.redis.Set(ctx, key, buf, time.Minute*3600).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to cache jwks in redis")
 		}

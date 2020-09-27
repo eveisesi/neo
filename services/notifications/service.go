@@ -19,7 +19,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/killmail"
 	"github.com/eveisesi/neo/services/universe"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 	goslack "github.com/slack-go/slack"
 )
@@ -83,7 +83,7 @@ func (s *service) Run(ctx context.Context) {
 	for {
 		txn := s.newrelic.StartTransaction("process notification queue")
 		entry := s.logger.WithContext(ctx)
-		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, "-inf", "+inf").Result()
 		if err != nil {
 			txn.NoticeError(err)
 
@@ -99,7 +99,7 @@ func (s *service) Run(ctx context.Context) {
 			continue
 		}
 
-		results, err := s.redis.WithContext(ctx).ZPopMax(neo.QUEUES_KILLMAIL_NOTIFICATION, 5).Result()
+		results, err := s.redis.ZPopMax(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, 5).Result()
 		if err != nil {
 			entry.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}

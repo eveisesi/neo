@@ -1,13 +1,14 @@
 package stats
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/eveisesi/neo/services/killmail"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/sirupsen/logrus"
 )
@@ -40,9 +41,11 @@ func NewService(redis *redis.Client, logger *logrus.Logger, newrelic *newrelic.A
 
 func (s *service) Run() error {
 
+	ctx := context.Background()
+
 	for {
 		entry := s.logger
-		count, err := s.redis.ZCount(neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_STATS, "-inf", "+inf").Result()
 		if err != nil {
 			entry.WithError(err).Error("unable to determine count of message queue")
 			time.Sleep(time.Second * 2)
@@ -55,7 +58,7 @@ func (s *service) Run() error {
 			continue
 		}
 
-		results, err := s.redis.ZPopMax(neo.QUEUES_KILLMAIL_STATS, 5).Result()
+		results, err := s.redis.ZPopMax(ctx, neo.QUEUES_KILLMAIL_STATS, 5).Result()
 		if err != nil {
 			entry.WithError(err).Fatal("unable to retrieve hashes from queue")
 		}

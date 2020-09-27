@@ -13,6 +13,7 @@ require (
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/go-openapi/strfmt v0.19.5 // indirect
 	github.com/go-redis/redis/v7 v7.4.0
+	github.com/go-redis/redis/v8 v8.2.2
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gomodule/redigo v1.8.1 // indirect
@@ -30,8 +31,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/newrelic/go-agent/v3 v3.8.1
-	github.com/onsi/ginkgo v1.12.0 // indirect
-	github.com/onsi/gomega v1.9.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/sirkon/go-format v0.1.2
 	github.com/sirupsen/logrus v1.5.0
@@ -52,5 +51,4 @@ require (
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/src-d/go-git.v4 v4.13.1 // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

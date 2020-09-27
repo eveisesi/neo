@@ -16,7 +16,7 @@ func (s *service) Region(ctx context.Context, id uint) (*neo.Region, error) {
 	var region = new(neo.Region)
 	var key = fmt.Sprintf(neo.REDIS_REGION, id)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *service) Region(ctx context.Context, id uint) (*neo.Region, error) {
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour*24).Result()
 
 	return region, errors.Wrap(err, "failed to cache category in redis")
 
@@ -51,7 +51,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Re
 	var regions = make([]*neo.Region, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_REGION, id)
-		result, err := s.redis.Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -104,7 +104,7 @@ func (s *service) RegionsByRegionIDs(ctx context.Context, ids []uint) ([]*neo.Re
 			return nil, errors.Wrap(err, "unable to marshal region to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Hour*24).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache region in redis")
 		}

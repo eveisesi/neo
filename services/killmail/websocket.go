@@ -9,7 +9,7 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/newrelic/go-agent/v3/newrelic"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -97,7 +97,7 @@ func (s *service) DispatchPayload(msg *neo.Message) {
 		s.logger.WithContext(ctx).WithError(err).Error("unable to marshal WSSPayload")
 		return
 	}
-	_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(msg.ID), Member: string(payload)}).Result()
+	_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(msg.ID), Member: string(payload)}).Result()
 	if err != nil {
 		txn.NoticeError(err)
 		s.logger.WithContext(ctx).WithError(err).WithField("payload", string(payload)).Error("unable to push killmail to processing queue")

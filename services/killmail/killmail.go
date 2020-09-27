@@ -20,7 +20,7 @@ func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) 
 	var killmail = new(neo.Killmail)
 	var key = fmt.Sprintf(neo.REDIS_KILLMAIL, id)
 
-	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		s.logger.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to fetch km from redis")
 		return nil, err
@@ -45,7 +45,7 @@ func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) 
 		return nil, errors.Wrap(err, "unable to marshal killmail for cache")
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, byteSlc, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlc, time.Minute*60).Result()
 
 	return killmail, errors.Wrap(err, "failed to cache killmail in redis")
 
@@ -190,7 +190,7 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 func (s *service) KillmailsFromCache(ctx context.Context, key string) ([]*neo.Killmail, error) {
 
 	var killmails = make([]*neo.Killmail, 0)
-	results, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	results, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (s *service) CacheKillmailSlice(ctx context.Context, key string, killmails 
 		return err
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, bSlice, duration).Result()
+	_, err = s.redis.Set(ctx, key, bSlice, duration).Result()
 	if err != nil {
 		s.logger.WithContext(ctx).WithError(err).WithField("key", key).Error("failed to cache killmail chunk in redis")
 	}

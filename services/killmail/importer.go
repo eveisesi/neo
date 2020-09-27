@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/eveisesi/neo"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/korovkin/limiter"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"github.com/pkg/errors"
@@ -22,10 +22,10 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 		txn := s.newrelic.StartTransaction("killmail queue check")
 		ctx := newrelic.NewContext(context.Background(), txn)
 
-		stop, err := s.redis.WithContext(ctx).Get(neo.QUEUE_STOP).Int64()
+		stop, err := s.redis.Get(ctx, neo.QUEUE_STOP).Int64()
 		if err != nil {
 			s.logger.WithError(err).Error("stop flag is missing. attempting to create with default value of 0")
-			_, err := s.redis.WithContext(ctx).Set(neo.QUEUE_STOP, 0, 0).Result()
+			_, err := s.redis.Set(ctx, neo.QUEUE_STOP, 0, 0).Result()
 			if err != nil {
 				txn.NoticeError(err)
 				s.logger.WithError(err).Fatal("error encountered attempting to create stop flag with default value")
@@ -46,7 +46,7 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 			continue
 		}
 
-		count, err := s.redis.WithContext(ctx).ZCount(neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
+		count, err := s.redis.ZCount(ctx, neo.QUEUES_KILLMAIL_PROCESSING, "-inf", "+inf").Result()
 		if err != nil {
 			txn.NoticeError(err)
 			s.logger.WithError(err).Error("unable to determine count of message queue")
@@ -61,7 +61,7 @@ func (s *service) Importer(gLimit, gSleep int64) error {
 			continue
 		}
 
-		results, err := s.redis.WithContext(ctx).ZPopMax(neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
+		results, err := s.redis.ZPopMax(ctx, neo.QUEUES_KILLMAIL_PROCESSING, gLimit).Result()
 		if err != nil {
 			txn.NoticeError(err)
 			s.logger.WithError(err).Fatal("unable to retrieve hashes from queue")
@@ -115,7 +115,7 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
 		if killmail.TotalValue >= float64(threshold) {
-			_, err = s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
+			_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
 			if err != nil {
 				entry.WithError(err).Error("failed to publish message to notifications queue")
 			}
@@ -160,7 +160,7 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 			"query": m.Query,
 		}).Error("failed to fetch killmail from esi")
 		if m.Code >= 500 {
-			s.redis.ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
+			s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		}
 		return nil, err
 	}
@@ -174,10 +174,10 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		}).Error("unexpected response code from esi")
 
 		if m.Code == http.StatusUnprocessableEntity {
-			s.redis.WithContext(ctx).ZAdd(neo.ZKB_INVALID_HASH, &redis.Z{Score: float64(payload.ID), Member: message})
+			s.redis.ZAdd(ctx, neo.ZKB_INVALID_HASH, &redis.Z{Score: float64(payload.ID), Member: message})
 			return nil, err
 		}
-		s.redis.WithContext(ctx).ZAdd(neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
+		s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_PROCESSING, &redis.Z{Score: float64(payload.ID), Member: message})
 		return nil, err
 	}
 
@@ -322,7 +322,7 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		entry.WithError(err).Error("failed to marshal payload for feed")
 		return killmail, nil
 	}
-	err = s.redis.Publish("killmail-feed", feedPayload).Err()
+	err = s.redis.Publish(ctx, "killmail-feed", feedPayload).Err()
 	if err != nil {
 		entry.WithError(err).Error("failed to publish payload to feed")
 	}

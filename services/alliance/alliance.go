@@ -17,7 +17,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 	var alliance = new(neo.Alliance)
 	var key = fmt.Sprintf(neo.REDIS_ALLIANCE, id)
 
-	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 			return nil, errors.Wrap(err, "unable to marshal alliance for cache")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
 
 		return alliance, errors.Wrap(err, "failed to cache alliance in redis")
 	}
@@ -67,7 +67,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 		return alliance, errors.Wrap(err, "unable to marshal alliance for cache")
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 
 	return alliance, errors.Wrap(err, "failed to cache solar alliance in redis")
 }
@@ -77,7 +77,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 	var alliances = make([]*neo.Alliance, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_ALLIANCE, id)
-		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -130,7 +130,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 			return nil, errors.Wrap(err, "unable to marshal alliance to slice of bytes")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache alliance in redis")
 		}

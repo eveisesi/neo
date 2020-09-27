@@ -16,7 +16,7 @@ func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellatio
 	var constellation = new(neo.Constellation)
 	var key = fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
 
-	result, err := s.redis.Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellatio
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour*24).Result()
 
 	return constellation, errors.Wrap(err, "failed to cache category in redis")
 
@@ -51,7 +51,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 	var constellations = make([]*neo.Constellation, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
-		result, err := s.redis.Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -104,7 +104,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 			return nil, errors.Wrap(err, "unable to marshal constellation to slice of bytes")
 		}
 
-		_, err = s.redis.Set(key, byteSlice, time.Hour*24).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Hour*24).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache constellation in redis")
 		}

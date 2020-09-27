@@ -35,7 +35,7 @@ import (
 	"github.com/eveisesi/neo/services/universe"
 	"gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pkg/errors"
 
@@ -112,7 +112,7 @@ func New(command string, debug bool) *App {
 		IdleCheckFrequency: time.Second * 10,
 	})
 
-	_, err = redisClient.Ping().Result()
+	_, err = redisClient.Ping(context.Background()).Result()
 	if err != nil {
 		logger.WithError(err).Fatal("failed to ping redis server")
 	}

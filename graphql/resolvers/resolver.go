@@ -8,7 +8,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/universe"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 	"github.com/sirupsen/logrus"
 
 	"github.com/eveisesi/neo/graphql/dataloaders"

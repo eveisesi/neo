@@ -17,7 +17,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 	var corporation = new(neo.Corporation)
 	var key = fmt.Sprintf(neo.REDIS_CORPORATION, id)
 
-	result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+	result, err := s.redis.Get(ctx, key).Bytes()
 	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 			return nil, errors.Wrap(err, "unable to marshal corporation for cache")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
 
 		return corporation, errors.Wrap(err, "failed to cache corporation in redis")
 	}
@@ -68,7 +68,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 		return corporation, errors.Wrap(err, "unable to marshal corporation for cache")
 	}
 
-	_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 
 	return corporation, errors.Wrap(err, "failed to cache solar corporation in redis")
 }
@@ -78,7 +78,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 	var corporations = make([]*neo.Corporation, 0)
 	for _, id := range ids {
 		key := fmt.Sprintf(neo.REDIS_CORPORATION, id)
-		result, err := s.redis.WithContext(ctx).Get(key).Bytes()
+		result, err := s.redis.Get(ctx, key).Bytes()
 		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
 			return nil, errors.Wrap(err, "encountered error querying redis")
 		}
@@ -131,7 +131,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 			return nil, errors.Wrap(err, "unable to marshal corporation to slice of bytes")
 		}
 
-		_, err = s.redis.WithContext(ctx).Set(key, byteSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to cache corporation in redis")
 		}

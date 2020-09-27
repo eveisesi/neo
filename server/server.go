@@ -20,7 +20,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v8"
 
 	core "github.com/eveisesi/neo/app"
 	"github.com/eveisesi/neo/graphql/resolvers"

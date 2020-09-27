@@ -126,9 +126,9 @@ func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Ki
 	go func(ctx context.Context, output chan *neo.Killmail) {
 		r.Logger.Println("hello")
 
-		feed := r.Redis.Subscribe("killmail-feed")
+		feed := r.Redis.Subscribe(ctx, "killmail-feed")
 
-		_, err := feed.Receive()
+		_, err := feed.Receive(ctx)
 		if err != nil {
 			return
 		}

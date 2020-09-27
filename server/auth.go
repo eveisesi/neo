@@ -15,7 +15,7 @@ func (s *Server) handleGetState(w http.ResponseWriter, r *http.Request) {
 
 	random := tools.RandomString(32)
 
-	_, err := s.redis.Set(fmt.Sprintf("neo:state:%s", random), true, time.Minute*2).Result()
+	_, err := s.redis.Set(r.Context(), fmt.Sprintf("neo:state:%s", random), true, time.Minute*2).Result()
 	if err != nil {
 		s.WriteError(w, http.StatusInternalServerError, errors.New("unable to handle request at this time"))
 		return
@@ -48,7 +48,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	key := fmt.Sprintf("neo:state:%s", state)
-	_, err := s.redis.Get(key).Result()
+	_, err := s.redis.Get(ctx, key).Result()
 	if err != nil {
 		if err.Error() == "redis: nil" {
 			err = errors.New("invalid state")
@@ -61,7 +61,7 @@ func (s *Server) handlePostCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.redis.Del(key)
+	s.redis.Del(r.Context(), key)
 
 	token, err := s.token.GetTokenForCode(ctx, state, code)
 	if err != nil {
