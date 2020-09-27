@@ -1,0 +1,12 @@
+extend type Query {
+    corporationByCorporationID(id: Int!): Corporation!
+}
+
+type Corporation @goModel(model: "github.com/eveisesi/neo.Corporation") {
+    id: Int!
+    name: String!
+    ticker: String!
+    memberCount: Int!
+
+    alliance: Alliance
+}

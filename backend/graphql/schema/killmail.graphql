@@ -1,0 +1,149 @@
+extend type Query {
+    killmail(id: Int!): Killmail!
+    killmailRecent(page: Int = 1): [Killmail]!
+
+    mvByEntityID(
+        category: Category = "all"
+        entity: Entity = "all"
+        id: Int
+        age: Int = 7
+        limit: Int = 6
+    ): [Killmail]!
+    killmailsByEntityID(
+        entity: Entity!
+        id: Int!
+        page: Int = 1
+        filter: KillmailFilter
+    ): [Killmail]!
+}
+
+input KillmailFilter {
+    moonID: IntFilterInput
+    solarSystemID: IntFilterInput
+    warID: IntFilterInput
+    isNPC: BooleanFilterInput
+    isAwox: BooleanFilterInput
+    isSolo: BooleanFilterInput
+    droppedValue: IntFilterInput
+    destroyedValue: IntFilterInput
+    fittedValue: IntFilterInput
+    totalValue: IntFilterInput
+
+    # killmailTime: TimeFilterInput
+
+    attackersAllianceID: IntFilterInput
+    attackersCorporationID: IntFilterInput
+    attackersCharacterID: IntFilterInput
+    attackersFactionID: IntFilterInput
+    attackersDamageDone: IntFilterInput
+    attackersFinalBlow: BooleanFilterInput
+    attackersShipTypeID: IntFilterInput
+    attackersWeaponTypeID: IntFilterInput
+
+    victimAllianceID: IntFilterInput
+    victimCorporationID: IntFilterInput
+    victimCharacterID: IntFilterInput
+    victimFactionID: IntFilterInput
+    victimDamageTaken: IntFilterInput
+    victimShiptypeID: IntFilterInput
+}
+
+enum Category {
+    all
+    kill
+    lose
+}
+
+enum Entity {
+    all
+    character
+    corporation
+    alliance
+    ship
+    shipGroup
+    system
+    constellation
+    region
+}
+
+type Killmail @goModel(model: "github.com/eveisesi/neo.Killmail") {
+    id: Int!
+    hash: String!
+    moonID: Int
+    solarSystemID: Int!
+    warID: Int
+    isNPC: Boolean!
+    isAwox: Boolean!
+    isSolo: Boolean!
+    droppedValue: Float!
+    destroyedValue: Float!
+    fittedValue: Float!
+    totalValue: Float!
+    killmailTime: Time!
+
+    system: SolarSystem! @goField(forceResolver: true)
+    attackers(finalBlowOnly: Boolean = false): [KillmailAttacker]!
+    @goField(forceResolver: true)
+    victim: KillmailVictim!
+}
+
+type KillmailAttacker
+@goModel(model: "github.com/eveisesi/neo.KillmailAttacker") {
+    killmailID: Int!
+    allianceID: Int
+    characterID: Int
+    corporationID: Int
+    factionID: Int
+    damageDone: Int!
+    finalBlow: Boolean!
+    securityStatus: Float!
+    shipTypeID: Int
+    weaponTypeID: Int
+
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
+    weapon: Type @goField(forceResolver: true)
+}
+
+type KillmailVictim @goModel(model: "github.com/eveisesi/neo.KillmailVictim") {
+    killmailID: Int!
+    allianceID: Int
+    characterID: Int
+    corporationID: Int!
+    factionID: Int
+    damageTaken: Int!
+    shipTypeID: Int!
+    shipValue: Float!
+
+    alliance: Alliance @goField(forceResolver: true)
+    corporation: Corporation @goField(forceResolver: true)
+    character: Character @goField(forceResolver: true)
+    ship: Type @goField(forceResolver: true)
+    position: Position
+    items: [KillmailItem]! @goField(forceResolver: true)
+    fitted: [KillmailItem]! @goField(forceResolver: true)
+}
+
+type KillmailItem @goModel(model: "github.com/eveisesi/neo.KillmailItem") {
+    killmailID: Int!
+    flag: Int!
+    itemTypeID: Int!
+    quantityDropped: Int
+    quantityDestroyed: Int
+    singleton: Int!
+    isParent: Boolean!
+    itemValue: Float!
+    totalValue: Float!
+
+    type: Type @goField(forceResolver: true)
+    typeflag: TypeFlag
+    items: [KillmailItem]!
+}
+
+type Position @goModel(model: "github.com/eveisesi/neo.Position") {
+    x: Float
+    y: Float
+    z: Float
+}

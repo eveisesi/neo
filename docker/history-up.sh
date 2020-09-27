@@ -1,1 +1,0 @@
-source docker.env && docker-compose -f docker-compose-init.yaml up --no-start && docker-compose -f docker-compose-init.yaml start history

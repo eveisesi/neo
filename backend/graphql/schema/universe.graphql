@@ -1,0 +1,73 @@
+extend type Query {
+    typeByTypeID(id: Int!): Type!
+    groupByGroupID(id: Int!): TypeGroup!
+    categoryByGroupID(id: Int!): TypeCategory!
+    solarSystemBySolarSystemID(id: Int!): SolarSystem!
+    constellationByConstellationID(id: Int!): Constellation!
+    regionByRegionID(id: Int!): Region!
+}
+
+type Constellation @goModel(model: "github.com/eveisesi/neo.Constellation") {
+    id: Int!
+    name: String!
+    regionID: Int!
+    factionID: Int
+
+    region: Region! @goField(forceResolver: true)
+}
+
+type Region @goModel(model: "github.com/eveisesi/neo.Region") {
+    id: Int!
+    name: String!
+}
+
+type SolarSystem @goModel(model: "github.com/eveisesi/neo.SolarSystem") {
+    id: Int!
+    name: String!
+    regionID: Int!
+    constellationID: Int!
+    factionID: Int
+    sunTypeID: Int
+    security: Float!
+
+    constellation: Constellation! @goField(forceResolver: true)
+}
+
+type Type @goModel(model: "github.com/eveisesi/neo.Type") {
+    id: Int!
+    groupID: Int!
+    name: String!
+    description: String!
+    published: Boolean!
+    marketGroupID: Int
+
+    group: TypeGroup! @goField(forceResolver: true)
+    attributes: [TypeAttribute]!
+}
+
+type TypeAttribute @goModel(model: "github.com/eveisesi/neo.TypeAttribute") {
+    typeID: Int!
+    attributeID: Int!
+    value: Int!
+}
+
+type TypeCategory @goModel(model: "github.com/eveisesi/neo.TypeCategory") {
+    id: Int!
+    name: String!
+    published: Boolean!
+}
+
+type TypeFlag @goModel(model: "github.com/eveisesi/neo.TypeFlag") {
+    id: Int!
+    name: String!
+    text: String!
+}
+
+type TypeGroup @goModel(model: "github.com/eveisesi/neo.TypeGroup") {
+    id: Int!
+    categoryID: Int!
+    name: String!
+    published: Boolean!
+
+    category: TypeCategory!
+}

@@ -1,0 +1,10 @@
+extend type Query {
+    allianceByAllianceID(id: Int!): Alliance!
+}
+
+type Alliance @goModel(model: "github.com/eveisesi/neo.Alliance") {
+    id: Int!
+    name: String!
+    ticker: String!
+    memberCount: Int!
+}

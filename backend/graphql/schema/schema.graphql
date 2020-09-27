@@ -1,0 +1,17 @@
+directive @goModel(model: String) on OBJECT | INPUT_OBJECT
+
+directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION
+
+type Query {
+    queryPlaceholder: Boolean!
+}
+
+type Mutation {
+    mutationPlaceholder: Boolean!
+}
+
+type Subscription {
+    killmailFeed: Killmail
+}
+
+scalar Time
