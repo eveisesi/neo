@@ -1,1 +1,1 @@
-git fetch -a && source docker.sh && docker-compose up -d && docker-compose logs -f
+git fetch -a && source ./scripts/docker.sh && docker-compose up -d && docker-compose logs -f

@@ -1,0 +1,1 @@
+git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | tr - \~ | sort -V | tr \~ - | tail -1 | tr -d \v
