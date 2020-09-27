@@ -8,6 +8,7 @@ import (
 	"github.com/eveisesi/neo/services/corporation"
 	"github.com/eveisesi/neo/services/search"
 	"github.com/eveisesi/neo/services/universe"
+	"github.com/go-redis/redis/v7"
 	"github.com/sirupsen/logrus"
 
 	"github.com/eveisesi/neo/graphql/dataloaders"
@@ -21,6 +22,7 @@ type Resolver struct {
 	Services   Services
 	Dataloader func(ctx context.Context) dataloaders.Loaders
 	Logger     *logrus.Logger
+	Redis      *redis.Client
 }
 
 type Killmail killmail.Service
@@ -50,6 +52,12 @@ func (r *Resolver) Mutation() service.MutationResolver {
 func (r *Resolver) Query() service.QueryResolver {
 	return &queryResolver{r}
 }
+
+func (r *Resolver) Subscription() service.SubscriptionResolver {
+	return &subscriptionResolver{r}
+}
+
+type subscriptionResolver struct{ *Resolver }
 
 type mutationResolver struct{ *Resolver }
 

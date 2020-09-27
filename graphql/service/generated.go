@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -49,6 +50,7 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
 	SolarSystem() SolarSystemResolver
+	Subscription() SubscriptionResolver
 	Type() TypeResolver
 	TypeGroup() TypeGroupResolver
 }
@@ -200,6 +202,10 @@ type ComplexityRoot struct {
 		SunTypeID       func(childComplexity int) int
 	}
 
+	Subscription struct {
+		KillmailFeed func(childComplexity int) int
+	}
+
 	Type struct {
 		Attributes    func(childComplexity int) int
 		Description   func(childComplexity int) int
@@ -295,6 +301,9 @@ type QueryResolver interface {
 }
 type SolarSystemResolver interface {
 	Constellation(ctx context.Context, obj *neo.SolarSystem) (*neo.Constellation, error)
+}
+type SubscriptionResolver interface {
+	KillmailFeed(ctx context.Context) (<-chan *neo.Killmail, error)
 }
 type TypeResolver interface {
 	Group(ctx context.Context, obj *neo.Type) (*neo.TypeGroup, error)
@@ -1117,6 +1126,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.SolarSystem.SunTypeID(childComplexity), true
 
+	case "Subscription.killmailFeed":
+		if e.complexity.Subscription.KillmailFeed == nil {
+			break
+		}
+
+		return e.complexity.Subscription.KillmailFeed(childComplexity), true
+
 	case "Type.attributes":
 		if e.complexity.Type.Attributes == nil {
 			break
@@ -1303,6 +1319,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			first = false
 			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -1557,6 +1590,10 @@ type Query {
 
 type Mutation {
     mutationPlaceholder: Boolean!
+}
+
+type Subscription {
+    killmailFeed: Killmail
 }
 
 scalar Time
@@ -5551,6 +5588,47 @@ func (ec *executionContext) _SolarSystem_constellation(ctx context.Context, fiel
 	return ec.marshalNConstellation2ᚖgithubᚗcomᚋeveisesiᚋneoᚐConstellation(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Subscription_killmailFeed(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().KillmailFeed(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *neo.Killmail)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalOKillmail2ᚖgithubᚗcomᚋeveisesiᚋneoᚐKillmail(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
+}
+
 func (ec *executionContext) _Type_id(ctx context.Context, field graphql.CollectedField, obj *neo.Type) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -8661,6 +8739,26 @@ func (ec *executionContext) _SolarSystem(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "killmailFeed":
+		return ec._Subscription_killmailFeed(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var typeImplementors = []string{"Type"}

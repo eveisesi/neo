@@ -2,11 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/service"
+	"github.com/sirupsen/logrus"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int) (*neo.Killmail, error) {
@@ -116,6 +118,54 @@ func (r *queryResolver) KillmailsByEntityID(ctx context.Context, entity models.E
 	}
 
 	return mails, err
+}
+
+func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Killmail, error) {
+	feedCh := make(chan *neo.Killmail)
+
+	go func(ctx context.Context, output chan *neo.Killmail) {
+		r.Logger.Println("hello")
+
+		feed := r.Redis.Subscribe("killmail-feed")
+
+		_, err := feed.Receive()
+		if err != nil {
+			return
+		}
+
+		subCh := feed.Channel()
+		r.Logger.WithFields(logrus.Fields{
+			"len": len(subCh),
+			"cap": cap(subCh),
+		}).Info("successfully created feedCh")
+
+		for {
+			r.Logger.WithFields(logrus.Fields{
+				"len": len(subCh),
+				"cap": cap(subCh),
+			}).Infoln()
+
+			select {
+			case <-ctx.Done():
+				close(output)
+				r.Logger.Info("ctx.Done, hanging up")
+				return
+			case msg := <-subCh:
+				var killmail = new(neo.Killmail)
+				err = json.Unmarshal([]byte(msg.Payload), killmail)
+				if err != nil {
+					r.Logger.WithError(err).Error("failed to unmarshal feed payload")
+				}
+				r.Logger.WithField("id", killmail.ID).WithField("hash", killmail.Hash).Info("pushing message to feed")
+				output <- killmail
+				break
+			}
+		}
+
+	}(ctx, feedCh)
+
+	return feedCh, err
+
 }
 
 func (r *Resolver) Killmail() service.KillmailResolver {

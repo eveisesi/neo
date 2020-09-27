@@ -10,4 +10,8 @@ type Mutation {
     mutationPlaceholder: Boolean!
 }
 
+type Subscription {
+    killmailFeed: Killmail
+}
+
 scalar Time

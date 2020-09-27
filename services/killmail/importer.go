@@ -315,11 +315,19 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		return nil, err
 	}
 
-	entry.Info("killmail successfully imported")
+	entry.Info("killmail successfully imported, publishing to feed")
 
-	// wg.Wait()
+	feedPayload, err := json.Marshal(killmail)
+	if err != nil {
+		entry.WithError(err).Error("failed to marshal payload for feed")
+		return killmail, nil
+	}
+	err = s.redis.Publish("killmail-feed", feedPayload).Err()
+	if err != nil {
+		entry.WithError(err).Error("failed to publish payload to feed")
+	}
 
-	return nil, nil
+	return killmail, nil
 }
 
 func (s *service) calcIsAwox(ctx context.Context, killmail *neo.Killmail) bool {

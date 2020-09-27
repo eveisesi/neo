@@ -11,6 +11,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gorilla/websocket"
+
 	"github.com/vektah/gqlparser/v2/ast"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -150,13 +152,21 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 				},
 				Dataloader: CtxLoaders,
 				Logger:     s.logger,
+				Redis:      s.redis,
 			},
 		})
 
 		gqlhandler := handler.New(schema)
 		gqlhandler.AddTransport(transport.GET{})
 		gqlhandler.AddTransport(transport.POST{})
-		gqlhandler.AddTransport(transport.Websocket{})
+		gqlhandler.AddTransport(transport.Websocket{
+			KeepAlivePingInterval: time.Second * 5,
+			Upgrader: websocket.Upgrader{
+				CheckOrigin: func(r *http.Request) bool {
+					return true
+				},
+			},
+		})
 		gqlhandler.Use(extension.Introspection{})
 
 		gqlhandler.AroundOperations(func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
