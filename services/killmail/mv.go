@@ -32,7 +32,7 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 
 	modsMarshaled, err := json.Marshal(operators)
 	if err != nil {
-		fmt.Println(err)
+		return nil, err
 	}
 
 	var key = format.Formatm(neo.REDIS_MV_KILLMAILS, format.Values{

@@ -41,6 +41,21 @@ type Services struct {
 	Search
 }
 
+func NewResolver(
+	ctxLoaders func(ctx context.Context) dataloaders.Loaders,
+	logger *logrus.Logger,
+	redis *redis.Client,
+	services Services,
+) *Resolver {
+
+	return &Resolver{
+		Services:   services,
+		Dataloader: ctxLoaders,
+		Logger:     logger,
+		Redis:      redis,
+	}
+}
+
 var (
 	err error
 )

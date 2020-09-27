@@ -141,19 +141,14 @@ func (s *Server) RegisterRoutes() *chi.Mux {
 		r.Use(NewStructuredLogger(s.logger))
 
 		schema := service.NewExecutableSchema(service.Config{
-			Resolvers: &resolvers.Resolver{
-				Services: resolvers.Services{
-					Killmail:    s.killmail,
-					Alliance:    s.alliance,
-					Corporation: s.corporation,
-					Character:   s.character,
-					Universe:    s.universe,
-					Search:      s.search,
-				},
-				Dataloader: CtxLoaders,
-				Logger:     s.logger,
-				Redis:      s.redis,
-			},
+			Resolvers: resolvers.NewResolver(CtxLoaders, s.logger, s.redis, resolvers.Services{
+				Killmail:    s.killmail,
+				Alliance:    s.alliance,
+				Corporation: s.corporation,
+				Character:   s.character,
+				Universe:    s.universe,
+				Search:      s.search,
+			}),
 		})
 
 		gqlhandler := handler.New(schema)

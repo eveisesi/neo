@@ -8,7 +8,6 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/graphql/models"
 	"github.com/eveisesi/neo/graphql/service"
-	"github.com/sirupsen/logrus"
 )
 
 func (r *queryResolver) Killmail(ctx context.Context, id int) (*neo.Killmail, error) {
@@ -40,7 +39,7 @@ func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Categ
 	case models.CategoryAll, models.CategoryKill:
 		switch *entity {
 		case models.EntityAll:
-			mails, err = r.Services.Killmail.MostValuable(ctx, "none", 0, *age, *limit)
+			mails, err = r.Services.MostValuable(ctx, "none", 0, *age, *limit)
 		case models.EntityCharacter:
 			mails, err = r.Services.MostValuable(ctx, "attackers.characterID", uint64(*id), *age, *limit)
 		case models.EntityCorporation:
@@ -133,21 +132,15 @@ func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Ki
 			return
 		}
 
-		subCh := feed.Channel()
-		r.Logger.WithFields(logrus.Fields{
-			"len": len(subCh),
-			"cap": cap(subCh),
-		}).Info("successfully created feedCh")
+		subCh := feed.ChannelSize(1)
+		r.Logger.Info("successfully created feedCh")
 
 		for {
-			r.Logger.WithFields(logrus.Fields{
-				"len": len(subCh),
-				"cap": cap(subCh),
-			}).Infoln()
 
 			select {
 			case <-ctx.Done():
 				close(output)
+				feed.Close()
 				r.Logger.Info("ctx.Done, hanging up")
 				return
 			case msg := <-subCh:
