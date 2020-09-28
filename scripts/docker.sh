@@ -1,3 +1,5 @@
+git fetch --all
+
 latest=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | tr - \~ | sort -V | tr \~ - | tail -1 | tr -d \v)
 
 feimage="docker.pkg.github.com/eveisesi/neo/frontend:${latest}"
