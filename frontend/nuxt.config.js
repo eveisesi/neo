@@ -1,5 +1,3 @@
-import { API_URL, WSS_URL } from './util/const/urls'
-
 export default {
   // Global page headers (https://go.nuxtjs.dev/config-head)
   head: {
@@ -51,8 +49,8 @@ export default {
   },
 
   env: {
-    apiURL: API_URL,
-    wssURL: WSS_URL
+    apiUrl: process.env.API_URL,
+    wssUrl: process.env.WSS_URL
   },
 
   // Build Configuration (https://go.nuxtjs.dev/config-build)

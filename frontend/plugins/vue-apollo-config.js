@@ -1,8 +1,8 @@
-export default (ctx) => {
+export default () => {
 
     const output = {
-        httpEndpoint: ctx.env.apiURL,
-        wsEndpoint: ctx.env.wssURL,
+        httpEndpoint: process.env.apiUrl,
+        wsEndpoint: process.env.wssUrl,
     }
 
     return output

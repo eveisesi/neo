@@ -3,6 +3,4 @@ export default ({ app }) => {
 
     client.wsClient.lazy = true
     client.wsClient.reconnect = true
-
-    console.log(client.wsClient)
 }
