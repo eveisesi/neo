@@ -184,9 +184,8 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 				entry.Fatal("maximum allowed attempts reeached")
 			}
 
-			entry.Info("pulling killmail history for date")
-
 			uri := fmt.Sprintf(neo.ZKILLBOARD_HISTORY_API, current.Format("20060102"))
+			entry.WithField("uri", uri).Info("pulling killmail history for date")
 
 			request, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 			if err != nil {
@@ -203,7 +202,6 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			// extSeg.End()
 
 			entry = entry.WithField("code", response.StatusCode)
-
 			if response.StatusCode != 200 {
 				entry.Fatal("unexpected status code recieved")
 			}
@@ -254,8 +252,8 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 				ids[i] = id
 				i++
 			}
-
-			killmails, err := s.Killmails(ctx, neo.NewInOperator("id", ids))
+			countKillmailsFilters := append(countKillmailsFilters, neo.NewInOperator("id", ids))
+			killmails, err := s.Killmails(ctx, countKillmailsFilters...)
 			if err != nil {
 				entry.WithError(err).Error("failed to query killmails for array of killIDs")
 				return
