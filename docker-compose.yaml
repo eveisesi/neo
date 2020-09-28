@@ -69,7 +69,7 @@ services:
         volumes:
             - ./logs:/app/logs
     ui:
-        image: frontend-image
+        image: ${FRONTEND_IMAGE}
         restart: on-failure
         container_name: ui
         hostname: ui
