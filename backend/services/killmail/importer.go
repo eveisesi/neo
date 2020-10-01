@@ -114,7 +114,8 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 	member := &redis.Z{Score: float64(killmail.ID), Member: msg}
 	if s.config.SlackNotifierEnabled {
 		threshold := s.config.SlackNotifierValueThreshold * 1000000
-		if killmail.TotalValue >= float64(threshold) {
+		now := time.Now()
+		if killmail.TotalValue >= float64(threshold) && killmail.KillmailTime.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
 			_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
 			if err != nil {
 				entry.WithError(err).Error("failed to publish message to notifications queue")
