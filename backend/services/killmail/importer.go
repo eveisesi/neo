@@ -103,23 +103,38 @@ func (s *service) handleMessage(ctx context.Context, message []byte, workerID in
 		return
 	}
 
-	msg, err := json.Marshal(neo.Message{
-		ID:   killmail.ID,
-		Hash: killmail.Hash,
-	})
-	if err != nil {
-		entry.WithError(err).Error("failed to marshal message for stats queue")
-		return
-	}
-	member := &redis.Z{Score: float64(killmail.ID), Member: msg}
-	if s.config.SlackNotifierEnabled {
-		threshold := s.config.SlackNotifierValueThreshold * 1000000
-		now := time.Now()
-		if killmail.TotalValue >= float64(threshold) && killmail.KillmailTime.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
-			_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
-			if err != nil {
-				entry.WithError(err).Error("failed to publish message to notifications queue")
+	now := time.Now()
+
+	if killmail.KillmailTime.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
+		msg, err := json.Marshal(neo.Message{
+			ID:   killmail.ID,
+			Hash: killmail.Hash,
+		})
+		if err != nil {
+			entry.WithError(err).Error("failed to marshal message for stats queue")
+			return
+		}
+		member := &redis.Z{Score: float64(killmail.ID), Member: msg}
+		if s.config.SlackNotifierEnabled {
+			threshold := s.config.SlackNotifierValueThreshold * 1000000
+			now := time.Now()
+			if killmail.TotalValue >= float64(threshold) && killmail.KillmailTime.After(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)) {
+				_, err = s.redis.ZAdd(ctx, neo.QUEUES_KILLMAIL_NOTIFICATION, member).Result()
+				if err != nil {
+					entry.WithError(err).Error("failed to publish message to notifications queue")
+				}
 			}
+		}
+
+		feedPayload, err := json.Marshal(killmail)
+		if err != nil {
+			entry.WithError(err).Error("failed to marshal payload for feed")
+			return
+		}
+		entry.Info("killmail successfully imported, publishing to feed")
+		err = s.redis.Publish(ctx, "killmail-feed", feedPayload).Err()
+		if err != nil {
+			entry.WithError(err).Error("failed to publish payload to feed")
 		}
 	}
 
@@ -316,17 +331,7 @@ func (s *service) ProcessMessage(ctx context.Context, entry *logrus.Entry, messa
 		return nil, err
 	}
 
-	entry.Info("killmail successfully imported, publishing to feed")
-
-	feedPayload, err := json.Marshal(killmail)
-	if err != nil {
-		entry.WithError(err).Error("failed to marshal payload for feed")
-		return killmail, nil
-	}
-	err = s.redis.Publish(ctx, "killmail-feed", feedPayload).Err()
-	if err != nil {
-		entry.WithError(err).Error("failed to publish payload to feed")
-	}
+	entry.Info("killmail successfully imported")
 
 	return killmail, nil
 }
