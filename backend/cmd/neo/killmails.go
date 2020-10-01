@@ -93,11 +93,20 @@ func killmail() cli.Command {
 				Usage: "Reaches out to the Zkillboard API and downloads historical killmail hashes, then reaches out to CCP for Killmail Data",
 				Action: func(c *cli.Context) error {
 					app := core.New("f", false)
+					const desc = "desc"
+					const asc = "asc"
 
 					startDate := c.String("startDate")
 					endDate := c.String("endDate")
-					incrementer := c.Int64("incrementer")
-					stats := c.Bool("stats")
+					var incrementer int64
+					if c.String("incrementer") != desc && c.String("incrementer") != asc {
+						return cli.NewExitError("incrementer must be one of asc or desc", 1)
+					} else if c.String("incrementer") == asc {
+						incrementer = 1
+					} else {
+						incrementer = -1
+					}
+					stats := c.Bool("stats")``
 
 					app.History.Run(startDate, endDate, incrementer, stats)
 
@@ -114,7 +123,7 @@ func killmail() cli.Command {
 						Usage:    "Date to stop the history loop at when calling zkillboard history api. (Format: YYYYMMDD)",
 						Required: true,
 					},
-					cli.Int64Flag{
+					cli.StringFlag{
 						Name:     "incrementer",
 						Usage:    "Direction to traverse dates in. Option are min and max. If min, script will start at the provided mindate and increment one day to max. If max, script will start at maxdate and decrement to min.",
 						Required: true,

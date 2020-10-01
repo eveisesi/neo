@@ -1,0 +1,14 @@
+version: "3.7"
+
+services:
+    history:
+        image: ${BACKEND_IMAGE}
+        network_mode: "host"
+        command: ./neo killmail history --startDate ${START_DATE} --endDate ${END_DATE} --incrementer ${INCREMENTER}
+        container_name: history
+        hostname: history
+        env_file:
+            - backend/.env
+        volumes:
+            - ./logs:/app/logs
+            - ./static:/app/static
