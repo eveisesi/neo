@@ -106,7 +106,7 @@ func killmail() cli.Command {
 					} else {
 						incrementer = -1
 					}
-					stats := c.Bool("stats")``
+					stats := c.Bool("stats")
 
 					app.History.Run(startDate, endDate, incrementer, stats)
 
