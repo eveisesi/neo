@@ -48,19 +48,19 @@ export default {
     apollo: {
         killmails: {
             query: RECENT_KILLMAILS,
-            subscribeToMore: [
-                {
-                    document: KILLMAIL_FEED,
-                    updateQuery: (previous, { subscriptionData }) => {
-                        const newKill = subscriptionData.data.feed;
-                        received++;
-                        console.log(previous, received);
-                        previous.killmails.unshift(newKill);
-                        previous.killmails.pop();
-                        return previous;
-                    },
-                },
-            ],
+            // subscribeToMore: [
+            //     {
+            //         document: KILLMAIL_FEED,
+            //         updateQuery: (previous, { subscriptionData }) => {
+            //             const newKill = subscriptionData.data.feed;
+            //             received++;
+            //             console.log(previous, received);
+            //             previous.killmails.unshift(newKill);
+            //             previous.killmails.pop();
+            //             return previous;
+            //         },
+            //     },
+            // ],
         },
         mv: {
             query: MOST_VALUABLE,
@@ -78,21 +78,6 @@ export default {
             return AbbreviateNumber(total);
         },
     },
-    // mounted() {
-    //     const feedQuery = KILLMAIL_FEED;
-    //     const listener = this.$apollo.subscribe({
-    //         query: feedQuery,
-    //     });
-
-    //     listener.subscribe({
-    //         next(data) {
-    //             console.log(data, this.killmails);
-    //         },
-    //         error(error) {
-    //             console.error(error);
-    //         },
-    //     });
-    // },
 };
 </script>
 

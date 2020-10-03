@@ -158,7 +158,7 @@ func (s *service) RecentKillmails(ctx context.Context, page int) ([]*neo.Killmai
 	}
 
 	if len(killmails) > 0 {
-		entry.Info("cache hit. returning results")
+		entry.Info("cache hit. returning killmails")
 		return killmails, nil
 	}
 	entry.Info("cache miss, fetch results from db")

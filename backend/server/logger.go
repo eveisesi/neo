@@ -36,7 +36,7 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 		logFields["req_id"] = reqID
 	}
 
-	logFields["user_agent"] = r.UserAgent()
+	// logFields["user_agent"] = r.UserAgent()
 
 	logFields["remote_addr"] = r.RemoteAddr
 

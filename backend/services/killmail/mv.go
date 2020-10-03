@@ -9,6 +9,7 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/sirkon/go-format"
+	"github.com/sirupsen/logrus"
 
 	"github.com/eveisesi/neo"
 )
@@ -41,21 +42,34 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 		"mods": fmt.Sprintf("%x", sha256.Sum256(modsMarshaled)),
 	})
 
-	killmails, err := s.KillmailsFromCache(ctx, key)
-	if err != nil {
-		return nil, err
-	}
+	entry := s.logger.WithFields(logrus.Fields{
+		"key":   key,
+		"class": "MostValuable",
+	})
+	entry.Info("checking cache")
+	var killmails = make([]*neo.Killmail, 0)
+	// killmails, err := s.KillmailsFromCache(ctx, key)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	if len(killmails) > 0 {
+		entry.Info("cache hit. returning killmails")
 		return killmails, nil
 	}
+	entry.Info("cache miss, fetch results from db")
 
 	killmails, err = s.killmails.Killmails(ctx, operators...)
 	if err != nil {
 		return nil, err
 	}
 
-	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute)
+	entry = entry.WithField("count", len(killmails))
+	// entry.Info("killmails retrieve, caching results")
+
+	// err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute)
+
+	entry.Info("return killmails")
 
 	return killmails, err
 }

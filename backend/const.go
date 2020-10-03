@@ -75,6 +75,7 @@ const BACKUP_KILLMAIL_RAW_NAME_FORMAT = "%s/%d-%s.json"
 // NEO Queues
 const QUEUE_STOP = "neo:queue:stop"
 const QUEUES_KILLMAIL_PROCESSING = "neo:killmails:processing"
+const QUEUES_KILLMAIL_DLQ = "neo:killmails:dlq"
 const QUEUES_KILLMAIL_RECALCULATE = "neo:killmails:recalculate"
 const QUEUES_KILLMAIL_BACKUP = "neo:killmails:backup"
 const QUEUES_KILLMAIL_STATS = "neo:killmails:stats"

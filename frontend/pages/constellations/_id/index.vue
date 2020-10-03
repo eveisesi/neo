@@ -26,7 +26,7 @@
                         <b-tr v-if="information.region">
                             <b-td>Region</b-td>
                             <b-td>
-                                <router-link :to="{name:'region', params:{id: information.region.id}}">{{information.region.name}}</router-link>
+                                <router-link :to="'/regions/' + information.region.id">{{information.region.name}}</router-link>
                             </b-td>
                         </b-tr>
                     </b-tbody>

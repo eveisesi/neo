@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -121,11 +122,16 @@ func NewServer(
 		universe:    universe,
 	}
 
+	w := logger.Writer()
+
 	s.server = &http.Server{
-		Addr:         fmt.Sprintf(":%d", port),
-		ReadTimeout:  time.Second * 15,
-		WriteTimeout: time.Second * 15,
-		Handler:      s.RegisterRoutes(),
+		Addr:              fmt.Sprintf(":%d", port),
+		ReadTimeout:       time.Second * 5,
+		WriteTimeout:      time.Second * 5,
+		ReadHeaderTimeout: time.Second * 5,
+		IdleTimeout:       time.Second * 5,
+		ErrorLog:          log.New(w, "", 0),
+		Handler:           s.RegisterRoutes(),
 	}
 
 	return &s

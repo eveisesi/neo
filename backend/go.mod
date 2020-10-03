@@ -3,7 +3,7 @@ module github.com/eveisesi/neo
 go 1.14
 
 require (
-	github.com/99designs/gqlgen v0.11.3
+	github.com/99designs/gqlgen v0.13.0
 	github.com/RediSearch/redisearch-go v1.0.0
 	github.com/aws/aws-sdk-go v1.32.6
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
@@ -12,10 +12,8 @@ require (
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/go-chi/chi v3.3.2+incompatible
 	github.com/go-openapi/strfmt v0.19.5 // indirect
-	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-redis/redis/v8 v8.2.2
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
-	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/gomodule/redigo v1.8.1 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
@@ -36,7 +34,7 @@ require (
 	github.com/sirupsen/logrus v1.5.0
 	github.com/slack-go/slack v0.6.4
 	github.com/urfave/cli v1.22.3
-	github.com/vektah/gqlparser/v2 v2.0.1
+	github.com/vektah/gqlparser/v2 v2.1.0
 	github.com/volatiletech/inflect v0.0.0-20170731032912-e7201282ae8d // indirect
 	github.com/volatiletech/null v8.0.0+incompatible
 	github.com/volatiletech/sqlboiler v3.6.1+incompatible // indirect
@@ -50,5 +48,4 @@ require (
 	google.golang.org/appengine v1.6.1 // indirect
 	google.golang.org/genproto v0.0.0-20191108220845-16a3f7862a1a // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gopkg.in/src-d/go-git.v4 v4.13.1 // indirect
 )

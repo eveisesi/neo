@@ -16,6 +16,8 @@ func (r *queryResolver) Killmail(ctx context.Context, id int) (*neo.Killmail, er
 
 func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.Killmail, error) {
 
+	r.Logger.Info("Start KillmailRecent")
+	defer r.Logger.Info("End KillmailRecent")
 	if *page > 10 {
 		*page = 10
 	}
@@ -25,6 +27,8 @@ func (r *queryResolver) KillmailRecent(ctx context.Context, page *int) ([]*neo.K
 
 func (r *queryResolver) MvByEntityID(ctx context.Context, category *models.Category, entity *models.Entity, id *int, age *int, limit *int) ([]*neo.Killmail, error) {
 
+	r.Logger.Info("Start MvByEntityID")
+	defer r.Logger.Info("End MvByEntityID")
 	if *age > 14 {
 		*age = 14
 	}

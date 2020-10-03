@@ -107,9 +107,9 @@ func New(command string, debug bool) *App {
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:               cfg.RedisAddr,
-		MaxRetries:         3,
-		IdleTimeout:        time.Second * 30,
-		IdleCheckFrequency: time.Second * 15,
+		MaxRetries:         5,
+		IdleTimeout:        time.Second * 10,
+		IdleCheckFrequency: time.Second * 5,
 	})
 
 	_, err = redisClient.Ping(context.Background()).Result()

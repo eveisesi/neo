@@ -37,10 +37,21 @@
                     </nuxt-link>
                 </b-td>
                 <b-td class="text-center">
-                    <img
-                        :src="EVEONLINE_IMAGE+'types/'+(killmail.victim.ship != null ? killmail.victim.ship.id :1 )+'/render?size=64'"
-                        class="rounded"
-                    />
+                    <b-link
+                        :href="'/kill/' + killmail.id"
+                        :id="'ship-link-detail-'+killmail.id"
+                    >
+                        <img
+                            :src="EVEONLINE_IMAGE+'types/'+(killmail.victim.ship != null ? killmail.victim.ship.id :1 )+'/render?size=64'"
+                            class="rounded"
+                        />
+                    </b-link>
+                    <b-tooltip
+                        :target="'ship-link-detail-'+killmail.id"
+                        triggers="hover"
+                    >
+                        Detail for {{killmail.id}}
+                    </b-tooltip>
                 </b-td>
                 <b-td>
                     <nuxt-link :to="'/systems/' + killmail.system.id">{{killmail.system.name}}</nuxt-link>
@@ -181,9 +192,9 @@ export default {
 
 <style scoped>
 .success {
-    background: #006400;
+    background: #001600;
 }
 .danger {
-    background: #a12121;
+    background: #2f0202;
 }
 </style>
