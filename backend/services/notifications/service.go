@@ -201,7 +201,7 @@ func (s *service) processMessage(msg neo.Message) {
 
 	blockElementSlc := make([]goslack.BlockElement, 0)
 	killmailActionButton := goslack.NewButtonBlockElement("view_killmail", "View Killmail", goslack.NewTextBlockObject(goslack.PlainTextType, "View Killmail", false, false))
-	killmailActionButton.URL = fmt.Sprintf("%s/kill/%d/%s", s.config.SlackActionBaseURL, killmail.ID, killmail.Hash)
+	killmailActionButton.URL = fmt.Sprintf("%s/kill/%d", s.config.SlackActionBaseURL, killmail.ID)
 	blockElementSlc = append(blockElementSlc, killmailActionButton)
 	if killmail.Victim.Character != nil {
 		victimActionButton := goslack.NewButtonBlockElement("view_victim", "View Victim", goslack.NewTextBlockObject(goslack.PlainTextType, "View Victim", false, false))
@@ -249,9 +249,9 @@ func (s *service) processMessage(msg neo.Message) {
 		return
 	}
 
-	body := bytes.NewBuffer(b)
+	s.logger.WithField("payload", string(b)).Infoln()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.config.SlackNotifierWebhookURL, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.config.SlackNotifierWebhookURL, bytes.NewBuffer(b))
 	if err != nil {
 		txn.NoticeError(err)
 		entry.WithError(err).Error("failed to build webhook request to slack webhook")

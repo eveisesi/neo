@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# Makes it easier to tag git repos using semantic versioning
+
+usage=$(cat <<-END
+    semver [rc|p|m|M|h] [description]
+    M for major, m for minor, p for patch, rc to increment release candidate. h/help for this message
+    If not on master branch, it will add an rc to the tag.
+    If on master branch and latest tag is a release candidate, it will remove the release candidate suffix but keep the version
+END
+)
+
+# lists all semver tags, replaces - with ~, sorts by version, replaces ~ back to -, and takes the last item
+# replacing - with ~ and back again was a trick on stack overflow to get the correct sort order
+latestTag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | tr - \~ | sort -V | tr \~ - | tail -1)
+currentBranch=$(git rev-parse --abbrev-ref HEAD)
+arg="$1"
+if [[ -z "${latestTag}" ]]
+then
+  echo "no semver tags found"
+  latestTag="v0.0.0"
+fi
+
+if [[ $currentBranch == "main" ]] && [[ $latestTag == *"rc"* ]]
+then
+  newTag=${latestTag%-*}
+  description="${@}"
+else
+  if [[ $# -eq 0 ]]
+  then
+    echo "Current tag: ${latestTag}"
+    echo "${usage}"
+    echo "Enter a valid argument (q to quit): "
+    read arg
+  fi
+
+  case "$arg" in
+    "-rc"|"rc")
+      newTag=$(echo $latestTag | awk -F'[v .-]|rc' '{print "v"$2"."$3"."$4"-rc"$6+1}')
+      ;;
+    "-p"|"p"|"-patch"|"patch")
+      newTag=$(echo $latestTag | awk -F'[v .-]' '{print "v"$2"."$3"."$4+1}')
+      ;;
+    "-m"|"m"|"-minor"|"minor")
+      newTag=$(echo $latestTag | awk -F'[v .-]' '{print "v"$2"."$3+1".0"}')
+      ;;
+    "-M"|"M"|"-major"|"major"|"Major")
+      newTag=$(echo $latestTag | awk -F'[v .-]' '{print "v"$2+1".0.0"}')
+      ;;
+    "-h"|"h"|"-help"|"help"|"--help")
+      echo $usage
+      exit 0
+      ;;
+    "q"|"quit")
+      exit 0
+      ;;
+    *)
+      echo "Invalid argument"
+      exit 1
+      ;;
+  esac
+
+  if [[ $currentBranch != "main" ]] && [[ $newTag != *"rc"* ]]
+  then
+    newTag="${newTag}-rc1"
+  fi
+
+  description="${@:2}"
+fi
+
+echo "${latestTag} --> ${newTag}. Confirm tag and push to origin? (description: ${description}) [y/n]:"
+read doPush
+if [[ "${doPush}" == "y" ]]
+then
+  git tag -a ${newTag} -m "$description"
+  if [ $? -eq 0 ]
+  then
+    git push --tags origin trunk
+    if [ $? -eq 0 ]
+    then
+      echo "tagged and pushed successfully"
+      exit 0
+    else
+      echo "error when pushing to origin. please push manually"
+      exit 1
+    fi
+  else
+    echo "error when tagging. please tag and push manually"
+    exit 1
+  fi
+else
+  echo "operation cancelled"
+  exit 0
+fi
