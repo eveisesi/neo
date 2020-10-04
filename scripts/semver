@@ -75,7 +75,7 @@ then
   git tag -a ${newTag} -m "$description"
   if [ $? -eq 0 ]
   then
-    git push --tags origin trunk
+    git push --tags origin main
     if [ $? -eq 0 ]
     then
       echo "tagged and pushed successfully"
