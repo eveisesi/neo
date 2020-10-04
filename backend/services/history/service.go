@@ -238,7 +238,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			}
 
 			// We want to be able to perform bulk lookups to the DB, so we need to convert this map[string]string to a slice of ints
-			ids := make([]neo.ModValue, len(hashes))
+			ids := make([]neo.OpValue, len(hashes))
 			i := 0
 			for killID, hash := range hashes {
 				id, err := strconv.Atoi(killID)

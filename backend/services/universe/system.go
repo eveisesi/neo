@@ -41,7 +41,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 			return nil, errors.Wrap(err, "unable to marshal system for cache")
 		}
 
-		_, err = s.redis.Set(ctx, key, bSystem, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSystem, time.Hour).Result()
 
 		return system, errors.Wrap(err, "failed to cache solar system in redis")
 	}
@@ -63,7 +63,7 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 		return system, errors.Wrap(err, "unable to marshal system for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour).Result()
 
 	return system, errors.Wrap(err, "failed to cache solar system in redis")
 }
@@ -71,32 +71,43 @@ func (s *service) SolarSystem(ctx context.Context, id uint) (*neo.SolarSystem, e
 func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) ([]*neo.SolarSystem, error) {
 
 	var systems = make([]*neo.SolarSystem, 0)
-	for _, v := range ids {
-		key := fmt.Sprintf(neo.REDIS_SYSTEM, v)
-		result, err := s.redis.Get(ctx, key).Bytes()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			return nil, errors.Wrap(err, "encountered error querying redis")
+
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf(neo.REDIS_SYSTEM, id)
+	}
+
+	results, err := s.redis.MGet(ctx, keys...).Result()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, errors.Wrap(err, "encountered error querying redis")
+	}
+
+	for i, resultInt := range results {
+		if resultInt == nil {
+			continue
 		}
 
-		if len(result) > 0 {
+		switch result := resultInt.(type) {
+		case string:
+			if len(result) > 0 {
+				var system = new(neo.SolarSystem)
+				err = json.Unmarshal([]byte(result), system)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to unmarshal system bytes into struct")
+				}
 
-			var system = new(neo.SolarSystem)
-			err = json.Unmarshal(result, system)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to unmarshal system bytes into struct")
+				systems = append(systems, system)
 			}
-
-			systems = append(systems, system)
-
+		default:
+			panic(fmt.Sprintf("unexpected type received from redis. expected string, got %#T. redis key is %s", result, keys[i]))
 		}
-
 	}
 
 	if len(ids) == len(systems) {
 		return systems, nil
 	}
 
-	var missing []neo.ModValue
+	var missing []neo.OpValue
 	for _, id := range ids {
 		found := false
 		for _, system := range systems {
@@ -119,20 +130,30 @@ func (s *service) SolarSystemsBySolarSystemIDs(ctx context.Context, ids []uint) 
 		return nil, errors.Wrap(err, "failed to query db for missing solar system ids")
 	}
 
+	keyMap := make(map[string]interface{})
+
 	for _, system := range dbSystems {
+		systems = append(systems, system)
+
 		key := fmt.Sprintf(neo.REDIS_SYSTEM, system.ID)
 
 		byteSlice, err := json.Marshal(system)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to marshal system to slice of bytes")
+			s.logger.WithError(err).WithField("id", system.ID).Error("unable to marshal system to slice of bytes")
+			continue
 		}
 
-		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to cache solar system in redis")
-		}
+		keyMap[key] = string(byteSlice)
 
-		systems = append(systems, system)
+	}
+
+	_, err = s.redis.MSet(ctx, keyMap).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to cache systems in redis")
+	}
+
+	for i := range keyMap {
+		s.redis.Expire(ctx, i, time.Hour)
 	}
 
 	return systems, nil

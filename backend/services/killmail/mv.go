@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/eveisesi/neo"
 	"github.com/iancoleman/strcase"
 	"github.com/sirkon/go-format"
 	"github.com/sirupsen/logrus"
-
-	"github.com/eveisesi/neo"
 )
 
 func (s *service) MostValuable(ctx context.Context, column string, id uint64, age, limit int) ([]*neo.Killmail, error) {
@@ -47,11 +46,10 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 		"class": "MostValuable",
 	})
 	entry.Info("checking cache")
-	var killmails = make([]*neo.Killmail, 0)
-	// killmails, err := s.KillmailsFromCache(ctx, key)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	killmails, err := s.KillmailsFromCache(ctx, key)
+	if err != nil {
+		return nil, err
+	}
 
 	if len(killmails) > 0 {
 		entry.Info("cache hit. returning killmails")
@@ -65,9 +63,9 @@ func (s *service) MostValuable(ctx context.Context, column string, id uint64, ag
 	}
 
 	entry = entry.WithField("count", len(killmails))
-	// entry.Info("killmails retrieve, caching results")
+	entry.Info("killmails retrieve, caching results")
 
-	// err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute)
+	err = s.CacheKillmailSlice(ctx, key, killmails, time.Minute)
 
 	entry.Info("return killmails")
 

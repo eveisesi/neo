@@ -45,7 +45,7 @@ func (s *service) Killmail(ctx context.Context, id uint) (*neo.Killmail, error) 
 		return nil, errors.Wrap(err, "unable to marshal killmail for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlc, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlc, time.Hour).Result()
 
 	return killmail, errors.Wrap(err, "failed to cache killmail in redis")
 

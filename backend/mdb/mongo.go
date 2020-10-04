@@ -2,6 +2,7 @@ package mdb
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/eveisesi/neo"
@@ -66,7 +67,6 @@ func BuildFilters(operators ...*neo.Operator) primitive.D {
 		case neo.ExistsOp:
 			ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: exists, Value: a.Value.(bool)}}})
 		case neo.OrOp:
-
 			switch o := a.Value.(type) {
 			case []*neo.Operator:
 				arr := make(primitive.A, 0)
@@ -77,7 +77,7 @@ func BuildFilters(operators ...*neo.Operator) primitive.D {
 
 				ops = append(ops, primitive.E{Key: or, Value: arr})
 			default:
-				// Invalid type provided. Skip over and don't evaluate
+				panic(fmt.Sprintf("valid type %#T supplied, expected one of [[]*neo.Operator]", o))
 			}
 
 		case neo.AndOp:
@@ -89,6 +89,8 @@ func BuildFilters(operators ...*neo.Operator) primitive.D {
 				}
 
 				ops = append(ops, primitive.E{Key: and, Value: arr})
+			default:
+				panic(fmt.Sprintf("valid type %#T supplied, expected one of [[]*neo.Operator]", o))
 			}
 
 		case neo.InOp:
@@ -100,6 +102,8 @@ func BuildFilters(operators ...*neo.Operator) primitive.D {
 				}
 
 				ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: in, Value: arr}}})
+			default:
+				panic(fmt.Sprintf("valid type %#T supplied, expected one of [[]neo.OpValue]", o))
 			}
 		case neo.NotInOp:
 			switch o := a.Value.(type) {
@@ -110,6 +114,8 @@ func BuildFilters(operators ...*neo.Operator) primitive.D {
 				}
 
 				ops = append(ops, primitive.E{Key: a.Column, Value: primitive.D{primitive.E{Key: notin, Value: arr}}})
+			default:
+				panic(fmt.Sprintf("valid type %#T supplied, expected one of [[]neo.OpValue]", o))
 			}
 		}
 	}

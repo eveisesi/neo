@@ -39,7 +39,7 @@ func (s *service) BlueprintMaterials(ctx context.Context, id uint) ([]*neo.Bluep
 		return nil, errors.Wrap(err, "unable to marshal type for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour).Result()
 
 	return materials, errors.Wrap(err, "failed to cache type in redis")
 }

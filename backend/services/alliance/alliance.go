@@ -41,7 +41,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 			return nil, errors.Wrap(err, "unable to marshal alliance for cache")
 		}
 
-		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Hour).Result()
 
 		return alliance, errors.Wrap(err, "failed to cache alliance in redis")
 	}
@@ -67,7 +67,7 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 		return alliance, errors.Wrap(err, "unable to marshal alliance for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour).Result()
 
 	return alliance, errors.Wrap(err, "failed to cache solar alliance in redis")
 }
@@ -75,23 +75,36 @@ func (s *service) Alliance(ctx context.Context, id uint) (*neo.Alliance, error) 
 func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*neo.Alliance, error) {
 
 	var alliances = make([]*neo.Alliance, 0)
-	for _, id := range ids {
-		key := fmt.Sprintf(neo.REDIS_ALLIANCE, id)
-		result, err := s.redis.Get(ctx, key).Bytes()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			return nil, errors.Wrap(err, "encountered error querying redis")
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf(neo.REDIS_ALLIANCE, id)
+	}
+
+	results, err := s.redis.MGet(ctx, keys...).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "encountered error querying redis")
+	}
+
+	for i, resultInt := range results {
+		if resultInt == nil {
+			continue
 		}
 
-		if len(result) > 0 {
+		switch result := resultInt.(type) {
+		case string:
+			if len(result) > 0 {
 
-			var alliance = new(neo.Alliance)
-			err = json.Unmarshal(result, alliance)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to unmarshal alliance bytes into struct")
+				var alliance = new(neo.Alliance)
+				err = json.Unmarshal([]byte(result), alliance)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to unmarshal alliance bytes into struct")
+				}
+
+				alliances = append(alliances, alliance)
+
 			}
-
-			alliances = append(alliances, alliance)
-
+		default:
+			panic(fmt.Sprintf("unexpected type received from redis. expected string, got %#T. redis key is %s", result, keys[i]))
 		}
 	}
 
@@ -99,7 +112,7 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return alliances, nil
 	}
 
-	var missing []neo.ModValue
+	var missing []neo.OpValue
 	for _, id := range ids {
 		found := false
 		for _, alliance := range alliances {
@@ -122,20 +135,29 @@ func (s *service) AlliancesByAllianceIDs(ctx context.Context, ids []uint) ([]*ne
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
 
+	keyMap := make(map[string]interface{})
+
 	for _, alliance := range dbTypes {
 		key := fmt.Sprintf(neo.REDIS_ALLIANCE, alliance.ID)
 
 		byteSlice, err := json.Marshal(alliance)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to marshal alliance to slice of bytes")
+			s.logger.WithError(err).WithField("id", alliance.ID).Error("unable to marshal alliance to slice of bytes")
+			continue
 		}
 
-		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to cache alliance in redis")
-		}
+		keyMap[key] = string(byteSlice)
 
 		alliances = append(alliances, alliance)
+	}
+
+	_, err = s.redis.MSet(ctx, keyMap).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to cache alliances in redis")
+	}
+
+	for i := range keyMap {
+		s.redis.Expire(ctx, i, time.Hour)
 	}
 
 	return alliances, nil

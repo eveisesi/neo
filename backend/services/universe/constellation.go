@@ -49,23 +49,34 @@ func (s *service) Constellation(ctx context.Context, id uint) (*neo.Constellatio
 func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []uint) ([]*neo.Constellation, error) {
 
 	var constellations = make([]*neo.Constellation, 0)
-	for _, id := range ids {
-		key := fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
-		result, err := s.redis.Get(ctx, key).Bytes()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			return nil, errors.Wrap(err, "encountered error querying redis")
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf(neo.REDIS_CONSTELLATION, id)
+	}
+
+	results, err := s.redis.MGet(ctx, keys...).Result()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, errors.Wrap(err, "encountered error querying redis")
+	}
+
+	for i, resultInt := range results {
+		if resultInt == nil {
+			continue
 		}
 
-		if len(result) > 0 {
+		switch result := resultInt.(type) {
+		case string:
+			if len(result) > 0 {
+				var constellation = new(neo.Constellation)
+				err = json.Unmarshal([]byte(result), constellation)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to unmarshal constellation bytes into struct")
+				}
 
-			var constellation = new(neo.Constellation)
-			err = json.Unmarshal(result, constellation)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to unmarshal constellation bytes into struct")
+				constellations = append(constellations, constellation)
 			}
-
-			constellations = append(constellations, constellation)
-
+		default:
+			panic(fmt.Sprintf("unexpected type received from redis. expected string, got %#T. redis key is %s", result, keys[i]))
 		}
 	}
 
@@ -73,7 +84,7 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return constellations, nil
 	}
 
-	var missing []neo.ModValue
+	var missing []neo.OpValue
 	for _, id := range ids {
 		found := false
 		for _, constellation := range constellations {
@@ -96,20 +107,30 @@ func (s *service) ConstellationsByConstellationIDs(ctx context.Context, ids []ui
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
 
+	keyMap := make(map[string]interface{})
+
 	for _, constellation := range dbConstellations {
+		constellations = append(constellations, constellation)
+
 		key := fmt.Sprintf(neo.REDIS_CONSTELLATION, constellation.ID)
 
 		byteSlice, err := json.Marshal(constellation)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to marshal constellation to slice of bytes")
+			s.logger.WithError(err).WithField("id", constellation.ID).Error("unable to marshal constellation to slice of bytes")
+			continue
 		}
 
-		_, err = s.redis.Set(ctx, key, byteSlice, time.Hour*24).Result()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to cache constellation in redis")
-		}
+		keyMap[key] = string(byteSlice)
 
-		constellations = append(constellations, constellation)
+	}
+
+	_, err = s.redis.MSet(ctx, keyMap).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to cache constellations in redis")
+	}
+
+	for i := range keyMap {
+		s.redis.Expire(ctx, i, time.Hour)
 	}
 
 	return constellations, nil

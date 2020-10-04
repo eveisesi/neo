@@ -43,7 +43,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 			return nil, errors.Wrap(err, "unable to marshal character for cache")
 		}
 
-		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Hour).Result()
 
 		return character, errors.Wrap(err, "failed to cache character in redis")
 	}
@@ -69,7 +69,7 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 		return character, errors.Wrap(err, "unable to marshal character for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour).Result()
 
 	return character, errors.Wrap(err, "failed to cache character in redis")
 }
@@ -77,23 +77,34 @@ func (s *service) Character(ctx context.Context, id uint64) (*neo.Character, err
 func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([]*neo.Character, error) {
 
 	var characters = make([]*neo.Character, 0)
-	for _, id := range ids {
-		key := fmt.Sprintf(neo.REDIS_CHARACTER, id)
-		result, err := s.redis.Get(ctx, key).Bytes()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			return nil, errors.Wrap(err, "encountered error querying redis")
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf(neo.REDIS_CHARACTER, id)
+	}
+
+	results, err := s.redis.MGet(ctx, keys...).Result()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, errors.Wrap(err, "encountered error querying redis")
+	}
+
+	for i, resultInt := range results {
+		if resultInt == nil {
+			continue
 		}
 
-		if len(result) > 0 {
+		switch result := resultInt.(type) {
+		case string:
+			if len(result) > 0 {
+				var character = new(neo.Character)
+				err = json.Unmarshal([]byte(result), character)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to unmarshal character bytes into struct")
+				}
 
-			var character = new(neo.Character)
-			err = json.Unmarshal(result, character)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to unmarshal character bytes into struct")
+				characters = append(characters, character)
 			}
-
-			characters = append(characters, character)
-
+		default:
+			panic(fmt.Sprintf("unexpected type received from redis. expected string, got %#T. redis key is %s", result, keys[i]))
 		}
 	}
 
@@ -101,7 +112,7 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return characters, nil
 	}
 
-	var missing []neo.ModValue
+	var missing []neo.OpValue
 	for _, id := range ids {
 		found := false
 		for _, character := range characters {
@@ -124,20 +135,30 @@ func (s *service) CharactersByCharacterIDs(ctx context.Context, ids []uint64) ([
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
 
+	keyMap := make(map[string]interface{})
+
 	for _, character := range dbTypes {
+		characters = append(characters, character)
+
 		key := fmt.Sprintf(neo.REDIS_CHARACTER, character.ID)
 
 		byteSlice, err := json.Marshal(character)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to marshal character to slice of bytes")
+			s.logger.WithError(err).WithField("id", character.ID).Error("unable to marshal character to slice of bytes")
+			continue
 		}
 
-		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to cache character in redis")
-		}
+		keyMap[key] = string(byteSlice)
 
-		characters = append(characters, character)
+	}
+
+	_, err = s.redis.MSet(ctx, keyMap).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to cache characters in redis")
+	}
+
+	for i := range keyMap {
+		s.redis.Expire(ctx, i, time.Hour)
 	}
 
 	return characters, nil

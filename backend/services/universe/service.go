@@ -6,6 +6,8 @@ import (
 	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/esi"
 	"github.com/go-redis/redis/v8"
+	"github.com/newrelic/go-agent/v3/newrelic"
+	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
@@ -39,15 +41,19 @@ type Service interface {
 }
 
 type service struct {
-	redis *redis.Client
-	esi   esi.Service
+	redis    *redis.Client
+	logger   *logrus.Logger
+	newrelic *newrelic.Application
+	esi      esi.Service
 	neo.BlueprintRepository
 	neo.UniverseRepository
 }
 
-func NewService(redis *redis.Client, esi esi.Service, blueprint neo.BlueprintRepository, universe neo.UniverseRepository) Service {
+func NewService(redis *redis.Client, logger *logrus.Logger, nr *newrelic.Application, esi esi.Service, blueprint neo.BlueprintRepository, universe neo.UniverseRepository) Service {
 	return &service{
 		redis,
+		logger,
+		nr,
 		esi,
 		blueprint,
 		universe,

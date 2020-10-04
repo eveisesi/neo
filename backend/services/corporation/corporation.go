@@ -42,7 +42,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 			return nil, errors.Wrap(err, "unable to marshal corporation for cache")
 		}
 
-		_, err = s.redis.Set(ctx, key, bSlice, time.Minute*60).Result()
+		_, err = s.redis.Set(ctx, key, bSlice, time.Hour).Result()
 
 		return corporation, errors.Wrap(err, "failed to cache corporation in redis")
 	}
@@ -68,7 +68,7 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 		return corporation, errors.Wrap(err, "unable to marshal corporation for cache")
 	}
 
-	_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
+	_, err = s.redis.Set(ctx, key, byteSlice, time.Hour).Result()
 
 	return corporation, errors.Wrap(err, "failed to cache solar corporation in redis")
 }
@@ -76,23 +76,34 @@ func (s *service) Corporation(ctx context.Context, id uint) (*neo.Corporation, e
 func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) ([]*neo.Corporation, error) {
 
 	var corporations = make([]*neo.Corporation, 0)
-	for _, id := range ids {
-		key := fmt.Sprintf(neo.REDIS_CORPORATION, id)
-		result, err := s.redis.Get(ctx, key).Bytes()
-		if err != nil && err.Error() != neo.ErrRedisNil.Error() {
-			return nil, errors.Wrap(err, "encountered error querying redis")
+	keys := make([]string, len(ids))
+	for i, id := range ids {
+		keys[i] = fmt.Sprintf(neo.REDIS_CORPORATION, id)
+	}
+
+	results, err := s.redis.MGet(ctx, keys...).Result()
+	if err != nil && err.Error() != neo.ErrRedisNil.Error() {
+		return nil, errors.Wrap(err, "encountered error querying redis")
+	}
+
+	for i, resultInt := range results {
+		if resultInt == nil {
+			continue
 		}
 
-		if len(result) > 0 {
+		switch result := resultInt.(type) {
+		case string:
+			if len(result) > 0 {
+				var corporation = new(neo.Corporation)
+				err = json.Unmarshal([]byte(result), corporation)
+				if err != nil {
+					return nil, errors.Wrap(err, "unable to unmarshal corporation bytes into struct")
+				}
 
-			var corporation = new(neo.Corporation)
-			err = json.Unmarshal(result, corporation)
-			if err != nil {
-				return nil, errors.Wrap(err, "unable to unmarshal corporation bytes into struct")
+				corporations = append(corporations, corporation)
 			}
-
-			corporations = append(corporations, corporation)
-
+		default:
+			panic(fmt.Sprintf("unexpected type received from redis. expected string, got %#T. redis key is %s", result, keys[i]))
 		}
 	}
 
@@ -100,7 +111,7 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 		return corporations, nil
 	}
 
-	var missing []neo.ModValue
+	var missing []neo.OpValue
 	for _, id := range ids {
 		found := false
 		for _, corporation := range corporations {
@@ -123,20 +134,29 @@ func (s *service) CorporationsByCorporationIDs(ctx context.Context, ids []uint) 
 		return nil, errors.Wrap(err, "failed to query db for missing type ids")
 	}
 
+	keyMap := make(map[string]interface{})
+
 	for _, corporation := range dbTypes {
+		corporations = append(corporations, corporation)
+
 		key := fmt.Sprintf(neo.REDIS_CORPORATION, corporation.ID)
 
 		byteSlice, err := json.Marshal(corporation)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to marshal corporation to slice of bytes")
+			s.logger.WithError(err).WithField("id", corporation.ID).Error("unable to marshal corporation to slice of bytes")
+			continue
 		}
+		keyMap[key] = string(byteSlice)
 
-		_, err = s.redis.Set(ctx, key, byteSlice, time.Minute*60).Result()
-		if err != nil {
-			return nil, errors.Wrap(err, "unable to cache corporation in redis")
-		}
+	}
 
-		corporations = append(corporations, corporation)
+	_, err = s.redis.MSet(ctx, keyMap).Result()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to cache corporations in redis")
+	}
+
+	for i := range keyMap {
+		s.redis.Expire(ctx, i, time.Hour)
 	}
 
 	return corporations, nil

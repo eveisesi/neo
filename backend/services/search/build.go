@@ -128,7 +128,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	groupIDs := make([]neo.ModValue, 0)
+	groupIDs := make([]neo.OpValue, 0)
 	shipGroups, err := s.universe.TypeGroups(ctx, neo.NewEqualOperator("categoryID", 6))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch ship groups")

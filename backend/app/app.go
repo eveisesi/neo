@@ -174,6 +174,8 @@ func New(command string, debug bool) *App {
 
 	universe := universe.NewService(
 		redisClient,
+		logger,
+		nr,
 		esiClient,
 		mdb.NewBlueprintRepository(mongoDB),
 		mdb.NewUniverseRepository(mongoDB),
