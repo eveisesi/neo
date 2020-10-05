@@ -25,6 +25,8 @@ func (s *service) Build(ctx context.Context) error {
 		return err
 	}
 
+	s.logger.WithField("numEntities", len(entities)).Infoln()
+
 	suggestions := make([]redisearch.Suggestion, 0)
 
 	count := 0
@@ -80,7 +82,7 @@ func (s *service) Build(ctx context.Context) error {
 func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntity, error) {
 
 	entities := make([]neo.SearchableEntity, 0)
-	characters, err := s.character.Characters(ctx, nil)
+	characters, err := s.character.Characters(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch characters")
 		return nil, errors.New("failed to fetch characters")
@@ -96,7 +98,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	corporations, err := s.corporation.Corporations(ctx, nil)
+	corporations, err := s.corporation.Corporations(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch corporations")
 		return nil, errors.New("failed to fetch corporations")
@@ -112,7 +114,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	alliances, err := s.alliance.Alliances(ctx, nil)
+	alliances, err := s.alliance.Alliances(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch alliances")
 		return nil, errors.New("failed to fetch alliances")
@@ -155,7 +157,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	solarSystems, err := s.universe.SolarSystems(ctx, nil)
+	solarSystems, err := s.universe.SolarSystems(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch solar systems")
 		return nil, errors.New("failed to fetch solar systems")
@@ -171,7 +173,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	constellations, err := s.universe.Constellations(ctx, nil)
+	constellations, err := s.universe.Constellations(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch constellations")
 		return nil, errors.New("failed to fetch constellations")
@@ -187,7 +189,7 @@ func (s *service) SearchableEntities(ctx context.Context) ([]neo.SearchableEntit
 		})
 	}
 
-	regions, err := s.universe.Regions(ctx, nil)
+	regions, err := s.universe.Regions(ctx)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to fetch regions")
 		return nil, errors.New("failed to fetch regions")
