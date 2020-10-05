@@ -7,8 +7,8 @@ beimage="docker.pkg.github.com/eveisesi/neo/backend:${latest}"
 
 export FRONTEND_IMAGE="docker.pkg.github.com/eveisesi/neo/frontend:${latest}"
 export BACKEND_IMAGE="docker.pkg.github.com/eveisesi/neo/backend:${latest}"
-export PROCESS_LIMIT=8
-export PROCESS_SLEEP=100
+export PROCESS_LIMIT=6
+export PROCESS_SLEEP=150
 
 docker pull ${feimage}
 docker pull ${beimage}
