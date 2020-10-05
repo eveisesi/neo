@@ -305,6 +305,7 @@ func (s *service) Run(startDateStr, endDateStr string, incrementer int64, stats 
 			time.Sleep(time.Second)
 			i++
 		}
+		time.Sleep(time.Second * 2)
 		entry.Info("confirm killmail count for date")
 		killmailCount, err = s.CountKillmails(ctx, countKillmailsFilters...)
 		if err != nil {
