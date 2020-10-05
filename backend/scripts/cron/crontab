@@ -1,4 +1,0 @@
-10 11 * * * /root/projects/neo/core/scripts/cron/marketdata.sh > /dev/null
-10 11 * * * /root/projects/neo/core/scripts/cron/autocomplete.sh > /dev/null
-* * * * * /root/projects/neo/core/scripts/cron/tqstatus.sh > /dev/null
-* * * * * /root/projects/neo/core/scripts/cron/janitor.sh > /dev/null
