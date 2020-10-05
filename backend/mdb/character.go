@@ -53,8 +53,12 @@ func (r *characterRepository) CreateCharacter(ctx context.Context, character *ne
 	character.UpdatedAt = now
 
 	_, err := r.c.InsertOne(ctx, character)
-
-	return err
+	if err != nil {
+		if !IsUniqueConstrainViolation(err) {
+			return err
+		}
+	}
+	return nil
 
 }
 
