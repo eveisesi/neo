@@ -68,6 +68,17 @@ services:
             - backend/.env
         volumes:
             - ./logs:/app/logs
+    cron:
+        image: ${BACKEND_IMAGE}
+        network_mode: "host"
+        restart: on-failure
+        command: ./neo cron
+        container_name: cron
+        hostname: cron
+        env_file:
+            - backend/.env
+        volumes:
+            - ./logs:/app/logs
     ui:
         image: ${FRONTEND_IMAGE}
         restart: on-failure
