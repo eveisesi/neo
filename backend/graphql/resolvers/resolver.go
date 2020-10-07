@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/eveisesi/neo"
 	"github.com/eveisesi/neo/services/alliance"
 	"github.com/eveisesi/neo/services/character"
 	"github.com/eveisesi/neo/services/corporation"
@@ -41,6 +42,15 @@ type Services struct {
 	Search
 }
 
+type FeedManager struct {
+	TotalConnections int
+	Feeds            []struct {
+		Receiver        chan *neo.Killmail
+		ConnectionCount int
+		Subscribers     map[string](chan *neo.Killmail)
+	}
+}
+
 func NewResolver(
 	ctxLoaders func(ctx context.Context) dataloaders.Loaders,
 	logger *logrus.Logger,
@@ -48,12 +58,16 @@ func NewResolver(
 	services Services,
 ) *Resolver {
 
+	redis.Del(context.Background(), neo.WEBSOCKET_CONNECTIONS)
+	redis.Set(context.Background(), neo.WEBSOCKET_CONNECTIONS, 0, -1)
+
 	return &Resolver{
 		Services:   services,
 		Dataloader: ctxLoaders,
 		Logger:     logger,
 		Redis:      redis,
 	}
+
 }
 
 var (

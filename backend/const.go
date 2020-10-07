@@ -81,6 +81,8 @@ const QUEUES_KILLMAIL_BACKUP = "neo:killmails:backup"
 const QUEUES_KILLMAIL_STATS = "neo:killmails:stats"
 const QUEUES_KILLMAIL_NOTIFICATION = "neo:notifications"
 
+const WEBSOCKET_CONNECTIONS = "neo:websocket:connections"
+
 // FlagIDs to FittingSlots
 
 var SLOT_TO_FLAGIDS = map[string]map[uint]bool{

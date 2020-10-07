@@ -126,7 +126,7 @@ func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Ki
 
 	go func(ctx context.Context, output chan *neo.Killmail) {
 		r.Logger.Println("hello")
-
+		r.Redis.Incr(ctx, neo.WEBSOCKET_CONNECTIONS)
 		feed := r.Redis.Subscribe(ctx, "killmail-feed")
 
 		_, err := feed.Receive(ctx)
@@ -143,7 +143,8 @@ func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Ki
 			case <-ctx.Done():
 				close(output)
 				feed.Close()
-				r.Logger.Info("ctx.Done, hanging up")
+				r.Redis.Decr(context.Background(), neo.WEBSOCKET_CONNECTIONS)
+				r.Logger.Info("goodby")
 				return
 			case msg := <-subCh:
 				var killmail = new(neo.Killmail)
@@ -151,7 +152,6 @@ func (r *subscriptionResolver) KillmailFeed(ctx context.Context) (<-chan *neo.Ki
 				if err != nil {
 					r.Logger.WithError(err).Error("failed to unmarshal feed payload")
 				}
-				r.Logger.WithField("id", killmail.ID).WithField("hash", killmail.Hash).Info("pushing message to feed")
 				output <- killmail
 				break
 			}

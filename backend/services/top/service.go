@@ -62,6 +62,9 @@ type (
 
 		InvalidQueue     int64
 		PrevInvalidQueue int64
+
+		WebsocketConnections     int64
+		PrevWebsocketConnections int64
 	}
 )
 
@@ -124,6 +127,11 @@ func (s *service) fetchNotificationQueue(ctx context.Context) (int64, error) {
 
 func (s *service) fetchInvalidQueue(ctx context.Context) (int64, error) {
 	return s.redis.ZCount(ctx, neo.ZKB_INVALID_HASH, "-inf", "+inf").Result()
+}
+
+func (s *service) fetchWebsocketConnections(ctx context.Context) (int64, error) {
+	count, _ := s.redis.Get(ctx, neo.WEBSOCKET_CONNECTIONS).Int64()
+	return count, nil
 }
 
 func (s *service) EvaluateParams(param *stat) error {
@@ -195,6 +203,11 @@ func (s *service) EvaluateParams(param *stat) error {
 		return errors.Wrap(err, "fetchInvalidQueue failed")
 	}
 
+	param.WebsocketConnections, err = s.fetchWebsocketConnections(ctx)
+	if err != nil {
+		return errors.Wrap(err, "fetchWebsocketConnections failed")
+	}
+
 	return nil
 
 }
@@ -211,6 +224,7 @@ func (s *service) SetPrevParams(params *stat) {
 	params.PrevStatsQueue = params.StatsQueue
 	params.PrevNotificationsQueue = params.NotificationsQueue
 	params.PrevInvalidQueue = params.InvalidQueue
+	params.PrevWebsocketConnections = params.WebsocketConnections
 }
 
 func (s *service) Run() error {
@@ -257,6 +271,12 @@ func (s *service) Run() error {
 					"%d: Queue Invalid Hashes (%d)",
 					params.InvalidQueue,
 					params.InvalidQueue-params.PrevInvalidQueue,
+				),
+				"",
+				fmt.Sprintf(
+					"%d: Websocket Connections (%d)",
+					params.WebsocketConnections,
+					params.WebsocketConnections-params.PrevWebsocketConnections,
 				),
 				"",
 				fmt.Sprintf(
