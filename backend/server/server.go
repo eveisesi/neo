@@ -87,7 +87,7 @@ func Action(c *cli.Context) {
 
 	err := server.GracefullyShutdown(context.Background())
 	if err != nil {
-		app.Logger.WithError(err).Error("unable to start serve")
+		app.Logger.WithError(err).Error("unable to shutdown serve")
 	}
 
 	app.Logger.Info("server gracefully shutdown")

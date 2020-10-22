@@ -337,12 +337,13 @@ func (s *service) buildSlackVictimString(victim *neo.KillmailVictim) string {
 func (s *service) buildSlackVictimImageString(victim *neo.KillmailVictim) string {
 	format := "%s/%s/%d/%s?size=%d"
 
-	if victim.Character != nil {
-		return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "characters", victim.CharacterID, "portrait", 128)
+	if victim.CharacterID != nil {
+		link := fmt.Sprintf(format, neo.EVE_IMAGE_URL, "characters", *victim.CharacterID, "portrait", 128)
+		return link
 	}
 
 	if victim.CorporationID != nil {
-		return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "corporations", victim.CorporationID, "logo", 128)
+		return fmt.Sprintf(format, neo.EVE_IMAGE_URL, "corporations", *victim.CorporationID, "logo", 128)
 	}
 	return ""
 }
