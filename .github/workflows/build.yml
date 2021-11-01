@@ -41,8 +41,8 @@ jobs:
                   IMAGE_NAME=$IMAGE_BASE/backend
                   echo IMAGE_NAME=$IMAGE_NAME
 
-                  docker tag backend-image $IMAGE_NAME:$VERSION
-                  docker tag backend-image $IMAGE_NAME:latest
+                  docker tag backend-image $IMAGE_NAME/$VERSION
+                  docker tag backend-image $IMAGE_NAME/latest
                   docker push $IMAGE_NAME:$VERSION 
                   docker push $IMAGE_NAME:latest
 
