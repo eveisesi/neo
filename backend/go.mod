@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/99designs/gqlgen v0.13.0
 	github.com/RediSearch/redisearch-go v1.0.0
-	github.com/aws/aws-sdk-go v1.32.6
+	github.com/aws/aws-sdk-go v1.33.0
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
